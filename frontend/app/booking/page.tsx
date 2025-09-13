@@ -12,7 +12,6 @@ import {
   ArrowRight,
   Camera,
   Car,
-  Sparkles,
   Clock,
   Heart,
   Star,
@@ -135,7 +134,7 @@ export default function BookingPage() {
     },
     guests: [],
     services: {
-      includeFood: true,
+      includeFood: false,
       includeBreakfast: false,
       transport: {
         pickup: false,
@@ -400,9 +399,9 @@ export default function BookingPage() {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="text-center mb-12"
       >
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-4">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-medium text-blue-800">Step 1 of 4</span>
+        <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full mb-4 border border-blue-200/60 shadow-sm">
+          <div className="w-1.5 h-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+          <span className="text-xs font-bold text-blue-700 tracking-wider">STEP 1 OF 3</span>
         </div>
         <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
           Choose Your Perfect Room
@@ -617,9 +616,9 @@ export default function BookingPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-blue-100 px-4 py-2 rounded-full mb-4">
-            <Users className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-green-800">Step 2 of 3</span>
+          <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full mb-4 border border-green-200/60 shadow-sm">
+            <div className="w-1.5 h-1.5 bg-gradient-to-r from-green-500 to-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-xs font-bold text-green-700 tracking-wider">STEP 2 OF 3</span>
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
             Your Information
@@ -915,9 +914,9 @@ export default function BookingPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 rounded-full mb-4">
-            <Sparkles className="w-4 h-4 text-orange-600" />
-            <span className="text-sm font-medium text-orange-800">Step 3 of 3</span>
+          <div className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full mb-4 border border-orange-200/60 shadow-sm">
+            <div className="w-1.5 h-1.5 bg-gradient-to-r from-orange-500 to-red-500 rounded-full animate-pulse"></div>
+            <span className="text-xs font-bold text-orange-700 tracking-wider">STEP 3 OF 3</span>
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
             Customize Your Experience
@@ -966,7 +965,16 @@ export default function BookingPage() {
                 <input
                   type="checkbox"
                   name="includeFood"
-                  defaultChecked={bookingData.services.includeFood}
+                  checked={bookingData.services.includeFood}
+                  onChange={(e) => {
+                    setBookingData((prev) => ({
+                      ...prev,
+                      services: {
+                        ...prev.services,
+                        includeFood: e.target.checked,
+                      },
+                    }));
+                  }}
                   className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <div className="flex-1">
@@ -1006,7 +1014,16 @@ export default function BookingPage() {
                 <input
                   type="checkbox"
                   name="includeBreakfast"
-                  defaultChecked={bookingData.services.includeBreakfast}
+                  checked={bookingData.services.includeBreakfast}
+                  onChange={(e) => {
+                    setBookingData((prev) => ({
+                      ...prev,
+                      services: {
+                        ...prev.services,
+                        includeBreakfast: e.target.checked,
+                      },
+                    }));
+                  }}
                   className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <div className="flex-1">
@@ -1060,7 +1077,19 @@ export default function BookingPage() {
                 <input
                   type="checkbox"
                   name="pickup"
-                  defaultChecked={bookingData.services.transport.pickup}
+                  checked={bookingData.services.transport.pickup}
+                  onChange={(e) => {
+                    setBookingData((prev) => ({
+                      ...prev,
+                      services: {
+                        ...prev.services,
+                        transport: {
+                          ...prev.services.transport,
+                          pickup: e.target.checked,
+                        },
+                      },
+                    }));
+                  }}
                   className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <div className="flex-1">
@@ -1100,7 +1129,19 @@ export default function BookingPage() {
                 <input
                   type="checkbox"
                   name="drop"
-                  defaultChecked={bookingData.services.transport.drop}
+                  checked={bookingData.services.transport.drop}
+                  onChange={(e) => {
+                    setBookingData((prev) => ({
+                      ...prev,
+                      services: {
+                        ...prev.services,
+                        transport: {
+                          ...prev.services.transport,
+                          drop: e.target.checked,
+                        },
+                      },
+                    }));
+                  }}
                   className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <div className="flex-1">
