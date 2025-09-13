@@ -14,6 +14,166 @@ const getUserObjectId = (userId: string | undefined): mongoose.Types.ObjectId =>
   return new mongoose.Types.ObjectId(userId);
 };
 
+// Public booking creation (no auth required)
+export const createPublicBooking = async (req: any, res: Response): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const {
+      roomId,
+      checkIn,
+      checkOut,
+      guests,
+      primaryGuestInfo,
+      includeFood = true,
+      includeBreakfast = false,
+      transport,
+      selectedServices = [],
+      yogaSessionId,
+      specialRequests
+    } = req.body;
+
+    // For public bookings, we don't have a userId, so we'll use the primary guest email as identifier
+    const guestEmail = primaryGuestInfo.email;
+
+    // Validate dates
+    const dateValidation = bookingValidator.validateBookingDates(new Date(checkIn), new Date(checkOut));
+    if (!dateValidation.valid) {
+      res.status(400).json({
+        success: false,
+        message: dateValidation.message
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Validate room exists and is available
+    const room = await Room.findById(roomId).session(session);
+    if (!room || !room.isAvailable) {
+      res.status(400).json({
+        success: false,
+        message: 'Room not found or not available'
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Validate guests
+    const guestValidation = bookingValidator.validateGuests(guests, room.capacity);
+    if (!guestValidation.valid) {
+      res.status(400).json({
+        success: false,
+        message: guestValidation.message
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Check for date overlap
+    const overlapCheck = await bookingValidator.checkDateOverlap(
+      roomId,
+      new Date(checkIn),
+      new Date(checkOut)
+    );
+
+    if (overlapCheck.hasOverlap) {
+      res.status(400).json({
+        success: false,
+        message: 'Room is already booked for the selected dates',
+        conflictingBookings: overlapCheck.conflictingBookings
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Calculate pricing
+    const pricing = pricingCalculator.calculateBookingPrice(
+      room.pricePerNight,
+      new Date(checkIn),
+      new Date(checkOut),
+      guests,
+      includeFood,
+      includeBreakfast,
+      0,
+      [],
+      0,
+      0
+    );
+
+    // Create booking for public user (no userId)
+    const booking = new Booking({
+      roomId,
+      userId: null, // No user account for public bookings
+      guestEmail, // Store guest email for identification
+      checkIn: new Date(checkIn),
+      checkOut: new Date(checkOut),
+      guests: guests.map((guest: any) => ({
+        name: guest.name,
+        age: parseInt(guest.age),
+        isChild: parseInt(guest.age) < 5,
+        gender: guest.gender,
+        idType: guest.idType,
+        idNumber: guest.idNumber
+      })),
+      primaryGuestInfo,
+      totalGuests: guests.length,
+      adults: guests.filter((g: any) => parseInt(g.age) >= 5).length,
+      children: guests.filter((g: any) => parseInt(g.age) < 5).length,
+      totalAmount: pricing.totalAmount,
+      roomPrice: pricing.roomPrice,
+      foodPrice: pricing.foodPrice,
+      breakfastPrice: pricing.breakfastPrice,
+      servicesPrice: pricing.servicesPrice,
+      transportPrice: pricing.transportPrice,
+      yogaPrice: pricing.yogaPrice,
+      includeFood,
+      includeBreakfast,
+      transport,
+      specialRequests: specialRequests || '',
+      status: 'pending',
+      paymentStatus: 'pending'
+    });
+
+    await booking.save({ session });
+    await session.commitTransaction();
+
+    // Send email notification for public booking
+    try {
+      await emailService.sendBookingConfirmation(booking);
+    } catch (emailError) {
+      console.error('Failed to send booking confirmation email:', emailError);
+      // Don't fail the booking creation if email fails
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Booking created successfully',
+      data: {
+        booking: {
+          _id: booking._id,
+          roomId: booking.roomId,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          totalAmount: booking.totalAmount,
+          status: booking.status,
+          paymentStatus: booking.paymentStatus
+        }
+      }
+    });
+
+  } catch (error: any) {
+    await session.abortTransaction();
+    console.error('Public booking creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create booking'
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
 export const createBooking = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -198,12 +358,18 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       totalGuests: guests.length,
       adults: guests.filter((g: any) => !g.isChild).length,
       children: guests.filter((g: any) => g.isChild).length,
+      totalAmount: pricing.totalAmount,
+      roomPrice: pricing.roomPrice,
+      foodPrice: pricing.foodPrice,
+      breakfastPrice: pricing.breakfastPrice,
+      servicesPrice: pricing.servicesPrice,
+      transportPrice: pricing.transportPrice,
+      yogaPrice: pricing.yogaPrice,
       includeFood,
       includeBreakfast,
       transport,
       selectedServices: calculatedServices,
       yogaSessionId: yogaSessionId || undefined,
-      ...pricing,
       specialRequests,
       status: 'pending',
       paymentStatus: 'pending'
@@ -231,9 +397,19 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
 
     // Send booking confirmation email
     try {
-      const user = await User.findById(userId);
-      if (user) {
-        await emailService.sendBookingConfirmation(populatedBooking, user);
+      if (userId === 'admin_id_123') {
+        // For admin bookings, use admin info
+        const adminUser = {
+          name: 'Admin User',
+          email: 'admin@gmail.com'
+        };
+        await emailService.sendBookingConfirmation(populatedBooking, adminUser);
+      } else {
+        // For regular users, find user in database
+        const user = await User.findById(userId);
+        if (user) {
+          await emailService.sendBookingConfirmation(populatedBooking, user);
+        }
       }
     } catch (emailError) {
       console.error('Failed to send booking confirmation email:', emailError);
@@ -405,9 +581,28 @@ export const cancelBooking = async (req: AuthenticatedRequest, res: Response): P
 
     // Send cancellation email
     try {
-      const user = await User.findById(booking.userId);
-      if (user) {
-        await emailService.sendBookingCancellation(booking, user);
+      if (booking.userId) {
+        if (booking.userId.toString() === '507f1f77bcf86cd799439011') {
+          // Admin booking
+          const adminUser = {
+            name: 'Admin User',
+            email: 'admin@gmail.com'
+          };
+          await emailService.sendBookingCancellation(booking, adminUser);
+        } else {
+          // Regular user booking
+          const user = await User.findById(booking.userId);
+          if (user) {
+            await emailService.sendBookingCancellation(booking, user);
+          }
+        }
+      } else if (booking.guestEmail) {
+        // Public booking
+        const guestUser = {
+          name: booking.primaryGuestInfo?.name || 'Guest',
+          email: booking.guestEmail
+        };
+        await emailService.sendBookingCancellation(booking, guestUser);
       }
     } catch (emailError) {
       console.error('Failed to send booking cancellation email:', emailError);
