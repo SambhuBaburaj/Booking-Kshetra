@@ -1,25 +1,32 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Wifi, 
-  Car, 
-  Coffee, 
+import { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  Wifi,
+  Car,
+  Coffee,
   Star,
   Calendar,
   Filter,
-  Search
-} from 'lucide-react';
-import Header from '../../components/Header';
-import { useRouter } from 'next/navigation';
-import { roomAPI } from '../../lib/api';
+  Search,
+  Tv,
+  Wind,
+  Utensils,
+  Waves,
+  TreePine,
+  Bath,
+  Bed,
+  Mountain
+} from "lucide-react";
+import Header from "../../components/Header";
+import { useRouter } from "next/navigation";
 
 interface Room {
   _id: string;
   roomNumber: string;
-  roomType: 'AC' | 'Non-AC';
+  roomType: "AC" | "Non-AC";
   pricePerNight: number;
   capacity: number;
   amenities: string[];
@@ -28,69 +35,150 @@ interface Room {
   isAvailable: boolean;
 }
 
+// Static room data
+const staticRooms: Room[] = [
+  {
+    _id: "1",
+    roomNumber: "101",
+    roomType: "AC",
+    pricePerNight: 3500,
+    capacity: 2,
+    amenities: ["WiFi", "AC", "TV", "Private Bathroom", "Coffee/Tea", "Balcony"],
+    description: "Spacious AC room with stunning ocean views and modern amenities. Perfect for couples seeking comfort and tranquility.",
+    images: ["https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "2",
+    roomNumber: "102",
+    roomType: "AC",
+    pricePerNight: 4200,
+    capacity: 3,
+    amenities: ["WiFi", "AC", "TV", "Private Bathroom", "Coffee/Tea", "Sea View", "Mini Fridge"],
+    description: "Deluxe AC room with panoramic sea views and premium amenities. Ideal for small families or groups of friends.",
+    images: ["https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "3",
+    roomNumber: "103",
+    roomType: "Non-AC",
+    pricePerNight: 2200,
+    capacity: 2,
+    amenities: ["WiFi", "Fan", "Private Bathroom", "Coffee/Tea", "Garden View"],
+    description: "Cozy non-AC room surrounded by lush gardens. Experience natural ventilation and eco-friendly accommodation.",
+    images: ["https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "4",
+    roomNumber: "104",
+    roomType: "AC",
+    pricePerNight: 5000,
+    capacity: 4,
+    amenities: ["WiFi", "AC", "TV", "Private Bathroom", "Coffee/Tea", "Sea View", "Mini Fridge", "Sitting Area"],
+    description: "Premium family suite with separate sitting area and breathtaking coastal views. Perfect for families or groups.",
+    images: ["https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "5",
+    roomNumber: "201",
+    roomType: "AC",
+    pricePerNight: 3800,
+    capacity: 2,
+    amenities: ["WiFi", "AC", "TV", "Private Bathroom", "Coffee/Tea", "Balcony", "Ocean View"],
+    description: "Second floor AC room with private balcony overlooking the Arabian Sea. Wake up to the sound of waves.",
+    images: ["https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "6",
+    roomNumber: "202",
+    roomType: "Non-AC",
+    pricePerNight: 1800,
+    capacity: 1,
+    amenities: ["WiFi", "Fan", "Private Bathroom", "Coffee/Tea"],
+    description: "Single occupancy non-AC room perfect for solo travelers seeking budget-friendly accommodation with comfort.",
+    images: ["https://images.unsplash.com/photo-1595576508898-0ad5c879a061?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "7",
+    roomNumber: "203",
+    roomType: "AC",
+    pricePerNight: 6500,
+    capacity: 4,
+    amenities: ["WiFi", "AC", "TV", "Private Bathroom", "Coffee/Tea", "Sea View", "Mini Fridge", "Kitchenette", "Living Room"],
+    description: "Luxury villa-style suite with kitchenette and separate living area. Ultimate comfort for extended stays or special occasions.",
+    images: ["https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3"],
+    isAvailable: true
+  },
+  {
+    _id: "8",
+    roomNumber: "301",
+    roomType: "Non-AC",
+    pricePerNight: 2800,
+    capacity: 3,
+    amenities: ["WiFi", "Fan", "Private Bathroom", "Coffee/Tea", "Terrace", "Mountain View"],
+    description: "Top floor non-AC room with private terrace and mountain views. Perfect for yoga practitioners and nature lovers.",
+    images: ["https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3"],
+    isAvailable: true
+  }
+];
+
 const RoomsPage = () => {
   const router = useRouter();
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    roomType: 'all',
-    priceRange: 'all',
-    capacity: 'all'
+    roomType: "all",
+    priceRange: "all",
+    capacity: "all",
   });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  const filteredRooms = staticRooms.filter((room) => {
+    const matchesSearch =
+      room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      const response = await roomAPI.getAllRooms();
-      const data = response.data;
-      
-      if (data.success) {
-        setRooms(data.data.rooms || []);
-      } else {
-        setError(data.message || 'Failed to fetch rooms');
-      }
-    } catch (err) {
-      setError('Failed to fetch rooms');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const matchesType =
+      filters.roomType === "all" || room.roomType === filters.roomType;
 
-  const filteredRooms = rooms.filter(room => {
-    const matchesSearch = room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = filters.roomType === 'all' || room.roomType === filters.roomType;
-    
-    const matchesPrice = filters.priceRange === 'all' || (
-      filters.priceRange === 'budget' && room.pricePerNight < 2000 ||
-      filters.priceRange === 'mid' && room.pricePerNight >= 2000 && room.pricePerNight < 4000 ||
-      filters.priceRange === 'luxury' && room.pricePerNight >= 4000
+    const matchesPrice =
+      filters.priceRange === "all" ||
+      (filters.priceRange === "budget" && room.pricePerNight < 2000) ||
+      (filters.priceRange === "mid" &&
+        room.pricePerNight >= 2000 &&
+        room.pricePerNight < 4000) ||
+      (filters.priceRange === "luxury" && room.pricePerNight >= 4000);
+
+    const matchesCapacity =
+      filters.capacity === "all" ||
+      parseInt(filters.capacity) === room.capacity;
+
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesPrice &&
+      matchesCapacity &&
+      room.isAvailable
     );
-    
-    const matchesCapacity = filters.capacity === 'all' || 
-                           parseInt(filters.capacity) === room.capacity;
-    
-    return matchesSearch && matchesType && matchesPrice && matchesCapacity && room.isAvailable;
   });
 
   const handleBookRoom = (room: Room) => {
     // Store selected room in localStorage and redirect to booking
-    localStorage.setItem('selectedRoom', JSON.stringify({
-      roomId: room._id,
-      roomType: room.roomType,
-      pricePerNight: room.pricePerNight,
-      capacity: room.capacity,
-      roomNumber: room.roomNumber
-    }));
-    
-    router.push('/booking');
+    localStorage.setItem(
+      "selectedRoom",
+      JSON.stringify({
+        roomId: room._id,
+        roomType: room.roomType,
+        pricePerNight: room.pricePerNight,
+        capacity: room.capacity,
+        roomNumber: room.roomNumber,
+      })
+    );
+
+    router.push("/booking");
   };
 
   const RoomCard = ({ room }: { room: Room }) => (
@@ -103,8 +191,8 @@ const RoomsPage = () => {
       {/* Room Image */}
       <div className="h-64 bg-gray-200 relative">
         {room.images.length > 0 ? (
-          <img 
-            src={room.images[0]} 
+          <img
+            src={room.images[0]}
             alt={`Room ${room.roomNumber}`}
             className="w-full h-full object-cover"
           />
@@ -116,13 +204,15 @@ const RoomsPage = () => {
             </div>
           </div>
         )}
-        
+
         <div className="absolute top-4 right-4">
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            room.roomType === 'AC' 
-              ? 'bg-blue-100 text-blue-800' 
-              : 'bg-orange-100 text-orange-800'
-          }`}>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              room.roomType === "AC"
+                ? "bg-blue-100 text-blue-800"
+                : "bg-orange-100 text-orange-800"
+            }`}
+          >
             {room.roomType}
           </span>
         </div>
@@ -180,7 +270,10 @@ const RoomsPage = () => {
         <div className="flex items-center mb-4">
           <div className="flex items-center">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <Star
+                key={i}
+                className="w-4 h-4 fill-yellow-400 text-yellow-400"
+              />
             ))}
           </div>
           <span className="ml-2 text-sm text-gray-600">4.8 (127 reviews)</span>
@@ -200,44 +293,24 @@ const RoomsPage = () => {
 
   const getAmenityIcon = (amenity: string) => {
     const lowerAmenity = amenity.toLowerCase();
-    if (lowerAmenity.includes('wifi')) return <Wifi className="w-3 h-3" />;
-    if (lowerAmenity.includes('parking')) return <Car className="w-3 h-3" />;
-    if (lowerAmenity.includes('coffee') || lowerAmenity.includes('tea')) return <Coffee className="w-3 h-3" />;
+    if (lowerAmenity.includes("wifi")) return <Wifi className="w-3 h-3" />;
+    if (lowerAmenity.includes("ac")) return <Wind className="w-3 h-3" />;
+    if (lowerAmenity.includes("tv")) return <Tv className="w-3 h-3" />;
+    if (lowerAmenity.includes("bathroom")) return <Bath className="w-3 h-3" />;
+    if (lowerAmenity.includes("coffee") || lowerAmenity.includes("tea")) return <Coffee className="w-3 h-3" />;
+    if (lowerAmenity.includes("balcony") || lowerAmenity.includes("terrace")) return <Mountain className="w-3 h-3" />;
+    if (lowerAmenity.includes("view")) return <Waves className="w-3 h-3" />;
+    if (lowerAmenity.includes("fridge")) return <Utensils className="w-3 h-3" />;
+    if (lowerAmenity.includes("fan")) return <Wind className="w-3 h-3" />;
+    if (lowerAmenity.includes("garden")) return <TreePine className="w-3 h-3" />;
+    if (lowerAmenity.includes("sitting") || lowerAmenity.includes("living")) return <Bed className="w-3 h-3" />;
     return null;
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <div className="text-red-500 text-xl mb-4">Error: {error}</div>
-          <button 
-            onClick={fetchRooms}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="bg-blue-600 text-white py-16">
         <div className="container mx-auto px-4 text-center">
@@ -248,7 +321,8 @@ const RoomsPage = () => {
           >
             <h1 className="text-4xl md:text-5xl font-light mb-4">Our Rooms</h1>
             <p className="text-xl opacity-90 max-w-2xl mx-auto">
-              Choose from our carefully designed accommodations, each offering comfort and tranquility
+              Choose from our carefully designed accommodations, each offering
+              comfort and tranquility
             </p>
           </motion.div>
         </div>
@@ -278,7 +352,9 @@ const RoomsPage = () => {
             <div className="flex gap-4">
               <select
                 value={filters.roomType}
-                onChange={(e) => setFilters(prev => ({ ...prev, roomType: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, roomType: e.target.value }))
+                }
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Types</option>
@@ -288,7 +364,12 @@ const RoomsPage = () => {
 
               <select
                 value={filters.priceRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    priceRange: e.target.value,
+                  }))
+                }
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Prices</option>
@@ -299,7 +380,9 @@ const RoomsPage = () => {
 
               <select
                 value={filters.capacity}
-                onChange={(e) => setFilters(prev => ({ ...prev, capacity: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, capacity: e.target.value }))
+                }
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">Any Capacity</option>
@@ -315,7 +398,7 @@ const RoomsPage = () => {
         {/* Rooms Grid */}
         {filteredRooms.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredRooms.map(room => (
+            {filteredRooms.map((room) => (
               <RoomCard key={room._id} room={room} />
             ))}
           </div>

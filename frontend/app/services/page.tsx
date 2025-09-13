@@ -1,19 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { serviceAPI } from '../../lib/api';
-import { 
-  Car, 
-  Bike, 
-  Camera, 
+import {
+  Car,
+  Bike,
+  Camera,
   Waves,
   Heart,
   Star,
   Clock,
   Users,
   MapPin,
-  Phone
+  Phone,
+  Utensils,
+  TreePine,
+  Compass
 } from 'lucide-react';
 import Header from '../../components/Header';
 
@@ -31,33 +33,152 @@ interface Service {
   };
 }
 
+// Static services data
+const staticServices: Service[] = [
+  // Transport Services
+  {
+    _id: "1",
+    name: "Kochi Airport Transfer",
+    category: "transport",
+    price: 1500,
+    priceUnit: "flat_rate",
+    description: "Comfortable pickup and drop service from Kochi International Airport (140km, 3 hours)",
+    isActive: true
+  },
+  {
+    _id: "2",
+    name: "Trivandrum Airport Transfer",
+    category: "transport",
+    price: 1200,
+    priceUnit: "flat_rate",
+    description: "Convenient transfer service from Trivandrum Airport (55km, 1.5 hours)",
+    isActive: true
+  },
+  {
+    _id: "3",
+    name: "Bike Rental",
+    category: "transport",
+    price: 500,
+    priceUnit: "per_day",
+    description: "Explore Kerala's scenic beauty on well-maintained motorcycles and scooters",
+    isActive: true
+  },
+  {
+    _id: "4",
+    name: "Local Transportation",
+    category: "transport",
+    price: 300,
+    priceUnit: "flat_rate",
+    description: "Local taxi service for trips within 10km radius",
+    isActive: true
+  },
+  // Adventure Activities
+  {
+    _id: "5",
+    name: "Surfing Lessons",
+    category: "addon",
+    price: 2000,
+    priceUnit: "per_session",
+    description: "Professional surfing instruction at world-famous Varkala Beach with equipment included",
+    isActive: true
+  },
+  {
+    _id: "6",
+    name: "Paragliding",
+    category: "addon",
+    price: 3500,
+    priceUnit: "per_person",
+    description: "Thrilling 15-minute tandem paragliding flight over the coastal cliffs",
+    isActive: true
+  },
+  {
+    _id: "7",
+    name: "Beach Volleyball",
+    category: "addon",
+    price: 500,
+    priceUnit: "per_session",
+    description: "Beach volleyball court with equipment provided for group activities",
+    isActive: true
+  },
+  // Wellness Services
+  {
+    _id: "8",
+    name: "Ayurvedic Massage",
+    category: "yoga",
+    price: 2500,
+    priceUnit: "per_session",
+    description: "Traditional 60-minute Ayurvedic massage using authentic oils and techniques",
+    isActive: true
+  },
+  {
+    _id: "9",
+    name: "Meditation Sessions",
+    category: "yoga",
+    price: 800,
+    priceUnit: "per_session",
+    description: "Guided 45-minute meditation sessions for inner peace and mindfulness",
+    isActive: true
+  },
+  {
+    _id: "10",
+    name: "Private Yoga Classes",
+    category: "yoga",
+    price: 3000,
+    priceUnit: "per_session",
+    description: "Personalized 90-minute one-on-one yoga instruction tailored to your level",
+    isActive: true
+  },
+  // Cultural Tours
+  {
+    _id: "11",
+    name: "Varkala Temple Tour",
+    category: "addon",
+    price: 1200,
+    priceUnit: "per_person",
+    description: "3-hour guided tour of ancient temples and historical sites in Varkala",
+    isActive: true
+  },
+  {
+    _id: "12",
+    name: "Backwater Cruise",
+    category: "addon",
+    price: 2800,
+    priceUnit: "per_person",
+    description: "4-hour traditional houseboat cruise through Kerala's scenic backwaters",
+    isActive: true
+  },
+  {
+    _id: "13",
+    name: "Local Market Visit",
+    category: "addon",
+    price: 800,
+    priceUnit: "per_person",
+    description: "2-hour guided tour of local spice markets and handicraft shops",
+    isActive: true
+  },
+  // Food Services
+  {
+    _id: "14",
+    name: "Cooking Class",
+    category: "food",
+    price: 1500,
+    priceUnit: "per_person",
+    description: "Learn to prepare traditional Kerala cuisine with our expert chefs",
+    isActive: true
+  },
+  {
+    _id: "15",
+    name: "Special Dinner",
+    category: "food",
+    price: 1800,
+    priceUnit: "per_person",
+    description: "Romantic candlelight dinner with traditional Kerala delicacies",
+    isActive: true
+  }
+];
+
 const ServicesPage = () => {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-
-  useEffect(() => {
-    fetchServices();
-  }, []);
-
-  const fetchServices = async () => {
-    try {
-      setLoading(true);
-      const response = await serviceAPI.getAllServices();
-      const data = response.data;
-      
-      if (data.success) {
-        setServices(data.data.services || []);
-      } else {
-        setError(data.message || 'Failed to fetch services');
-      }
-    } catch (err) {
-      setError('Failed to fetch services');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const categories = [
     { id: 'all', name: 'All Services', icon: Star },
@@ -67,7 +188,7 @@ const ServicesPage = () => {
     { id: 'yoga', name: 'Yoga & Wellness', icon: Users }
   ];
 
-  const filteredServices = services.filter(service => {
+  const filteredServices = staticServices.filter(service => {
     return selectedCategory === 'all' || service.category === selectedCategory;
   }).filter(service => service.isActive);
 
@@ -150,33 +271,6 @@ const ServicesPage = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-20 text-center">
-          <div className="text-red-500 text-xl mb-4">Error: {error}</div>
-          <button 
-            onClick={fetchServices}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -252,42 +346,240 @@ const ServicesPage = () => {
           <h2 className="text-2xl font-semibold text-gray-900 text-center mb-8">
             Popular Services
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl hover:shadow-lg transition-shadow">
               <Car className="w-12 h-12 text-blue-600 mx-auto mb-4" />
               <h3 className="font-semibold text-gray-900 mb-2">Airport Transfer</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Hassle-free pickup and drop service
+                Hassle-free pickup and drop service from Kochi/Trivandrum airports
               </p>
-              <div className="text-lg font-bold text-blue-600">₹1,500</div>
+              <div className="text-lg font-bold text-blue-600 mb-3">₹1,500</div>
+              <button className="w-full px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                Book Transfer
+              </button>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl hover:shadow-lg transition-shadow">
               <Bike className="w-12 h-12 text-green-600 mx-auto mb-4" />
               <h3 className="font-semibold text-gray-900 mb-2">Bike Rental</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Explore Kerala on two wheels
+                Explore Kerala's scenic beauty on two wheels with our well-maintained bikes
               </p>
-              <div className="text-lg font-bold text-green-600">₹500/day</div>
+              <div className="text-lg font-bold text-green-600 mb-3">₹500/day</div>
+              <button className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                Rent Bike
+              </button>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl hover:shadow-lg transition-shadow">
               <Camera className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Sightseeing</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Local Sightseeing</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Guided tours to local attractions
+                Guided tours to temples, backwaters, and cultural attractions
               </p>
-              <div className="text-lg font-bold text-purple-600">₹1,500</div>
+              <div className="text-lg font-bold text-purple-600 mb-3">₹1,500</div>
+              <button className="w-full px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors">
+                Book Tour
+              </button>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
+            <div className="text-center p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl hover:shadow-lg transition-shadow">
               <Waves className="w-12 h-12 text-orange-600 mx-auto mb-4" />
               <h3 className="font-semibold text-gray-900 mb-2">Surfing Lessons</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Professional surfing instruction
+                Professional surfing instruction at world-famous Varkala Beach
               </p>
-              <div className="text-lg font-bold text-orange-600">₹2,000</div>
+              <div className="text-lg font-bold text-orange-600 mb-3">₹2,000</div>
+              <button className="w-full px-3 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors">
+                Book Lesson
+              </button>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Detailed Services Grid */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-16"
+        >
+          <h2 className="text-3xl font-light text-gray-900 text-center mb-12">
+            Complete Service Portfolio
+          </h2>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Transport Services */}
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Car className="w-8 h-8 text-blue-600" />
+                <h3 className="text-2xl font-semibold text-gray-900">Transport Services</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Kochi Airport Transfer</h4>
+                    <p className="text-sm text-gray-600">140km • 3 hours</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-blue-600">₹1,500</div>
+                    <div className="text-xs text-gray-500">one way</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Trivandrum Airport Transfer</h4>
+                    <p className="text-sm text-gray-600">55km • 1.5 hours</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-blue-600">₹1,200</div>
+                    <div className="text-xs text-gray-500">one way</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Local Transportation</h4>
+                    <p className="text-sm text-gray-600">Within 10km radius</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-blue-600">₹300</div>
+                    <div className="text-xs text-gray-500">per trip</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Adventure Activities */}
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Waves className="w-8 h-8 text-orange-600" />
+                <h3 className="text-2xl font-semibold text-gray-900">Adventure & Sports</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Surfing Lessons</h4>
+                    <p className="text-sm text-gray-600">2 hours • Equipment included</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-orange-600">₹2,000</div>
+                    <div className="text-xs text-gray-500">per session</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Paragliding</h4>
+                    <p className="text-sm text-gray-600">15 minutes • Tandem flight</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-orange-600">₹3,500</div>
+                    <div className="text-xs text-gray-500">per person</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Beach Volleyball</h4>
+                    <p className="text-sm text-gray-600">1 hour • Equipment provided</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-orange-600">₹500</div>
+                    <div className="text-xs text-gray-500">per hour</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Wellness Services */}
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Heart className="w-8 h-8 text-pink-600" />
+                <h3 className="text-2xl font-semibold text-gray-900">Wellness & Spa</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Ayurvedic Massage</h4>
+                    <p className="text-sm text-gray-600">60 minutes • Traditional oils</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-pink-600">₹2,500</div>
+                    <div className="text-xs text-gray-500">per session</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Meditation Sessions</h4>
+                    <p className="text-sm text-gray-600">45 minutes • Guided practice</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-pink-600">₹800</div>
+                    <div className="text-xs text-gray-500">per session</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Yoga Private Class</h4>
+                    <p className="text-sm text-gray-600">90 minutes • One-on-one</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-pink-600">₹3,000</div>
+                    <div className="text-xs text-gray-500">per session</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cultural Experiences */}
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <Camera className="w-8 h-8 text-purple-600" />
+                <h3 className="text-2xl font-semibold text-gray-900">Cultural Tours</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Varkala Temple Tour</h4>
+                    <p className="text-sm text-gray-600">3 hours • Historical sites</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-purple-600">₹1,200</div>
+                    <div className="text-xs text-gray-500">per person</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Backwater Cruise</h4>
+                    <p className="text-sm text-gray-600">4 hours • Traditional houseboat</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-purple-600">₹2,800</div>
+                    <div className="text-xs text-gray-500">per person</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">Local Market Visit</h4>
+                    <p className="text-sm text-gray-600">2 hours • Spice & handicrafts</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-purple-600">₹800</div>
+                    <div className="text-xs text-gray-500">per person</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </motion.section>

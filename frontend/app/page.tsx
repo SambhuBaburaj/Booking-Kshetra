@@ -38,15 +38,15 @@ export default function Home() {
               ))}
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-light mb-6 tracking-wide">
-              Book Your Dream Hotel
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 tracking-wide text-shadow-lg">
+              Welcome to Kshetra
             </h1>
-            <h2 className="text-3xl md:text-4xl font-light mb-8 opacity-90">
-              With Kshetra
+            <h2 className="text-3xl md:text-4xl font-light mb-8 opacity-90 text-shadow-md">
+              Retreat Resort
             </h2>
             
-            <p className="text-xl md:text-2xl font-light opacity-80 max-w-2xl mx-auto leading-relaxed">
-              Experience the perfect blend of luxury, tranquility, and adventure at Kerala's most serene retreat
+            <p className="text-xl md:text-2xl font-light opacity-90 max-w-2xl mx-auto leading-relaxed text-shadow-sm">
+              Experience luxury, tranquility, and adventure at Kerala's most serene retreat
             </p>
           </motion.div>
 
@@ -72,10 +72,10 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6">
-              Why Choose Kshetra Retreat
+              Why Choose Kshetra
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover what makes our resort the perfect destination for your next getaway
+              Discover what makes Kshetra the perfect destination for your next getaway
             </p>
           </motion.div>
 

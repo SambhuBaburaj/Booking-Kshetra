@@ -1,19 +1,19 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Menu, X, Crown, Phone, Mail, Shield } from 'lucide-react'
+import { useState } from "react";
+import Link from "next/link";
+import { Menu, X, Crown, Phone, Mail, Shield } from "lucide-react";
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'Rooms & Suites', href: '/rooms' },
-    { name: 'Yoga Sessions', href: '/yoga' },
-    { name: 'Services', href: '/services' },
-    { name: 'Contact', href: '/contact' },
-  ]
+    { name: "Home", href: "/" },
+    { name: "Rooms & Suites", href: "/rooms" },
+    { name: "Yoga Sessions", href: "/yoga" },
+    { name: "Services", href: "/services" },
+    { name: "Contact", href: "/contact" },
+  ];
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -32,8 +32,8 @@ export default function Header() {
           </div>
           <div className="hidden md:flex items-center gap-6">
             <span>88 Varkala Beach, Kerala</span>
-            <Link 
-              href="/admin/login" 
+            <Link
+              href="/admin/login"
               className="flex items-center gap-1 text-blue-300 hover:text-blue-100 transition-colors"
             >
               <Shield className="w-4 h-4" />
@@ -53,12 +53,14 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">KSHETRA</h1>
-              <p className="text-sm text-gray-600 font-light tracking-wider">RETREAT RESORT</p>
+              <p className="text-sm text-gray-600 font-light tracking-wider">
+                RETREAT RESORT
+              </p>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -71,22 +73,19 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* CTA Button */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/booking"
-              className="btn-primary"
-            >
-              Book Now
-            </Link>
-          </div>
+          {/* Spacer for balance */}
+          <div className="hidden md:block w-32"></div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 text-gray-600 hover:text-gray-900"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
@@ -106,13 +105,7 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
-              <Link
-                href="/booking"
-                className="btn-primary mt-2 text-center"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Book Now
-              </Link>
+
               <Link
                 href="/admin/login"
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-800 py-2 font-medium"
@@ -126,5 +119,5 @@ export default function Header() {
         </div>
       )}
     </header>
-  )
+  );
 }
