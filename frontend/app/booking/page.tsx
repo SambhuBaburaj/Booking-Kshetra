@@ -1,23 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Calendar,
   Users,
-  User,
   CreditCard,
   CheckCircle,
   ArrowLeft,
   ArrowRight,
-  AlertCircle,
-  MapPin,
-  Phone,
-  Mail,
   Camera,
   Car,
-  Utensils,
+  Sparkles,
+  Clock,
+  Heart,
+  Star,
+  Zap,
 } from "lucide-react";
 import Header from "../../components/Header";
 import { apiClient } from "../../lib/api-client";
@@ -41,7 +40,7 @@ interface Guest {
   name: string;
   age: number;
   gender: "Male" | "Female" | "Other";
-  idType: "Aadhar" | "Passport" | "Driving License" | "PAN Card";
+  idType: "Aadhaar" | "Passport" | "Driving License" | "PAN Card";
   idNumber: string;
   email?: string;
   phone?: string;
@@ -93,6 +92,7 @@ export default function BookingPage() {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
@@ -173,7 +173,7 @@ export default function BookingPage() {
           name: "",
           age: i < parseInt(adults || "1") ? 25 : 8,
           gender: "Male",
-          idType: "Aadhar",
+          idType: "Aadhaar",
           idNumber: "",
           email: i === 0 ? "" : undefined,
           phone: i === 0 ? "" : undefined,
@@ -201,7 +201,7 @@ export default function BookingPage() {
       );
 
       if (response.success) {
-        setAvailableRooms(response.data.availableRooms);
+        setAvailableRooms((response.data as any).availableRooms);
       } else {
         setError(response.error || "Failed to fetch available rooms");
       }
@@ -268,17 +268,31 @@ export default function BookingPage() {
     calculatePricing();
   }, [selectedRoom, bookingData]);
 
-  const handleStepSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
+  const nextStep = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentStep(prev => Math.min(5, prev + 1));
+      setIsTransitioning(false);
+    }, 400);
+  };
 
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      // Final booking submission
-      await createBooking();
-    }
+  const prevStep = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentStep(prev => Math.max(1, prev - 1));
+      setIsTransitioning(false);
+    }, 400);
+  };
+
+  const goToStep = (step: number) => {
+    if (isTransitioning || step === currentStep) return;
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentStep(step);
+      setIsTransitioning(false);
+    }, 400);
   };
 
   const createBooking = async () => {
@@ -307,7 +321,7 @@ export default function BookingPage() {
 
       if (response.data.success) {
         setBookingId(response.data.data.booking._id);
-        setCurrentStep(5); // Payment step
+        setCurrentStep(4); // Payment step
       } else {
         setError(response.data.message || "Failed to create booking");
       }
@@ -319,30 +333,98 @@ export default function BookingPage() {
   };
 
   const handlePaymentSuccess = (paymentData: any) => {
-    setCurrentStep(6); // Success step
+    setCurrentStep(5); // Success step
   };
 
   const handlePaymentError = (error: any) => {
     setError(error.message || "Payment failed");
   };
 
+  // Enhanced animations
+  const pageTransition = {
+    enter: {
+      opacity: 0,
+      x: 300,
+      scale: 0.9
+    },
+    center: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: {
+        duration: 0.7,
+        ease: "easeOut" as any,
+        staggerChildren: 0.1
+      }
+    },
+    exit: {
+      opacity: 0,
+      x: -300,
+      scale: 0.9,
+      transition: {
+        duration: 0.5,
+        ease: "easeIn" as any
+      }
+    }
+  };
+
+  const stepVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { duration: 0.5, ease: "easeOut" as any }
+    },
+    hover: {
+      scale: 1.02,
+      y: -4,
+      transition: { duration: 0.3, ease: "easeOut" as any }
+    },
+    tap: { scale: 0.98 }
+  };
+
+
   // Step 1: Room Selection
   const RoomSelectionStep = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Select Your Room
+    <motion.div
+      variants={stepVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      className="space-y-8"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="text-center mb-12"
+      >
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-4">
+          <Sparkles className="w-4 h-4 text-blue-600" />
+          <span className="text-sm font-medium text-blue-800">Step 1 of 4</span>
+        </div>
+        <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
+          Choose Your Perfect Room
         </h2>
-        <p className="text-gray-600">
+        <div className="text-sm sm:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
           {bookingData.checkIn && bookingData.checkOut && (
-            <>
-              {bookingData.checkIn.toLocaleDateString()} -{" "}
-              {bookingData.checkOut.toLocaleDateString()}•{" "}
-              {bookingData.guests.length} guests
-            </>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+              <span className="inline-flex items-center gap-2 bg-white px-3 sm:px-4 py-2 rounded-full shadow-sm border text-sm">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <span className="whitespace-nowrap">
+                  {bookingData.checkIn.toLocaleDateString()} - {bookingData.checkOut.toLocaleDateString()}
+                </span>
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span className="inline-flex items-center gap-2 bg-white px-3 sm:px-4 py-2 rounded-full shadow-sm border text-sm">
+                <Users className="w-4 h-4 text-blue-600" />
+                {bookingData.guests.length} guests
+              </span>
+            </div>
           )}
-        </p>
-      </div>
+        </div>
+      </motion.div>
 
       {loading && <LoadingSpinner text="Finding available rooms..." />}
 
@@ -350,100 +432,144 @@ export default function BookingPage() {
         <ErrorMessage message={error} onDismiss={() => setError(null)} />
       )}
 
-      <div className="grid gap-6">
-        {availableRooms.map((room) => (
+      <div className="grid gap-8">
+        {availableRooms.map((room, index) => (
           <motion.div
             key={room._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`bg-white rounded-xl shadow-lg p-6 border-2 cursor-pointer transition-all duration-300 ${
+            variants={stepVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
+            whileTap="tap"
+            transition={{ delay: index * 0.1 }}
+            className={`group relative bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 ${
               selectedRoom?._id === room._id
-                ? "border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-xl ring-2 ring-blue-200"
-                : "border-gray-200 hover:border-blue-300 hover:shadow-xl"
+                ? "shadow-2xl ring-4 ring-blue-500/20 bg-gradient-to-br from-blue-50 via-white to-purple-50"
+                : "shadow-lg hover:shadow-2xl border border-gray-100"
             }`}
             onClick={() => {
               setSelectedRoom(room);
               setBookingData((prev) => ({ ...prev, roomId: room._id }));
             }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-6 mb-6">
-                  <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl overflow-hidden shadow-md">
+            <div className={`absolute inset-0 bg-gradient-to-r opacity-0 transition-opacity duration-300 ${
+              selectedRoom?._id === room._id ? "opacity-10" : "group-hover:opacity-5"
+            } from-blue-600 to-purple-600`} />
+
+            <div className="relative p-4 sm:p-6 lg:p-8">
+              <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 lg:gap-8">
+                <div className="relative flex-shrink-0 w-full sm:w-auto">
+                  <div className="w-full h-48 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                     {room.images.length > 0 ? (
                       <img
                         src={room.images[0]}
                         alt={`Room ${room.roomNumber}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Camera className="w-8 h-8 text-gray-400" />
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100">
+                        <Camera className="w-10 h-10 text-blue-400" />
                       </div>
                     )}
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-2xl font-bold text-gray-900">
-                        Room {room.roomNumber}
-                      </h3>
-                      {selectedRoom?._id === room._id && (
-                        <CheckCircle className="w-6 h-6 text-blue-600" />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 mb-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
-                        {room.roomType}
-                      </span>
-                      <div className="flex items-center gap-1 text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span className="text-sm">
-                          Up to {room.capacity} guests
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  {selectedRoom?._id === room._id && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shadow-lg"
+                    >
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    </motion.div>
+                  )}
                 </div>
 
-                {room.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {room.amenities.slice(0, 6).map((amenity, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 text-xs font-medium rounded-full border"
-                      >
-                        {amenity}
-                      </span>
-                    ))}
-                    {room.amenities.length > 6 && (
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                        +{room.amenities.length - 6} more
-                      </span>
-                    )}
-                  </div>
-                )}
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                          Room {room.roomNumber}
+                        </h3>
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                        <span className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+                          room.roomType === 'AC'
+                            ? 'bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-blue-200'
+                            : 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200'
+                        }`}>
+                          {room.roomType}
+                        </span>
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-full">
+                          <Users className="w-4 h-4 text-gray-600" />
+                          <span className="text-sm font-medium text-gray-700">
+                            Up to {room.capacity} guests
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-                {room.description && (
-                  <p className="text-gray-600 text-sm">{room.description}</p>
-                )}
-              </div>
-
-              <div className="text-right">
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl shadow-lg">
-                  <div className="text-2xl font-bold">
-                    ₹{room.pricePerNight.toLocaleString()}
+                    <div className="w-full sm:w-auto sm:text-right">
+                      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold">
+                          ₹{room.pricePerNight.toLocaleString()}
+                        </div>
+                        <div className="text-sm opacity-90 font-medium">per night</div>
+                        <div className="text-xs opacity-75 mt-1">+ taxes</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm opacity-90">per night</div>
+
+                  {room.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {room.amenities.slice(0, 8).map((amenity, index) => (
+                        <motion.span
+                          key={index}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="px-3 py-1.5 bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 text-xs font-medium rounded-full border hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200 cursor-default"
+                        >
+                          {amenity}
+                        </motion.span>
+                      ))}
+                      {room.amenities.length > 8 && (
+                        <span className="px-3 py-1.5 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                          +{room.amenities.length - 8} more
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {room.description && (
+                    <p className="text-gray-600 leading-relaxed">{room.description}</p>
+                  )}
+
+                  <div className="mt-6 flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-green-600">
+                      <Heart className="w-4 h-4" />
+                      <span className="text-sm font-medium">Most loved</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Zap className="w-4 h-4" />
+                      <span className="text-sm font-medium">Quick book</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-purple-600">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm font-medium">24/7 service</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 
   // Step 2: Primary Guest Details
@@ -473,30 +599,54 @@ export default function BookingPage() {
         },
       }));
 
-      // Move to next step
-      setCurrentStep(3);
+      nextStep();
     };
 
     return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Primary Guest Information
-          </h2>
-          <p className="text-gray-600">
-            Please provide the primary booker's details
-          </p>
-        </div>
-
-        <form
-          onSubmit={handlePrimaryGuestSubmit}
-          className="bg-white rounded-xl shadow-sm p-6"
+      <motion.div
+        variants={stepVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="space-y-8"
+      >
+        <motion.div
+          variants={stepVariants}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center mb-12"
         >
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-green-100 to-blue-100 px-4 py-2 rounded-full mb-4">
+            <Users className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800">Step 2 of 3</span>
+          </div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
+            Your Information
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            We need your details to create the perfect stay experience
+          </p>
+        </motion.div>
+
+        <motion.form
+          onSubmit={handlePrimaryGuestSubmit}
+          variants={stepVariants}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            <motion.div
+              variants={stepVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 Full Name *
               </label>
@@ -505,16 +655,21 @@ export default function BookingPage() {
                 id="name"
                 name="name"
                 defaultValue={bookingData.primaryGuest.name}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="name"
+                placeholder="Enter your full name"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+            >
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 Email Address *
               </label>
@@ -523,16 +678,21 @@ export default function BookingPage() {
                 id="email"
                 name="email"
                 defaultValue={bookingData.primaryGuest.email}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="email"
+                placeholder="your.email@example.com"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+            >
               <label
                 htmlFor="phone"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 Phone Number *
               </label>
@@ -541,16 +701,21 @@ export default function BookingPage() {
                 id="phone"
                 name="phone"
                 defaultValue={bookingData.primaryGuest.phone}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="tel"
+                placeholder="+91 9876543210"
               />
-            </div>
+            </motion.div>
 
-            <div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+            >
               <label
                 htmlFor="address"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 Address *
               </label>
@@ -559,16 +724,17 @@ export default function BookingPage() {
                 id="address"
                 name="address"
                 defaultValue={bookingData.primaryGuest.address}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="address-line1"
+                placeholder="Your address"
               />
-            </div>
+            </motion.div>
 
             <div>
               <label
                 htmlFor="city"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 City *
               </label>
@@ -577,7 +743,7 @@ export default function BookingPage() {
                 id="city"
                 name="city"
                 defaultValue={bookingData.primaryGuest.city}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="address-level2"
               />
@@ -586,7 +752,7 @@ export default function BookingPage() {
             <div>
               <label
                 htmlFor="state"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 State *
               </label>
@@ -595,7 +761,7 @@ export default function BookingPage() {
                 id="state"
                 name="state"
                 defaultValue={bookingData.primaryGuest.state}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="address-level1"
               />
@@ -604,7 +770,7 @@ export default function BookingPage() {
             <div>
               <label
                 htmlFor="pincode"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-semibold text-gray-800 mb-3"
               >
                 PIN Code *
               </label>
@@ -613,7 +779,7 @@ export default function BookingPage() {
                 id="pincode"
                 name="pincode"
                 defaultValue={bookingData.primaryGuest.pincode}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 font-medium bg-gray-50 focus:bg-white"
                 required
                 autoComplete="postal-code"
               />
@@ -682,235 +848,33 @@ export default function BookingPage() {
             </div>
           </div>
 
-          {/* Submit button for primary guest form */}
-          <div className="flex justify-center pt-6">
-            <button
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="flex justify-center pt-8"
+          >
+            <motion.button
               type="submit"
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Continue to Guest Details
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
-  // Step 3: All Guest Details
-  const AllGuestsStep = () => {
-    const handleAllGuestsSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const formData = new FormData(e.currentTarget);
-
-      // Process all guests data from the form
-      const updatedGuests = bookingData.guests.map((guest, index) => ({
-        ...guest,
-        name: (formData.get(`guest-${index}-name`) as string) || "",
-        age: parseInt(formData.get(`guest-${index}-age`) as string) || 0,
-        gender:
-          (formData.get(`guest-${index}-gender`) as
-            | "Male"
-            | "Female"
-            | "Other") || "Male",
-        idType: (formData.get(`guest-${index}-idType`) as any) || "Aadhar",
-        idNumber: (formData.get(`guest-${index}-idNumber`) as string) || "",
-        email:
-          index === 0
-            ? (formData.get(`guest-${index}-email`) as string)
-            : undefined,
-        phone:
-          index === 0
-            ? (formData.get(`guest-${index}-phone`) as string)
-            : undefined,
-      }));
-
-      setBookingData((prev) => ({ ...prev, guests: updatedGuests }));
-
-      // Move to next step
-      setCurrentStep(4);
-    };
-
-    return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Guest Details
-          </h2>
-          <p className="text-gray-600">Please provide details for all guests</p>
-        </div>
-
-        <form onSubmit={handleAllGuestsSubmit} className="space-y-4">
-          {bookingData.guests.map((guest, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Guest {index + 1} {index === 0 && "(Primary)"}
-              </h3>
-
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <label
-                    htmlFor={`guest-${index}-name`}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    id={`guest-${index}-name`}
-                    name={`guest-${index}-name`}
-                    defaultValue={guest.name}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    placeholder={
-                      index === 0 ? bookingData.primaryGuest.name : ""
-                    }
-                    required
-                    autoComplete="name"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`guest-${index}-age`}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Age *
-                  </label>
-                  <input
-                    type="number"
-                    id={`guest-${index}-age`}
-                    name={`guest-${index}-age`}
-                    defaultValue={guest.age}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    min="1"
-                    max="120"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`guest-${index}-gender`}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Gender *
-                  </label>
-                  <select
-                    id={`guest-${index}-gender`}
-                    name={`guest-${index}-gender`}
-                    defaultValue={guest.gender}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`guest-${index}-idType`}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    ID Type *
-                  </label>
-                  <select
-                    id={`guest-${index}-idType`}
-                    name={`guest-${index}-idType`}
-                    defaultValue={guest.idType}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="Aadhar">Aadhar Card</option>
-                    <option value="Passport">Passport</option>
-                    <option value="Driving License">Driving License</option>
-                    <option value="PAN Card">PAN Card</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor={`guest-${index}-idNumber`}
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    ID Number *
-                  </label>
-                  <input
-                    type="text"
-                    id={`guest-${index}-idNumber`}
-                    name={`guest-${index}-idNumber`}
-                    value={guest.idNumber}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setBookingData((prev) => {
-                        const updatedGuests = [...prev.guests];
-                        updatedGuests[index] = {
-                          ...updatedGuests[index],
-                          idNumber: value,
-                        };
-                        return { ...prev, guests: updatedGuests };
-                      });
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-
-                {index === 0 && (
-                  <div>
-                    <label
-                      htmlFor={`guest-${index}-email`}
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id={`guest-${index}-email`}
-                      name={`guest-${index}-email`}
-                      value={guest.email || ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setBookingData((prev) => {
-                          const updatedGuests = [...prev.guests];
-                          updatedGuests[index] = {
-                            ...updatedGuests[index],
-                            email: value,
-                          };
-                          return { ...prev, guests: updatedGuests };
-                        });
-                      }}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder={bookingData.primaryGuest.email}
-                      autoComplete="email"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Submit button for all guests form */}
-          <div className="flex justify-center pt-6">
-            <button
-              type="submit"
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full sm:w-auto px-8 sm:px-12 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-blue-500/20"
             >
               Continue to Services
-            </button>
-          </div>
-        </form>
-      </div>
+              <ArrowRight className="w-5 h-5 ml-2 inline" />
+            </motion.button>
+          </motion.div>
+        </motion.form>
+      </motion.div>
     );
   };
 
-  // Step 4: Services & Preferences
+  // Step 3: Services & Preferences
   const ServicesStep = () => {
     const handleServicesSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
 
-      // Update services data
       setBookingData((prev) => ({
         ...prev,
         services: {
@@ -933,263 +897,329 @@ export default function BookingPage() {
         specialRequests: (formData.get("specialRequests") as string) || "",
       }));
 
-      // Create booking and move to payment
       createBooking();
     };
 
     return (
-      <form onSubmit={handleServicesSubmit} className="space-y-6">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Services & Preferences
+      <motion.div
+        variants={stepVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        className="space-y-8"
+      >
+        <motion.div
+          variants={stepVariants}
+          initial="hidden"
+          animate="visible"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-100 to-red-100 px-4 py-2 rounded-full mb-4">
+            <Sparkles className="w-4 h-4 text-orange-600" />
+            <span className="text-sm font-medium text-orange-800">Step 3 of 3</span>
+          </div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-4">
+            Customize Your Experience
           </h2>
-          <p className="text-gray-600">Customize your stay experience</p>
-        </div>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Add services to make your stay perfect
+          </p>
+        </motion.div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Food Services
-          </h3>
-          <div className="space-y-4">
-            <motion.label
-              className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
-              animate={{
-                borderColor: bookingData.services.includeFood
-                  ? "#3B82F6"
-                  : "#E5E7EB",
-                backgroundColor: bookingData.services.includeFood
-                  ? "#EFF6FF"
-                  : "#FFFFFF",
-              }}
-            >
-              <input
-                type="checkbox"
-                name="includeFood"
-                defaultChecked={bookingData.services.includeFood}
-                className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-semibold text-gray-900">
-                      Include Meals
-                    </span>
-                    <p className="text-sm text-gray-600 mt-1">
-                      3 meals per day for all guests
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-green-600">
-                      +₹150
-                    </span>
-                    <p className="text-xs text-gray-500">per person/day</p>
-                  </div>
-                </div>
-              </div>
-            </motion.label>
-
-            <motion.label
-              className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
-              animate={{
-                borderColor: bookingData.services.includeBreakfast
-                  ? "#3B82F6"
-                  : "#E5E7EB",
-                backgroundColor: bookingData.services.includeBreakfast
-                  ? "#EFF6FF"
-                  : "#FFFFFF",
-              }}
-            >
-              <input
-                type="checkbox"
-                name="includeBreakfast"
-                defaultChecked={bookingData.services.includeBreakfast}
-                className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-semibold text-gray-900">
-                      Breakfast Only
-                    </span>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Daily breakfast service
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-green-600">
-                      +₹200
-                    </span>
-                    <p className="text-xs text-gray-500">per person/day</p>
-                  </div>
-                </div>
-              </div>
-            </motion.label>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Transport Services
-          </h3>
-          <div className="space-y-4">
-            <motion.label
-              className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
-              animate={{
-                borderColor: bookingData.services.transport.pickup
-                  ? "#3B82F6"
-                  : "#E5E7EB",
-                backgroundColor: bookingData.services.transport.pickup
-                  ? "#EFF6FF"
-                  : "#FFFFFF",
-              }}
-            >
-              <input
-                type="checkbox"
-                name="pickup"
-                defaultChecked={bookingData.services.transport.pickup}
-                className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <Car className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <span className="font-semibold text-gray-900">
-                        Airport Pickup
-                      </span>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Comfortable pickup service from airport
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-blue-600">
-                      +₹1,500
-                    </span>
-                    <p className="text-xs text-gray-500">one-time</p>
-                  </div>
-                </div>
-              </div>
-            </motion.label>
-
-            <motion.label
-              className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
-              animate={{
-                borderColor: bookingData.services.transport.drop
-                  ? "#3B82F6"
-                  : "#E5E7EB",
-                backgroundColor: bookingData.services.transport.drop
-                  ? "#EFF6FF"
-                  : "#FFFFFF",
-              }}
-            >
-              <input
-                type="checkbox"
-                name="drop"
-                defaultChecked={bookingData.services.transport.drop}
-                className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                    <Car className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <span className="font-semibold text-gray-900">
-                        Airport Drop
-                      </span>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Safe drop service to airport
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-lg font-bold text-blue-600">
-                      +₹1,500
-                    </span>
-                    <p className="text-xs text-gray-500">one-time</p>
-                  </div>
-                </div>
-              </div>
-            </motion.label>
-
-            {(bookingData.services.transport.pickup ||
-              bookingData.services.transport.drop) && (
-              <div className="pl-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Airport Location
-                  </label>
-                  <select
-                    name="airportLocation"
-                    defaultValue={bookingData.services.transport.airportLocation}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="Kochi">Kochi Airport</option>
-                    <option value="Trivandrum">Trivandrum Airport</option>
-                  </select>
-                </div>
-
-                {bookingData.services.transport.pickup && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Flight Number (for pickup)
-                    </label>
-                    <input
-                      type="text"
-                      name="flightNumber"
-                      defaultValue={bookingData.services.transport.flightNumber || ""}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g. AI 674"
-                    />
-                  </div>
-                )}
-
-                {bookingData.services.transport.pickup && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Arrival Time
-                    </label>
-                    <input
-                      type="datetime-local"
-                      name="arrivalTime"
-                      defaultValue={bookingData.services.transport.arrivalTime || ""}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Special Requests
-          </h3>
-          <textarea
-            name="specialRequests"
-            defaultValue={bookingData.specialRequests}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            rows={3}
-            placeholder="Any special requests or requirements..."
-          />
-        </div>
-
-        {/* Submit button for services form */}
-        <div className="flex justify-center pt-6">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:bg-gray-400"
+        <motion.form
+          onSubmit={handleServicesSubmit}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="space-y-8"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-8 border border-gray-100"
           >
-            {loading
-              ? "Creating Booking..."
-              : "Create Booking & Continue to Payment"}
-          </button>
-        </div>
-      </form>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-100 to-green-200 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">🍽️</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                Food Services
+              </h3>
+            </div>
+            <div className="space-y-6">
+              <motion.label
+                className="group flex items-start p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:shadow-lg"
+                animate={{
+                  borderColor: bookingData.services.includeFood
+                    ? "#10B981"
+                    : "#E5E7EB",
+                  backgroundColor: bookingData.services.includeFood
+                    ? "#F0FDF4"
+                    : "#FFFFFF",
+                  scale: bookingData.services.includeFood ? 1.02 : 1
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <input
+                  type="checkbox"
+                  name="includeFood"
+                  defaultChecked={bookingData.services.includeFood}
+                  className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-semibold text-gray-900">
+                        Include Meals
+                      </span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        3 meals per day for all guests
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-green-600">
+                        +₹150
+                      </span>
+                      <p className="text-xs text-gray-500">per person/day</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.label>
+
+              <motion.label
+                className="group flex items-start p-6 rounded-2xl border-2 cursor-pointer transition-all duration-300 hover:shadow-lg"
+                animate={{
+                  borderColor: bookingData.services.includeBreakfast
+                    ? "#F59E0B"
+                    : "#E5E7EB",
+                  backgroundColor: bookingData.services.includeBreakfast
+                    ? "#FFFBEB"
+                    : "#FFFFFF",
+                  scale: bookingData.services.includeBreakfast ? 1.02 : 1
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <input
+                  type="checkbox"
+                  name="includeBreakfast"
+                  defaultChecked={bookingData.services.includeBreakfast}
+                  className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-semibold text-gray-900">
+                        Breakfast Only
+                      </span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Daily breakfast service
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-green-600">
+                        +₹200
+                      </span>
+                      <p className="text-xs text-gray-500">per person/day</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.label>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg p-8 border border-gray-100"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                <Car className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900">
+                Transport Services
+              </h3>
+            </div>
+            <div className="space-y-6">
+              <motion.label
+                className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
+                animate={{
+                  borderColor: bookingData.services.transport.pickup
+                    ? "#3B82F6"
+                    : "#E5E7EB",
+                  backgroundColor: bookingData.services.transport.pickup
+                    ? "#EFF6FF"
+                    : "#FFFFFF",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  name="pickup"
+                  defaultChecked={bookingData.services.transport.pickup}
+                  className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <span className="font-semibold text-gray-900">
+                          Airport Pickup
+                        </span>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Comfortable pickup service from airport
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-blue-600">
+                        +₹1,500
+                      </span>
+                      <p className="text-xs text-gray-500">one-time</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.label>
+
+              <motion.label
+                className="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:bg-gray-50"
+                animate={{
+                  borderColor: bookingData.services.transport.drop
+                    ? "#3B82F6"
+                    : "#E5E7EB",
+                  backgroundColor: bookingData.services.transport.drop
+                    ? "#EFF6FF"
+                    : "#FFFFFF",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  name="drop"
+                  defaultChecked={bookingData.services.transport.drop}
+                  className="mr-4 w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-5 h-5 text-blue-600" />
+                      <div>
+                        <span className="font-semibold text-gray-900">
+                          Airport Drop
+                        </span>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Safe drop service to airport
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-blue-600">
+                        +₹1,500
+                      </span>
+                      <p className="text-xs text-gray-500">one-time</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.label>
+
+              {(bookingData.services.transport.pickup ||
+                bookingData.services.transport.drop) && (
+                <div className="pl-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Airport Location
+                    </label>
+                    <select
+                      name="airportLocation"
+                      defaultValue={bookingData.services.transport.airportLocation}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Kochi">Kochi Airport</option>
+                      <option value="Trivandrum">Trivandrum Airport</option>
+                    </select>
+                  </div>
+
+                  {bookingData.services.transport.pickup && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Flight Number (for pickup)
+                      </label>
+                      <input
+                        type="text"
+                        name="flightNumber"
+                        defaultValue={bookingData.services.transport.flightNumber || ""}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g. AI 674"
+                      />
+                    </div>
+                  )}
+
+                  {bookingData.services.transport.pickup && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Arrival Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        name="arrivalTime"
+                        defaultValue={bookingData.services.transport.arrivalTime || ""}
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Special Requests
+            </h3>
+            <textarea
+              name="specialRequests"
+              defaultValue={bookingData.specialRequests}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              rows={3}
+              placeholder="Any special requests or requirements..."
+            />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="flex justify-center pt-8"
+          >
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: loading ? 1 : 1.05, y: loading ? 0 : -2 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              className="w-full sm:w-auto px-8 sm:px-12 lg:px-16 py-4 sm:py-5 bg-gradient-to-r from-green-600 via-green-700 to-emerald-700 text-white font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed border border-green-500/20 text-base sm:text-lg"
+            >
+              {loading ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Creating Booking...
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6" />
+                  Create Booking & Continue
+                </div>
+              )}
+            </motion.button>
+          </motion.div>
+        </motion.form>
+      </motion.div>
     );
   };
+
 
   // Step 5: Payment
   const PaymentStep = () => (
@@ -1336,11 +1366,10 @@ export default function BookingPage() {
 
   const steps = [
     { number: 1, title: "Select Room", component: <RoomSelectionStep /> },
-    { number: 2, title: "Primary Guest", component: <GuestDetailsStep /> },
-    { number: 3, title: "All Guests", component: <AllGuestsStep /> },
-    { number: 4, title: "Services", component: <ServicesStep /> },
-    { number: 5, title: "Payment", component: <PaymentStep /> },
-    { number: 6, title: "Confirmation", component: <SuccessStep /> },
+    { number: 2, title: "Guest Details", component: <GuestDetailsStep /> },
+    { number: 3, title: "Services", component: <ServicesStep /> },
+    { number: 4, title: "Payment", component: <PaymentStep /> },
+    { number: 5, title: "Confirmation", component: <SuccessStep /> },
   ];
 
   const canProceed = () => {
@@ -1357,54 +1386,71 @@ export default function BookingPage() {
     if (!selectedRoom || currentStep === 1) return null;
 
     return (
-      <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Booking Summary
-        </h3>
+      <motion.div
+        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="bg-gradient-to-br from-white via-blue-50 to-purple-50 rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-8 lg:sticky lg:top-6 border border-blue-100 mb-6 lg:mb-0"
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Booking Summary
+          </h3>
+        </div>
 
-        <div className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center p-3 bg-white rounded-xl shadow-sm">
+            <span className="font-medium text-gray-800">
               Room {selectedRoom.roomNumber}
             </span>
-            <span className="font-medium">
+            <span className="font-bold text-gray-900">
               ₹{selectedRoom.pricePerNight.toLocaleString()}/night
             </span>
           </div>
 
           {priceBreakdown.nights > 0 && (
-            <div className="flex justify-between">
-              <span className="text-gray-600">
+            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-xl">
+              <span className="font-medium text-blue-800">
                 {priceBreakdown.nights} nights
               </span>
-              <span className="font-medium">
+              <span className="font-bold text-blue-900">
                 ₹{priceBreakdown.baseAmount.toLocaleString()}
               </span>
             </div>
           )}
 
           {priceBreakdown.foodAmount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Meals included</span>
-              <span className="font-medium">
+            <div className="flex justify-between items-center p-3 bg-green-50 rounded-xl">
+              <span className="font-medium text-green-800 flex items-center gap-2">
+                🍽️ Meals included
+              </span>
+              <span className="font-bold text-green-900">
                 + ₹{priceBreakdown.foodAmount.toLocaleString()}
               </span>
             </div>
           )}
 
           {priceBreakdown.breakfastAmount > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Breakfast</span>
-              <span className="font-medium">
+            <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-xl">
+              <span className="font-medium text-yellow-800 flex items-center gap-2">
+                ☀️ Breakfast
+              </span>
+              <span className="font-bold text-yellow-900">
                 + ₹{priceBreakdown.breakfastAmount.toLocaleString()}
               </span>
             </div>
           )}
 
           {priceBreakdown.transportAmount > 0 && (
-            <div className="flex justify-between text-blue-600">
-              <span>Airport transport</span>
-              <span className="font-medium">
+            <div className="flex justify-between items-center p-3 bg-purple-50 rounded-xl">
+              <span className="font-medium text-purple-800 flex items-center gap-2">
+                <Car className="w-4 h-4" />
+                Airport transport
+              </span>
+              <span className="font-bold text-purple-900">
                 + ₹{priceBreakdown.transportAmount.toLocaleString()}
               </span>
             </div>
@@ -1432,15 +1478,22 @@ export default function BookingPage() {
           )}
         </div>
 
-        <div className="pt-4 border-t mt-4">
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-semibold text-gray-900">Total</span>
-            <span className="text-2xl font-bold text-blue-600">
+        <motion.div
+          className="pt-6 mt-6 border-t-2 border-gradient-to-r from-blue-200 to-purple-200"
+          animate={{ scale: [1, 1.02, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 rounded-2xl text-white shadow-lg">
+            <span className="text-xl font-bold">Total Amount</span>
+            <span className="text-3xl font-black">
               ₹{totalAmount.toLocaleString()}
             </span>
           </div>
-        </div>
-      </div>
+          <p className="text-center text-sm text-gray-600 mt-2">
+            Including all taxes and charges
+          </p>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -1448,50 +1501,139 @@ export default function BookingPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-2">
+            <div className="order-2 lg:order-1 lg:col-span-2">
               {/* Progress Bar */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between">
-                  {steps.slice(0, 5).map((step, index) => (
-                    <div key={step.number} className="flex items-center">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+              <div className="mb-6 sm:mb-8">
+                <div className="hidden sm:flex items-center justify-between">
+                  {steps.slice(0, 3).map((step, index) => (
+                    <motion.div
+                      key={step.number}
+                      className="flex items-center"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                    >
+                      <motion.div
+                        className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-all duration-700 ${
                           currentStep >= step.number
-                            ? "bg-blue-600 text-white shadow-lg"
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-100"
+                            : currentStep < step.number
+                            ? "bg-gray-200 text-gray-600 hover:bg-gray-300 hover:scale-110"
                             : "bg-gray-200 text-gray-600"
                         }`}
+                        animate={{
+                          scale: currentStep === step.number ? 1.2 : 1,
+                          rotate: currentStep > step.number ? [0, 360] : 0,
+                          boxShadow: currentStep === step.number
+                            ? "0 0 30px rgba(59, 130, 246, 0.4)"
+                            : "0 4px 6px rgba(0, 0, 0, 0.1)"
+                        }}
+                        transition={{
+                          duration: 0.7,
+                          ease: [0.25, 0.46, 0.45, 0.94],
+                          rotate: { duration: 1.2, ease: "easeInOut" }
+                        }}
+                        onClick={() => step.number <= currentStep && goToStep(step.number)}
+                        whileHover={step.number <= currentStep ? { scale: 1.1 } : {}}
+                        whileTap={step.number <= currentStep ? { scale: 0.95 } : {}}
                       >
-                        {currentStep > step.number ? (
-                          <CheckCircle className="w-6 h-6" />
-                        ) : (
-                          step.number
-                        )}
-                      </div>
-                      <span
-                        className={`ml-2 text-sm transition-colors ${
+                        <motion.div
+                          animate={{
+                            scale: currentStep > step.number ? [1, 1.5, 1] : 1
+                          }}
+                          transition={{ duration: 0.6 }}
+                        >
+                          {currentStep > step.number ? (
+                            <CheckCircle className="w-6 h-6" />
+                          ) : (
+                            step.number
+                          )}
+                        </motion.div>
+                      </motion.div>
+                      <motion.span
+                        className={`ml-2 lg:ml-3 text-sm font-medium cursor-pointer transition-all duration-500 ${
                           currentStep >= step.number
-                            ? "text-blue-600 font-medium"
-                            : "text-gray-600"
+                            ? "text-blue-600 font-semibold"
+                            : "text-gray-500 hover:text-gray-700"
                         }`}
+                        animate={{
+                          x: currentStep === step.number ? [0, 5, 0] : 0
+                        }}
+                        transition={{ duration: 0.6, repeat: currentStep === step.number ? Infinity : 0, repeatDelay: 2 }}
+                        onClick={() => step.number <= currentStep && goToStep(step.number)}
                       >
                         {step.title}
-                      </span>
+                      </motion.span>
                       {index < steps.length - 2 && (
-                        <div
-                          className={`w-16 h-0.5 mx-4 transition-colors duration-300 ${
+                        <motion.div
+                          className={`w-12 lg:w-20 h-1 mx-4 lg:mx-6 rounded-full transition-all duration-700 ${
                             currentStep > step.number
-                              ? "bg-blue-600"
+                              ? "bg-gradient-to-r from-blue-500 to-purple-500"
                               : "bg-gray-200"
                           }`}
+                          animate={{
+                            scaleX: currentStep > step.number ? 1 : 0.3,
+                            opacity: currentStep > step.number ? 1 : 0.5
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            delay: currentStep > step.number ? 0.3 : 0,
+                            ease: [0.25, 0.46, 0.45, 0.94]
+                          }}
                         />
                       )}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
+                {/* Mobile Progress Bar */}
+                <motion.div
+                  className="sm:hidden mb-4"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="flex items-center justify-center space-x-2 mb-3">
+                    <motion.span
+                      className="text-sm font-medium text-blue-600"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
+                    >
+                      Step {currentStep} of 3
+                    </motion.span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                    <motion.div
+                      className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-3 rounded-full shadow-lg"
+                      animate={{
+                        width: `${(currentStep / 3) * 100}%`,
+                        backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"]
+                      }}
+                      transition={{
+                        width: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] },
+                        backgroundPosition: { duration: 3, repeat: Infinity, ease: "linear" }
+                      }}
+                    />
+                  </div>
+                  {/* Step dots */}
+                  <div className="flex justify-center mt-3 space-x-2">
+                    {[1, 2, 3].map((step) => (
+                      <motion.div
+                        key={step}
+                        className={`w-2 h-2 rounded-full transition-colors duration-500 ${
+                          currentStep >= step ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}
+                        animate={{
+                          scale: currentStep === step ? [1, 1.5, 1] : 1
+                        }}
+                        transition={{ duration: 0.6, repeat: currentStep === step ? Infinity : 0, repeatDelay: 1 }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
               </div>
 
               {error && (
@@ -1503,50 +1645,84 @@ export default function BookingPage() {
               )}
 
               {/* Step Content */}
-              <div className="mb-8">{steps[currentStep - 1]?.component}</div>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={currentStep}
+                  variants={pageTransition}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  className="mb-8"
+                >
+                  {steps[currentStep - 1]?.component}
+                </motion.div>
+              </AnimatePresence>
 
               {/* Navigation Buttons */}
-              {currentStep < 6 && currentStep === 1 && (
-                <div className="flex justify-between">
-                  <button
+              {currentStep < 5 && currentStep === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="flex justify-between items-center"
+                >
+                  <motion.button
                     type="button"
-                    onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                    disabled={currentStep === 1}
-                    className="px-6 py-3 text-gray-600 hover:text-gray-800 flex items-center gap-2 disabled:opacity-50 transition-colors"
+                    onClick={prevStep}
+                    disabled={currentStep === 1 || isTransitioning}
+                    whileHover={{ scale: currentStep === 1 ? 1 : 1.05 }}
+                    whileTap={{ scale: currentStep === 1 ? 1 : 0.95 }}
+                    className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2 disabled:opacity-30 transition-all duration-200 font-medium rounded-xl hover:bg-gray-50"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    Previous
-                  </button>
+                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </motion.button>
 
-                  <button
+                  <motion.button
                     type="button"
-                    onClick={() => setCurrentStep(2)}
-                    disabled={!canProceed() || loading}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 flex items-center gap-2 disabled:bg-gray-400 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    onClick={() => nextStep()}
+                    disabled={!canProceed() || loading || isTransitioning}
+                    whileHover={{ scale: (!canProceed() || loading) ? 1 : 1.05, y: (!canProceed() || loading) ? 0 : -2 }}
+                    whileTap={{ scale: (!canProceed() || loading) ? 1 : 0.98 }}
+                    className="px-6 sm:px-8 lg:px-12 py-3 sm:py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-2xl flex items-center justify-center gap-2 sm:gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 border border-blue-500/20"
                   >
-                    Next
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+                    {isTransitioning ? (
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span className="text-sm sm:text-base">Continue</span>
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </>
+                    )}
+                  </motion.button>
+                </motion.div>
               )}
 
               {/* Payment Navigation */}
-              {currentStep === 5 && (
-                <div className="flex justify-between">
-                  <button
+              {currentStep === 4 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="flex justify-start"
+                >
+                  <motion.button
                     type="button"
-                    onClick={() => setCurrentStep(4)}
-                    className="px-6 py-3 text-gray-600 hover:text-gray-800 flex items-center gap-2 transition-colors"
+                    onClick={prevStep}
+                    disabled={isTransitioning}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 text-gray-600 hover:text-gray-800 flex items-center gap-2 transition-all duration-200 font-medium rounded-xl hover:bg-gray-50"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    Previous
-                  </button>
-                </div>
+                    <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="text-sm sm:text-base">Back to Services</span>
+                  </motion.button>
+                </motion.div>
               )}
             </div>
 
             {/* Price Summary Sidebar */}
-            <div className="lg:col-span-1">
+            <div className="order-1 lg:order-2 lg:col-span-1">
               <PriceSummary />
             </div>
           </div>
