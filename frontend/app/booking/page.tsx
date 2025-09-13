@@ -1547,88 +1547,92 @@ export default function BookingPage() {
           <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Content */}
             <div className="order-2 lg:order-1 lg:col-span-2">
-              {/* Progress Bar */}
-              <div className="mb-6 sm:mb-8">
-                <div className="hidden sm:flex items-center justify-between">
-                  {steps.slice(0, 3).map((step, index) => (
-                    <motion.div
-                      key={step.number}
-                      className="flex items-center"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
-                    >
+              {/* Clean Tab Navigation */}
+              <div className="mb-8 sm:mb-12">
+                <div className="hidden sm:block">
+                  <div className="flex items-center justify-center space-x-8">
+                    {steps.slice(0, 3).map((step) => (
                       <motion.div
-                        className={`w-10 h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-all duration-700 ${
-                          currentStep >= step.number
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-100"
-                            : currentStep < step.number
-                            ? "bg-gray-200 text-gray-600 hover:bg-gray-300 hover:scale-110"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
-                        animate={{
-                          scale: currentStep === step.number ? 1.2 : 1,
-                          rotate: currentStep > step.number ? [0, 360] : 0,
-                          boxShadow: currentStep === step.number
-                            ? "0 0 30px rgba(59, 130, 246, 0.4)"
-                            : "0 4px 6px rgba(0, 0, 0, 0.1)"
-                        }}
-                        transition={{
-                          duration: 0.7,
-                          ease: [0.25, 0.46, 0.45, 0.94],
-                          rotate: { duration: 1.2, ease: "easeInOut" }
-                        }}
+                        key={step.number}
+                        className="flex flex-col items-center cursor-pointer group"
                         onClick={() => step.number <= currentStep && goToStep(step.number)}
-                        whileHover={step.number <= currentStep ? { scale: 1.1 } : {}}
-                        whileTap={step.number <= currentStep ? { scale: 0.95 } : {}}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: step.number * 0.1 }}
                       >
+                        {/* Step Circle */}
                         <motion.div
-                          animate={{
-                            scale: currentStep > step.number ? [1, 1.5, 1] : 1
-                          }}
-                          transition={{ duration: 0.6 }}
-                        >
-                          {currentStep > step.number ? (
-                            <CheckCircle className="w-6 h-6" />
-                          ) : (
-                            step.number
-                          )}
-                        </motion.div>
-                      </motion.div>
-                      <motion.span
-                        className={`ml-2 lg:ml-3 text-sm font-medium cursor-pointer transition-all duration-500 ${
-                          currentStep >= step.number
-                            ? "text-blue-600 font-semibold"
-                            : "text-gray-500 hover:text-gray-700"
-                        }`}
-                        animate={{
-                          x: currentStep === step.number ? [0, 5, 0] : 0
-                        }}
-                        transition={{ duration: 0.6, repeat: currentStep === step.number ? Infinity : 0, repeatDelay: 2 }}
-                        onClick={() => step.number <= currentStep && goToStep(step.number)}
-                      >
-                        {step.title}
-                      </motion.span>
-                      {index < steps.length - 2 && (
-                        <motion.div
-                          className={`w-12 lg:w-20 h-1 mx-4 lg:mx-6 rounded-full transition-all duration-700 ${
-                            currentStep > step.number
-                              ? "bg-gradient-to-r from-blue-500 to-purple-500"
-                              : "bg-gray-200"
+                          className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold border-4 transition-all duration-300 ${
+                            currentStep === step.number
+                              ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white border-blue-200 shadow-lg shadow-blue-200/50"
+                              : currentStep > step.number
+                              ? "bg-gradient-to-br from-green-400 to-emerald-500 text-white border-green-200 shadow-md"
+                              : "bg-white text-gray-400 border-gray-300 group-hover:border-gray-400"
                           }`}
                           animate={{
-                            scaleX: currentStep > step.number ? 1 : 0.3,
-                            opacity: currentStep > step.number ? 1 : 0.5
+                            scale: currentStep === step.number ? [1, 1.05, 1] : 1,
                           }}
                           transition={{
-                            duration: 0.8,
-                            delay: currentStep > step.number ? 0.3 : 0,
-                            ease: [0.25, 0.46, 0.45, 0.94]
+                            duration: 2,
+                            repeat: currentStep === step.number ? Infinity : 0,
+                            ease: "easeInOut"
                           }}
-                        />
-                      )}
-                    </motion.div>
-                  ))}
+                        >
+                          {currentStep > step.number ? (
+                            <CheckCircle className="w-7 h-7" />
+                          ) : (
+                            <span>{step.number}</span>
+                          )}
+                        </motion.div>
+
+                        {/* Step Title */}
+                        <motion.div
+                          className="mt-3 text-center"
+                          animate={{
+                            y: currentStep === step.number ? [0, -2, 0] : 0,
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: currentStep === step.number ? Infinity : 0,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <h3
+                            className={`text-sm font-semibold transition-colors duration-300 ${
+                              currentStep === step.number
+                                ? "text-blue-600"
+                                : currentStep > step.number
+                                ? "text-green-600"
+                                : "text-gray-500 group-hover:text-gray-700"
+                            }`}
+                          >
+                            {step.title}
+                          </h3>
+                          <div
+                            className={`mt-1 h-0.5 w-full rounded transition-all duration-300 ${
+                              currentStep >= step.number
+                                ? "bg-gradient-to-r from-blue-400 to-purple-500"
+                                : "bg-gray-200"
+                            }`}
+                          />
+                        </motion.div>
+
+                        {/* Connecting Line */}
+                        {step.number < 3 && (
+                          <div className="absolute top-7 left-full w-8 h-0.5 bg-gray-200 transform -translate-y-1/2">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-blue-400 to-purple-500 origin-left"
+                              initial={{ scaleX: 0 }}
+                              animate={{ scaleX: currentStep > step.number ? 1 : 0 }}
+                              transition={{ duration: 0.5, ease: "easeInOut" }}
+                            />
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
                 {/* Mobile Progress Bar */}
                 <motion.div
