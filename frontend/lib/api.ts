@@ -220,6 +220,10 @@ export const adminAPI = {
     return await ApiInstance.get("/admin/bookings", { params });
   },
 
+  createBooking: async (data: any) => {
+    return await ApiInstance.post("/admin/bookings", data);
+  },
+
   updateBookingStatus: async (id: string, data: { status: string }) => {
     return await ApiInstance.put(`/admin/bookings/${id}/status`, data);
   },

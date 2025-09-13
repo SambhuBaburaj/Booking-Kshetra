@@ -10,6 +10,7 @@ import {
   createService,
   updateService,
   getAllBookings,
+  createAdminBooking,
   updateBookingStatus,
   getAllUsers,
   getRoomAvailability,
@@ -225,7 +226,54 @@ const updateBookingValidation = [
     .withMessage('Notes cannot exceed 1000 characters')
 ];
 
+const createBookingValidation = [
+  body('roomId')
+    .isMongoId()
+    .withMessage('Valid room ID is required'),
+  body('checkIn')
+    .isISO8601()
+    .withMessage('Valid check-in date is required'),
+  body('checkOut')
+    .isISO8601()
+    .withMessage('Valid check-out date is required'),
+  body('guests')
+    .isArray({ min: 1 })
+    .withMessage('At least one guest is required'),
+  body('guests.*.name')
+    .trim()
+    .notEmpty()
+    .withMessage('Guest name is required'),
+  body('guests.*.age')
+    .isInt({ min: 0, max: 120 })
+    .withMessage('Guest age must be between 0 and 120'),
+  body('primaryGuestInfo.name')
+    .trim()
+    .notEmpty()
+    .withMessage('Primary guest name is required'),
+  body('primaryGuestInfo.email')
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('primaryGuestInfo.phone')
+    .trim()
+    .notEmpty()
+    .withMessage('Phone number is required'),
+  body('status')
+    .optional()
+    .isIn(['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'])
+    .withMessage('Invalid status'),
+  body('paymentStatus')
+    .optional()
+    .isIn(['pending', 'paid', 'failed', 'refunded'])
+    .withMessage('Invalid payment status'),
+  body('notes')
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage('Notes cannot exceed 1000 characters')
+];
+
 router.get('/bookings', validate(bookingQueryValidation), getAllBookings);
+router.post('/bookings', validate(createBookingValidation), createAdminBooking);
 router.put('/bookings/:id/status', validate(updateBookingValidation), updateBookingStatus);
 
 // User Management
