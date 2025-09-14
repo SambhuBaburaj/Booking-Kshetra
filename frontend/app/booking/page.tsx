@@ -189,7 +189,7 @@ export default function BookingPage() {
       )
       
       if (response.success) {
-        setAvailableRooms(response.data.availableRooms)
+        setAvailableRooms((response.data as { availableRooms: Room[] }).availableRooms)
       } else {
         setError(response.error || 'Failed to fetch available rooms')
       }
@@ -280,7 +280,7 @@ export default function BookingPage() {
       const response = await apiClient.post('/bookings', bookingPayload, true)
       
       if (response.success) {
-        setBookingId(response.data.booking._id)
+        setBookingId((response.data as { booking: { _id: string } }).booking._id)
         setCurrentStep(5) // Payment step
       } else {
         setError(response.error || 'Failed to create booking')
@@ -1180,7 +1180,6 @@ export default function BookingPage() {
               <span className="font-medium">₹{priceBreakdown.baseAmount.toLocaleString()}</span>
             </div>
           )}
-
           {priceBreakdown.foodAmount > 0 && (
             <div className="flex justify-between text-green-600">
               <span>Meals included</span>

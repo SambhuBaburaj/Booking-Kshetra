@@ -5,6 +5,7 @@ export class RazorpayService {
   private razorpay: Razorpay;
 
   constructor() {
+    console.log("oomb2",process.env.RAZORPAY_KEY_ID);
     if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET || 
         process.env.RAZORPAY_KEY_ID === 'your-razorpay-key-id') {
       if (process.env.NODE_ENV === 'production') {

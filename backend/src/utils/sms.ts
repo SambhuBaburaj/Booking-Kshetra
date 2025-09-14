@@ -6,9 +6,12 @@ export class SMSService {
   private whatsappNumber: string;
 
   constructor() {
+    console.log("ooomb",process.env.TWILIO_ACCOUNT_SID );
+    
     if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN ||
         process.env.TWILIO_ACCOUNT_SID === 'your-twilio-account-sid') {
       if (process.env.NODE_ENV === 'production') {
+        console.log();
         throw new Error('Twilio credentials are not configured');
       }
       console.warn('⚠️ Twilio credentials not configured - using development mode');
