@@ -119,7 +119,7 @@ export const bookingAPI = {
 // Payment API calls
 export const paymentAPI = {
   createOrder: async (data: { amount: number; bookingId: string }) => {
-    return await ApiInstance.post("/payments/create-order", data);
+    return await ApiInstance.post("/payments/public/create-order", data);
   },
 
   verifyPayment: async (data: {
@@ -128,7 +128,7 @@ export const paymentAPI = {
     razorpay_signature: string;
     bookingId: string;
   }) => {
-    return await ApiInstance.post("/payments/verify", data);
+    return await ApiInstance.post("/payments/public/verify", data);
   },
 };
 

@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Booking, Payment, User } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
@@ -10,11 +10,11 @@ export const createPaymentOrder = async (req: AuthenticatedRequest, res: Respons
     const userId = req.user?.userId;
 
     // Find and validate booking
-    const booking = await Booking.findOne({ 
-      _id: bookingId, 
-      userId, 
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      userId,
       status: 'pending',
-      paymentStatus: 'pending' 
+      paymentStatus: 'pending'
     }).populate('userId', 'name email phone');
 
     if (!booking) {
@@ -26,9 +26,9 @@ export const createPaymentOrder = async (req: AuthenticatedRequest, res: Respons
     }
 
     // Check if payment order already exists
-    const existingPayment = await Payment.findOne({ 
-      bookingId, 
-      status: { $in: ['created', 'attempted'] } 
+    const existingPayment = await Payment.findOne({
+      bookingId,
+      status: { $in: ['created', 'attempted'] }
     });
 
     if (existingPayment) {
@@ -108,10 +108,10 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
   session.startTransaction();
 
   try {
-    const { 
-      razorpay_order_id, 
-      razorpay_payment_id, 
-      razorpay_signature 
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
     } = req.body;
 
     const userId = req.user?.userId;
@@ -133,8 +133,8 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
     }
 
     // Find payment record
-    const payment = await Payment.findOne({ 
-      razorpayOrderId: razorpay_order_id 
+    const payment = await Payment.findOne({
+      razorpayOrderId: razorpay_order_id
     }).session(session);
 
     if (!payment) {
@@ -147,9 +147,9 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
     }
 
     // Find and validate booking
-    const booking = await Booking.findOne({ 
-      _id: payment.bookingId, 
-      userId 
+    const booking = await Booking.findOne({
+      _id: payment.bookingId,
+      userId
     }).session(session);
 
     if (!booking) {
@@ -178,7 +178,7 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
     payment.razorpaySignature = razorpay_signature;
     payment.status = paymentDetails.data?.status === 'captured' ? 'paid' : 'failed';
     payment.paymentMethod = paymentDetails.data?.method;
-    
+
     if (paymentDetails.data?.status !== 'captured') {
       payment.failureReason = paymentDetails.data?.error_description || 'Payment not captured';
     }
@@ -307,9 +307,9 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response): P
     }
 
     // Find payment record
-    const payment = await Payment.findOne({ 
-      bookingId, 
-      status: 'paid' 
+    const payment = await Payment.findOne({
+      bookingId,
+      status: 'paid'
     }).session(session);
 
     if (!payment || !payment.razorpayPaymentId) {
@@ -366,6 +366,216 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response): P
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to process refund'
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
+// Public payment endpoints (no authentication required)
+export const createPublicPaymentOrder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bookingId } = req.body;
+
+    // Find and validate public booking
+    const booking = await Booking.findOne({
+      _id: bookingId,
+      userId: null, // Public bookings have null userId
+      status: 'pending',
+      paymentStatus: 'pending'
+    });
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        message: 'Booking not found or not eligible for payment'
+      });
+      return;
+    }
+
+    // Check if payment order already exists
+    const existingPayment = await Payment.findOne({
+      bookingId,
+      status: { $in: ['created', 'attempted'] }
+    });
+
+    if (existingPayment) {
+      res.json({
+        success: true,
+        message: 'Payment order already exists',
+        data: {
+          id: existingPayment.razorpayOrderId,
+          amount: existingPayment.amount,
+          currency: existingPayment.currency,
+          bookingId: booking._id
+        }
+      });
+      return;
+    }
+
+    // Create Razorpay order
+    const customerInfo = {
+      name: booking.primaryGuestInfo?.name || 'Guest',
+      email: booking.guestEmail || booking.primaryGuestInfo?.email || '',
+      phone: booking.primaryGuestInfo?.phone || ''
+    };
+
+    const orderResult = await razorpayService.createOrder(
+      booking.totalAmount,
+      (booking._id as any).toString(),
+      customerInfo
+    );
+
+    if (!orderResult.success) {
+      res.status(500).json({
+        success: false,
+        message: orderResult.message
+      });
+      return;
+    }
+
+    // Save payment record
+    const payment = new Payment({
+      bookingId: booking._id,
+      razorpayOrderId: orderResult.data!.orderId,
+      amount: booking.totalAmount,
+      currency: 'INR',
+      status: 'created'
+    });
+
+    await payment.save();
+
+    res.json({
+      success: true,
+      message: 'Payment order created successfully',
+      data: {
+        id: orderResult.data!.orderId,
+        amount: orderResult.data!.amount,
+        currency: orderResult.data!.currency,
+        bookingId: booking._id
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Public payment order creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create payment order'
+    });
+  }
+};
+
+export const verifyPublicPayment = async (req: Request, res: Response): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      bookingId
+    } = req.body;
+
+    // Verify signature
+    const isValidSignature = razorpayService.verifyPaymentSignature(
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    );
+
+    if (!isValidSignature) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid payment signature'
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Find payment record
+    const payment = await Payment.findOne({
+      razorpayOrderId: razorpay_order_id
+    }).session(session);
+
+    if (!payment) {
+      res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Find and validate public booking
+    const booking = await Booking.findOne({
+      _id: payment.bookingId,
+      userId: null // Public booking
+    }).session(session);
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Get payment details from Razorpay
+    const paymentDetails = await razorpayService.getPaymentDetails(razorpay_payment_id);
+
+    if (!paymentDetails.success) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to verify payment with Razorpay'
+      });
+      await session.abortTransaction();
+      return;
+    }
+
+    // Update payment record
+    payment.razorpayPaymentId = razorpay_payment_id;
+    payment.razorpaySignature = razorpay_signature;
+    payment.status = paymentDetails.data?.status === 'captured' ? 'paid' : 'failed';
+    payment.paymentMethod = paymentDetails.data?.method;
+
+    if (paymentDetails.data?.status !== 'captured') {
+      payment.failureReason = paymentDetails.data?.error_description || 'Payment not captured';
+    }
+
+    await payment.save({ session });
+
+    // Update booking status
+    if (payment.status === 'paid') {
+      booking.paymentStatus = 'paid';
+      booking.paymentId = razorpay_payment_id;
+      booking.status = 'confirmed';
+      await booking.save({ session });
+    } else {
+      booking.paymentStatus = 'failed';
+      await booking.save({ session });
+    }
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: payment.status === 'paid' ? 'Payment successful' : 'Payment failed',
+      data: {
+        paymentStatus: payment.status,
+        bookingStatus: booking.status,
+        paymentId: razorpay_payment_id,
+        bookingId: booking._id
+      }
+    });
+
+  } catch (error: any) {
+    await session.abortTransaction();
+    console.error('Public payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Payment verification failed'
     });
   } finally {
     await session.endSession();
