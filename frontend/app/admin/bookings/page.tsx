@@ -1,0 +1,1050 @@
+'use client'
+
+import { useState, useEffect } from 'react';
+import { adminAPI, roomAPI, serviceAPI } from '../../../lib/api';
+import {
+  Calendar,
+  Users,
+  DollarSign,
+  Eye,
+  Edit3,
+  Plus,
+  Filter,
+  Search,
+  RefreshCw,
+  MapPin,
+  Clock,
+  Mail,
+  Phone,
+  User
+} from 'lucide-react';
+
+interface Booking {
+  _id: string;
+  roomId: {
+    roomNumber: string;
+    roomType: string;
+    pricePerNight: number;
+  };
+  userId?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  guestEmail?: string;
+  primaryGuestInfo?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  checkIn: string;
+  checkOut: string;
+  totalGuests: number;
+  adults: number;
+  children: number;
+  totalAmount: number;
+  status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  specialRequests?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+interface Room {
+  _id: string;
+  roomNumber: string;
+  roomType: string;
+  pricePerNight: number;
+  capacity: number;
+  isAvailable: boolean;
+}
+
+const AdminBookingsPage = () => {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pages: 1,
+    total: 0
+  });
+
+  // Filters
+  const [filters, setFilters] = useState({
+    status: '',
+    paymentStatus: '',
+    search: '',
+    page: 1,
+    limit: 10
+  });
+
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+  // Create booking form data
+  const [createForm, setCreateForm] = useState({
+    roomId: '',
+    checkIn: '',
+    checkOut: '',
+    guests: [{
+      name: '',
+      age: 25,
+      gender: 'Male' as 'Male' | 'Female' | 'Other',
+      idType: 'Aadhar' as 'Aadhar' | 'Passport' | 'Driving License' | 'PAN Card',
+      idNumber: ''
+    }],
+    primaryGuestInfo: {
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      pincode: '',
+      emergencyContact: {
+        name: '',
+        phone: '',
+        relationship: ''
+      }
+    },
+    includeFood: true,
+    includeBreakfast: false,
+    transport: {
+      pickup: false,
+      drop: false,
+      flightNumber: '',
+      airportFrom: 'Kochi',
+      airportTo: 'Kochi'
+    },
+    selectedServices: [],
+    specialRequests: '',
+    status: 'confirmed' as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled',
+    paymentStatus: 'pending' as 'pending' | 'paid' | 'failed' | 'refunded',
+    notes: ''
+  });
+
+  useEffect(() => {
+    fetchBookings();
+    fetchRooms();
+    fetchServices();
+  }, [filters]);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.getAllBookings(filters);
+      const data = response.data;
+
+      if (data.success) {
+        setBookings(data.data.bookings);
+        setPagination(data.data.pagination);
+      } else {
+        setError(data.message || 'Failed to fetch bookings');
+      }
+    } catch (err: any) {
+      setError('Failed to fetch bookings');
+      console.error('Fetch bookings error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRooms = async () => {
+    try {
+      const response = await adminAPI.getAllRooms({ limit: 100 });
+      const data = response.data;
+      if (data.success) {
+        setRooms(data.data.rooms);
+      }
+    } catch (err) {
+      console.error('Failed to fetch rooms:', err);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const response = await adminAPI.getAllServices({ isActive: true });
+      const data = response.data;
+      if (data.success) {
+        setServices(data.data.services);
+      }
+    } catch (err) {
+      console.error('Failed to fetch services:', err);
+    }
+  };
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      page: 1 // Reset to first page when filters change
+    }));
+  };
+
+  const handleCreateBooking = async () => {
+    try {
+      setLoading(true);
+      const response = await adminAPI.createBooking(createForm);
+      const data = response.data;
+
+      if (data.success) {
+        setShowCreateModal(false);
+        fetchBookings();
+        resetCreateForm();
+      } else {
+        setError(data.message || 'Failed to create booking');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create booking');
+      console.error('Create booking error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setCreateForm({
+      roomId: '',
+      checkIn: '',
+      checkOut: '',
+      guests: [{
+        name: '',
+        age: 25,
+        gender: 'Male',
+        idType: 'Aadhar',
+        idNumber: ''
+      }],
+      primaryGuestInfo: {
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        pincode: '',
+        emergencyContact: {
+          name: '',
+          phone: '',
+          relationship: ''
+        }
+      },
+      includeFood: true,
+      includeBreakfast: false,
+      transport: {
+        pickup: false,
+        drop: false,
+        flightNumber: '',
+        airportFrom: 'Kochi',
+        airportTo: 'Kochi'
+      },
+      selectedServices: [],
+      specialRequests: '',
+      status: 'confirmed',
+      paymentStatus: 'pending',
+      notes: ''
+    });
+  };
+
+  const addGuest = () => {
+    setCreateForm(prev => ({
+      ...prev,
+      guests: [...prev.guests, {
+        name: '',
+        age: 25,
+        gender: 'Male' as const,
+        idType: 'Aadhar' as const,
+        idNumber: ''
+      }]
+    }));
+  };
+
+  const removeGuest = (index: number) => {
+    if (createForm.guests.length > 1) {
+      setCreateForm(prev => ({
+        ...prev,
+        guests: prev.guests.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const updateGuest = (index: number, field: string, value: any) => {
+    setCreateForm(prev => ({
+      ...prev,
+      guests: prev.guests.map((guest, i) =>
+        i === index ? { ...guest, [field]: value } : guest
+      )
+    }));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'checked_in':
+        return 'bg-blue-100 text-blue-800';
+      case 'checked_out':
+        return 'bg-gray-100 text-gray-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'refunded':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading && bookings.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Bookings Management</h1>
+              <p className="text-gray-600">Manage all resort bookings</p>
+            </div>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Create Booking
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search bookings..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="checked_in">Checked In</option>
+                <option value="checked_out">Checked Out</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+              <select
+                value={filters.paymentStatus}
+                onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Payment Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </div>
+
+            <div className="flex items-end">
+              <button
+                onClick={fetchBookings}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Guest
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Room
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Dates
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Guests
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {bookings.map((booking) => (
+                  <tr key={booking._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {booking.userId?.name || booking.primaryGuestInfo?.name || 'Guest'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.userId?.email || booking.primaryGuestInfo?.email || booking.guestEmail}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        Room {booking.roomId.roomNumber}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.roomId.roomType}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {new Date(booking.checkIn).toLocaleDateString()}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        to {new Date(booking.checkOut).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {booking.totalGuests} guests
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.adults} adults, {booking.children} children
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{booking.totalAmount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="space-y-1">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.status)}`}>
+                          {booking.status}
+                        </span>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                          {booking.paymentStatus}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedBooking(booking);
+                            setShowViewModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            // Handle edit booking
+                            console.log('Edit booking:', booking._id);
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
+                  disabled={filters.page <= 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handleFilterChange('page', Math.min(pagination.pages, filters.page + 1))}
+                  disabled={filters.page >= pagination.pages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing page {pagination.current} of {pagination.pages} ({pagination.total} total bookings)
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {[...Array(pagination.pages)].map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => handleFilterChange('page', i + 1)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          i + 1 === pagination.current
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Create Booking Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Booking</h2>
+
+              {/* Room Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Room</label>
+                  <select
+                    value={createForm.roomId}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, roomId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Room</option>
+                    {rooms.map(room => (
+                      <option key={room._id} value={room._id}>
+                        Room {room.roomNumber} - {room.roomType} (₹{room.pricePerNight}/night)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
+                    <input
+                      type="date"
+                      value={createForm.checkIn}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, checkIn: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
+                    <input
+                      type="date"
+                      value={createForm.checkOut}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, checkOut: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Guest Info */}
+              <div className="mb-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-3">Primary Guest Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    value={createForm.primaryGuestInfo.name}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, name: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={createForm.primaryGuestInfo.email}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, email: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone"
+                    value={createForm.primaryGuestInfo.phone}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, phone: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                  <input
+                    type="text"
+                    placeholder="Address"
+                    value={createForm.primaryGuestInfo.address}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, address: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="City"
+                    value={createForm.primaryGuestInfo.city}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, city: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="State"
+                    value={createForm.primaryGuestInfo.state}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, state: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="PIN Code"
+                    value={createForm.primaryGuestInfo.pincode}
+                    onChange={(e) => setCreateForm(prev => ({
+                      ...prev,
+                      primaryGuestInfo: { ...prev.primaryGuestInfo, pincode: e.target.value }
+                    }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Guests */}
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">Guests</h3>
+                  <button
+                    type="button"
+                    onClick={addGuest}
+                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                  >
+                    Add Guest
+                  </button>
+                </div>
+                {createForm.guests.map((guest, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-200 rounded-lg">
+                    <input
+                      type="text"
+                      placeholder="Guest Name"
+                      value={guest.name}
+                      onChange={(e) => updateGuest(index, 'name', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                    <input
+                      type="number"
+                      placeholder="Age"
+                      value={guest.age}
+                      onChange={(e) => updateGuest(index, 'age', parseInt(e.target.value))}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="0"
+                      max="120"
+                      required
+                    />
+                    <select
+                      value={guest.gender}
+                      onChange={(e) => updateGuest(index, 'gender', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <select
+                      value={guest.idType}
+                      onChange={(e) => updateGuest(index, 'idType', e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="Aadhar">Aadhar</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Driving License">Driving License</option>
+                      <option value="PAN Card">PAN Card</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="ID Number"
+                        value={guest.idNumber}
+                        onChange={(e) => updateGuest(index, 'idNumber', e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {createForm.guests.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeGuest(index)}
+                          className="bg-red-600 text-white px-2 py-2 rounded hover:bg-red-700"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Services and Options */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Services</h3>
+                  <div className="space-y-2">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={createForm.includeFood}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, includeFood: e.target.checked }))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Include Food</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={createForm.includeBreakfast}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, includeBreakfast: e.target.checked }))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Include Breakfast</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={createForm.transport.pickup}
+                        onChange={(e) => setCreateForm(prev => ({
+                          ...prev,
+                          transport: { ...prev.transport, pickup: e.target.checked }
+                        }))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Airport Pickup</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={createForm.transport.drop}
+                        onChange={(e) => setCreateForm(prev => ({
+                          ...prev,
+                          transport: { ...prev.transport, drop: e.target.checked }
+                        }))}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Airport Drop</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Booking Status</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={createForm.status}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, status: e.target.value as any }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="checked_in">Checked In</option>
+                        <option value="checked_out">Checked Out</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                      <select
+                        value={createForm.paymentStatus}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, paymentStatus: e.target.value as any }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                        <option value="refunded">Refunded</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Special Requests and Notes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
+                  <textarea
+                    value={createForm.specialRequests}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, specialRequests: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Any special requests from guest..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                  <textarea
+                    value={createForm.notes}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Internal notes for this booking..."
+                  />
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    resetCreateForm();
+                  }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateBooking}
+                  disabled={!createForm.roomId || !createForm.checkIn || !createForm.checkOut}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Booking Modal */}
+      {showViewModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">Booking Details</h2>
+
+              <div className="space-y-6">
+                {/* Guest Information */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Guest Information</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Name:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedBooking.userId?.name || selectedBooking.primaryGuestInfo?.name || 'Guest'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Email:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedBooking.userId?.email || selectedBooking.primaryGuestInfo?.email || selectedBooking.guestEmail}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Phone:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedBooking.userId?.phone || selectedBooking.primaryGuestInfo?.phone || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Guests:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedBooking.totalGuests} ({selectedBooking.adults} adults, {selectedBooking.children} children)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Booking Details */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Booking Details</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Room:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedBooking.roomId.roomNumber} ({selectedBooking.roomId.roomType})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Check-in:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedBooking.checkIn).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Check-out:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedBooking.checkOut).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm text-gray-600">Total Amount:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          ₹{selectedBooking.totalAmount.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Status</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <span className="text-sm text-gray-600">Booking Status:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedBooking.status)}`}>
+                          {selectedBooking.status}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-600">Payment Status:</span>
+                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
+                          {selectedBooking.paymentStatus}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Requests & Notes */}
+                {(selectedBooking.specialRequests || selectedBooking.notes) && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Additional Information</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                      {selectedBooking.specialRequests && (
+                        <div>
+                          <span className="text-sm text-gray-600">Special Requests:</span>
+                          <p className="text-sm text-gray-900 mt-1">{selectedBooking.specialRequests}</p>
+                        </div>
+                      )}
+                      {selectedBooking.notes && (
+                        <div>
+                          <span className="text-sm text-gray-600">Admin Notes:</span>
+                          <p className="text-sm text-gray-900 mt-1">{selectedBooking.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500">
+                  Created on {new Date(selectedBooking.createdAt).toLocaleString()}
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminBookingsPage;

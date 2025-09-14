@@ -415,6 +415,124 @@ export const getAllBookings = async (req: AuthenticatedRequest, res: Response): 
   }
 };
 
+export const createAdminBooking = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const {
+      roomId,
+      checkIn,
+      checkOut,
+      guests,
+      primaryGuestInfo,
+      includeFood = true,
+      includeBreakfast = false,
+      transport,
+      selectedServices = [],
+      yogaSessionId,
+      specialRequests,
+      status = 'confirmed',
+      paymentStatus = 'pending',
+      notes
+    } = req.body;
+
+    // Use the createBooking function from bookingController but with admin overrides
+    const { createBooking } = await import('./bookingController');
+
+    // Create a temporary request object for the booking controller
+    const tempReq: any = {
+      body: {
+        roomId,
+        checkIn,
+        checkOut,
+        guests,
+        primaryGuestInfo,
+        includeFood,
+        includeBreakfast,
+        transport,
+        selectedServices,
+        yogaSessionId,
+        specialRequests
+      },
+      user: {
+        userId: 'admin_id_123', // Special admin ID
+        role: 'admin'
+      }
+    };
+
+    // Create a custom response handler
+    let bookingResult: any = null;
+    let errorResult: any = null;
+
+    const tempRes: any = {
+      status: (code: number) => ({
+        json: (data: any) => {
+          if (code >= 400) {
+            errorResult = { code, data };
+          } else {
+            bookingResult = data;
+          }
+        }
+      }),
+      json: (data: any) => {
+        bookingResult = data;
+      }
+    };
+
+    // Call the booking creation function
+    await createBooking(tempReq, tempRes);
+
+    if (errorResult) {
+      await session.abortTransaction();
+      res.status(errorResult.code).json(errorResult.data);
+      return;
+    }
+
+    if (!bookingResult || !bookingResult.success) {
+      await session.abortTransaction();
+      res.status(500).json({
+        success: false,
+        message: 'Failed to create admin booking'
+      });
+      return;
+    }
+
+    // Update the booking with admin-specific fields
+    const booking = await Booking.findByIdAndUpdate(
+      bookingResult.data.booking._id,
+      {
+        status,
+        paymentStatus,
+        ...(notes && { notes })
+      },
+      { new: true, session }
+    )
+    .populate('userId', 'name email phone')
+    .populate('roomId', 'roomNumber roomType pricePerNight')
+    .populate('selectedServices.serviceId', 'name category')
+    .populate('yogaSessionId', 'type batchName');
+
+    await session.commitTransaction();
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin booking created successfully',
+      data: { booking }
+    });
+
+  } catch (error: any) {
+    await session.abortTransaction();
+    console.error('Admin booking creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create admin booking'
+    });
+  } finally {
+    await session.endSession();
+  }
+};
+
 export const updateBookingStatus = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -422,9 +540,9 @@ export const updateBookingStatus = async (req: AuthenticatedRequest, res: Respon
 
     const booking = await Booking.findByIdAndUpdate(
       id,
-      { 
-        status, 
-        ...(notes && { notes }) 
+      {
+        status,
+        ...(notes && { notes })
       },
       { new: true, runValidators: true }
     )

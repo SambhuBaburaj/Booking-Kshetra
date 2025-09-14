@@ -93,6 +93,12 @@ export const roomAPI = {
 
 // Booking API calls
 export const bookingAPI = {
+  // Public booking (no auth required)
+  createPublicBooking: async (data: any) => {
+    return await ApiInstance.post("/bookings/public", data);
+  },
+
+  // Authenticated booking
   createBooking: async (data: any) => {
     return await ApiInstance.post("/bookings", data);
   },
@@ -212,6 +218,10 @@ export const adminAPI = {
   // Booking Management
   getAllBookings: async (params?: any) => {
     return await ApiInstance.get("/admin/bookings", { params });
+  },
+
+  createBooking: async (data: any) => {
+    return await ApiInstance.post("/admin/bookings", data);
   },
 
   updateBookingStatus: async (id: string, data: { status: string }) => {

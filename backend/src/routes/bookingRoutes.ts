@@ -2,6 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import {
   createBooking,
+  createPublicBooking,
   getUserBookings,
   getBookingById,
   cancelBooking
@@ -109,6 +110,14 @@ const bookingIdValidation = [
 ];
 
 // Routes
+// Public booking route (no auth required)
+router.post(
+  '/public',
+  validate(createBookingValidation),
+  createPublicBooking
+);
+
+// Authenticated booking route
 router.post(
   '/',
   authenticate,

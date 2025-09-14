@@ -25,6 +25,18 @@ export class EmailService {
 
   async sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      // Check if email configuration is available
+      if (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your-email@gmail.com') {
+        console.log('📧 Email not configured - would send email to:', options.to);
+        console.log('   Subject:', options.subject);
+        console.log('   Note: Configure EMAIL_USER and EMAIL_PASS in .env to enable email sending');
+
+        return {
+          success: true,
+          messageId: 'dev-mode-' + Date.now()
+        };
+      }
+
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
         to: options.to,
@@ -34,7 +46,7 @@ export class EmailService {
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      
+
       return {
         success: true,
         messageId: result.messageId
@@ -178,11 +190,24 @@ export class EmailService {
     `;
   }
 
-  async sendBookingConfirmation(booking: any, user: any): Promise<{ success: boolean; error?: string }> {
-    const html = this.generateBookingConfirmationEmail(booking, user);
-    
+  async sendBookingConfirmation(booking: any, user?: any): Promise<{ success: boolean; error?: string }> {
+    // Handle both user account and public bookings
+    const guestInfo = user || {
+      name: booking.primaryGuestInfo?.name || 'Guest',
+      email: booking.guestEmail || booking.primaryGuestInfo?.email
+    };
+
+    if (!guestInfo.email) {
+      return {
+        success: false,
+        error: 'No email address available for booking confirmation'
+      };
+    }
+
+    const html = this.generateBookingConfirmationEmail(booking, guestInfo);
+
     return this.sendEmail({
-      to: user.email,
+      to: guestInfo.email,
       subject: 'Booking Confirmation - Kshetra Retreat Resort',
       html,
       text: `Your booking ${booking._id} at Kshetra Retreat Resort has been confirmed.`

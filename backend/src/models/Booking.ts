@@ -44,7 +44,7 @@ export interface ISelectedService {
 }
 
 export interface IBooking extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId; // Made optional for public bookings
   roomId: mongoose.Types.ObjectId;
   checkIn: Date;
   checkOut: Date;
@@ -52,9 +52,10 @@ export interface IBooking extends Document {
   totalGuests: number;
   adults: number;
   children: number;
-  
+
   // Primary Guest Information
   primaryGuestInfo?: IPrimaryGuestInfo;
+  guestEmail?: string; // For public bookings without user accounts
   
   // Services
   includeFood: boolean;
@@ -237,7 +238,15 @@ const bookingSchema = new Schema<IBooking>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required']
+      required: false // Made optional for public bookings
+    },
+    guestEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      required: function(this: IBooking) {
+        return !this.userId; // Required for public bookings (when no userId)
+      }
     },
     roomId: {
       type: Schema.Types.ObjectId,
