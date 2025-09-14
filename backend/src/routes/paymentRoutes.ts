@@ -4,7 +4,9 @@ import {
   createPaymentOrder,
   verifyPayment,
   getPaymentStatus,
-  refundPayment
+  refundPayment,
+  createPublicPaymentOrder,
+  verifyPublicPayment
 } from '../controllers/paymentController';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -79,6 +81,19 @@ router.post(
   authorize('admin'),
   validate(refundValidation),
   refundPayment
+);
+
+// Public payment routes (no authentication required)
+router.post(
+  '/public/create-order',
+  validate(createOrderValidation),
+  createPublicPaymentOrder
+);
+
+router.post(
+  '/public/verify',
+  validate(verifyPaymentValidation),
+  verifyPublicPayment
 );
 
 export default router;

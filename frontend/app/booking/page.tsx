@@ -1349,7 +1349,7 @@ const BookingPage = () => {
           {
             name: bookingData.primaryGuest.name,
             age: 25, // Default age for primary guest
-            gender: 'other' as const
+            gender: 'Other' as const
           }
         ];
 
@@ -1357,7 +1357,7 @@ const BookingPage = () => {
           roomId: bookingData.roomId,
           checkIn: bookingData.checkIn?.toISOString(),
           checkOut: bookingData.checkOut?.toISOString(),
-          guestDetails: {
+          primaryGuestInfo: {
             name: bookingData.primaryGuest.name,
             email: bookingData.primaryGuest.email,
             phone: bookingData.primaryGuest.phone,
@@ -1372,7 +1372,10 @@ const BookingPage = () => {
             }
           },
           guests: guestsArray,
-          services: bookingData.services,
+          includeFood: bookingData.services.includeFood,
+          includeBreakfast: bookingData.services.includeBreakfast,
+          transport: bookingData.services.transport,
+          selectedServices: [], // Map services if needed
           specialRequests: bookingData.specialRequests,
           totalAmount: priceBreakdown.total,
           paymentStatus: 'pending'
