@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
+require("dotenv").config();
 
 import { connectDatabase } from "./config/database";
 import { errorHandler, notFound } from "./middleware/errorHandler";
