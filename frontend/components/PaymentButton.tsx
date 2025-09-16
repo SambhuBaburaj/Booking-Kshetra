@@ -29,23 +29,28 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const handlePayment = async () => {
+    console.log('🚀 PaymentButton clicked:', { amount, bookingId, userDetails });
     setIsLoading(true);
-    
+
     try {
+      console.log('🎯 Initiating payment...');
       await initiatePayment({
         amount,
         bookingId,
         userDetails,
         onSuccess: (paymentData) => {
+          console.log('✅ Payment successful:', paymentData);
           setIsLoading(false);
           onSuccess(paymentData);
         },
         onError: (error) => {
+          console.error('❌ Payment error:', error);
           setIsLoading(false);
           onError(error);
         }
       });
     } catch (error) {
+      console.error('❌ Payment initiation error:', error);
       setIsLoading(false);
       onError(error);
     }

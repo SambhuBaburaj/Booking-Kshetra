@@ -98,6 +98,11 @@ export const bookingAPI = {
     return await ApiInstance.post("/bookings/public", data);
   },
 
+  // Public booking details (no auth required)
+  getPublicBookingById: async (id: string) => {
+    return await ApiInstance.get(`/bookings/public/${id}`);
+  },
+
   // Authenticated booking
   createBooking: async (data: any) => {
     return await ApiInstance.post("/bookings", data);

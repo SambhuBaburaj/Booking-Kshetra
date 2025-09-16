@@ -5,6 +5,7 @@ import {
   createPublicBooking,
   getUserBookings,
   getBookingById,
+  getPublicBookingById,
   cancelBooking
 } from '../controllers/bookingController';
 import { authenticate, authorize } from '../middleware/auth';
@@ -115,6 +116,13 @@ router.post(
   '/public',
   validate(createBookingValidation),
   createPublicBooking
+);
+
+// Public booking details route (no auth required)
+router.get(
+  '/public/:id',
+  validate(bookingIdValidation),
+  getPublicBookingById
 );
 
 // Authenticated booking route

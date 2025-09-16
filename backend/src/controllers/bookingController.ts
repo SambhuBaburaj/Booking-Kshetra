@@ -626,3 +626,36 @@ export const cancelBooking = async (req: AuthenticatedRequest, res: Response): P
     await session.endSession();
   }
 };
+
+// Public booking details (no auth required for public bookings)
+export const getPublicBookingById = async (req: any, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Find public booking (where userId is null)
+    const booking = await Booking.findOne({
+      _id: id,
+      userId: null // Only public bookings
+    }).populate('roomId', 'roomNumber roomType description pricePerNight');
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        message: 'Public booking not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        booking
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get booking details'
+    });
+  }
+};

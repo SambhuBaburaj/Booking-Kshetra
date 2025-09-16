@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import Header from "../../components/Header";
 import { bookingAPI } from "../../lib/api";
-import PaymentButton from "../../components/PaymentButton";
+import { initiatePayment } from "../../utils/razorpay";
 
 interface Room {
   _id: string;
@@ -1331,7 +1331,6 @@ const BookingPage = () => {
   // Confirmation Step
   const ConfirmationStep = () => {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [bookingSuccess, setBookingSuccess] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
 
     const createBooking = async () => {
@@ -1384,9 +1383,11 @@ const BookingPage = () => {
         const response = await bookingAPI.createPublicBooking(bookingPayload);
 
         if (response.data?.success) {
-          setBookingId(response.data.data._id);
-          setBookingSuccess(true);
-          return response.data.data._id;
+          console.log('✅ Booking created successfully:', response.data.data);
+          const bookingId = response.data.data.booking._id;
+          console.log('📋 Extracted booking ID:', bookingId);
+          setBookingId(bookingId);
+          return bookingId;
         } else {
           throw new Error(response.data?.message || 'Failed to create booking');
         }
@@ -1414,9 +1415,28 @@ const BookingPage = () => {
 
     const handleConfirmBooking = async () => {
       try {
-        await createBooking();
-        // Booking created successfully, now we'll show the payment button
+        console.log('🚀 Starting one-click booking flow...');
+
+        // Create booking first
+        const createdBookingId = await createBooking();
+
+        console.log('✅ Booking created, now opening Razorpay...');
+
+        // Immediately trigger payment after booking creation
+        await initiatePayment({
+          amount: priceBreakdown.total,
+          bookingId: createdBookingId,
+          userDetails: {
+            name: bookingData.primaryGuest.name,
+            email: bookingData.primaryGuest.email,
+            phone: bookingData.primaryGuest.phone,
+          },
+          onSuccess: handlePaymentSuccess,
+          onError: handlePaymentError
+        });
+
       } catch (error) {
+        console.error('❌ Booking/Payment flow error:', error);
         alert('Failed to create booking: ' + (error as Error).message);
       }
     };
@@ -1652,52 +1672,28 @@ const BookingPage = () => {
                 Secure Payment
               </h3>
 
-              {!bookingSuccess ? (
-                <div className="space-y-4">
-                  <p className="text-gray-600 text-sm">
-                    Click below to create your booking. You'll then be able to complete the payment.
-                  </p>
-                  <button
-                    onClick={handleConfirmBooking}
-                    disabled={isProcessing}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader className="w-5 h-5 animate-spin" />
-                        Creating Booking...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        Create Booking
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-green-600 mb-2">
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="font-semibold">Booking created successfully!</span>
-                  </div>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Complete your payment to confirm your reservation. Your booking is secured and will be held for 15 minutes.
-                  </p>
-                  <PaymentButton
-                    amount={priceBreakdown.total}
-                    bookingId={bookingId!}
-                    userDetails={{
-                      name: bookingData.primaryGuest.name,
-                      email: bookingData.primaryGuest.email,
-                      phone: bookingData.primaryGuest.phone,
-                    }}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300"
-                  />
-                </div>
-              )}
+              <div className="space-y-4">
+                <p className="text-gray-600 text-sm">
+                  Click below to book your stay and complete payment securely with Razorpay.
+                </p>
+                <button
+                  onClick={handleConfirmBooking}
+                  disabled={isProcessing}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-5 h-5" />
+                      Book & Pay ₹{priceBreakdown.total.toLocaleString()}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

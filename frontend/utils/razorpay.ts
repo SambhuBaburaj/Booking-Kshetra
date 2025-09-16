@@ -35,19 +35,33 @@ export const loadRazorpayScript = (): Promise<boolean> => {
 };
 
 export const initiatePayment = async (options: PaymentOptions): Promise<void> => {
+  console.log('🔄 InitiatePayment called with:', options);
+
   const scriptLoaded = await loadRazorpayScript();
-  
+  console.log('📜 Razorpay script loaded:', scriptLoaded);
+
   if (!scriptLoaded) {
+    console.error('❌ Failed to load Razorpay SDK');
     options.onError({ message: 'Failed to load Razorpay SDK' });
     return;
   }
 
   try {
+    console.log('🔧 Creating payment order on backend...');
+    console.log('📋 Payment order data being sent:', {
+      amount: options.amount,
+      bookingId: options.bookingId,
+      bookingIdType: typeof options.bookingId,
+      bookingIdLength: options.bookingId?.length
+    });
+
     // Create order on backend first
     const response = await paymentAPI.createOrder({
       amount: options.amount,
       bookingId: options.bookingId
     });
+
+    console.log('📋 Order creation response:', response.data);
 
     const orderData = response.data;
     
@@ -56,7 +70,7 @@ export const initiatePayment = async (options: PaymentOptions): Promise<void> =>
     }
 
     const razorpayOptions = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key: 'rzp_test_RHyWk20J1eq916',
       amount: orderData.data.amount,
       currency: orderData.data.currency,
       name: 'Kshetra Retreat Resort',
