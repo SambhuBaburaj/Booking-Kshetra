@@ -16,22 +16,51 @@ import {
 } from "lucide-react";
 import Header from "../../components/Header";
 import Link from "next/link";
+import { bookingAPI } from "../../lib/api";
+import { generateReceipt, BookingDetails } from "../../utils/receiptGenerator";
 
 const BookingSuccessPage = () => {
   const searchParams = useSearchParams();
   const bookingId = searchParams?.get("bookingId");
-  const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (bookingId) {
-      // In a real app, you'd fetch booking details from the API
-      // For now, we'll show a success message with the booking ID
-      setTimeout(() => {
+    const fetchBookingDetails = async () => {
+      if (!bookingId) {
+        setError("No booking ID provided");
         setLoading(false);
-      }, 1000);
-    }
+        return;
+      }
+
+      try {
+        console.log('📋 Fetching booking details for ID:', bookingId);
+        const response = await bookingAPI.getPublicBookingById(bookingId);
+
+        if (response.data?.success) {
+          console.log('✅ Booking details fetched:', response.data.data.booking);
+          setBookingDetails(response.data.data.booking);
+        } else {
+          setError(response.data?.message || 'Failed to fetch booking details');
+        }
+      } catch (error: any) {
+        console.error('❌ Error fetching booking details:', error);
+        setError('Failed to fetch booking details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookingDetails();
   }, [bookingId]);
+
+  const handleDownloadReceipt = () => {
+    if (bookingDetails) {
+      console.log('📥 Generating receipt for booking:', bookingDetails._id);
+      generateReceipt(bookingDetails);
+    }
+  };
 
   if (loading) {
     return (
@@ -41,6 +70,48 @@ const BookingSuccessPage = () => {
           <div className="text-center">
             <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-gray-600">Loading booking details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CreditCard className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Booking</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Link
+              href="/"
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!bookingDetails) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <p className="text-gray-600">No booking details found.</p>
+            <Link
+              href="/"
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors mt-4 inline-block"
+            >
+              Back to Home
+            </Link>
           </div>
         </div>
       </div>
@@ -83,7 +154,7 @@ const BookingSuccessPage = () => {
               <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
                 <CreditCard className="w-4 h-4 text-blue-600" />
                 <span className="text-blue-600 font-mono font-semibold">
-                  {bookingId || "BK-" + Date.now()}
+                  {bookingDetails._id}
                 </span>
               </div>
             </div>
@@ -96,7 +167,7 @@ const BookingSuccessPage = () => {
                     <div>
                       <p className="font-semibold text-gray-900">Check-in</p>
                       <p className="text-gray-600">
-                        {new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString()}
+                        {new Date(bookingDetails.checkIn).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -106,7 +177,7 @@ const BookingSuccessPage = () => {
                     <div>
                       <p className="font-semibold text-gray-900">Check-out</p>
                       <p className="text-gray-600">
-                        {new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                        {new Date(bookingDetails.checkOut).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -115,7 +186,9 @@ const BookingSuccessPage = () => {
                     <User className="w-5 h-5 text-green-600" />
                     <div>
                       <p className="font-semibold text-gray-900">Duration</p>
-                      <p className="text-gray-600">1 night</p>
+                      <p className="text-gray-600">
+                        {Math.ceil((new Date(bookingDetails.checkOut).getTime() - new Date(bookingDetails.checkIn).getTime()) / (1000 * 60 * 60 * 24))} night(s)
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -125,23 +198,41 @@ const BookingSuccessPage = () => {
                     <MapPin className="w-5 h-5 text-orange-600" />
                     <div>
                       <p className="font-semibold text-gray-900">Room</p>
-                      <p className="text-gray-600">AC Room - Premium</p>
+                      <p className="text-gray-600">
+                        {bookingDetails.roomId?.roomNumber || 'N/A'} - {bookingDetails.roomId?.roomType || 'Standard'}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-purple-600" />
+                    <User className="w-5 h-5 text-purple-600" />
                     <div>
                       <p className="font-semibold text-gray-900">Guests</p>
-                      <p className="text-gray-600">2 Adults</p>
+                      <p className="text-gray-600">{bookingDetails.guests.length} Guest(s)</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <CreditCard className="w-5 h-5 text-red-600" />
                     <div>
+                      <p className="font-semibold text-gray-900">Total Amount</p>
+                      <p className="text-gray-900 font-semibold">₹{bookingDetails.totalAmount.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <div>
                       <p className="font-semibold text-gray-900">Payment Status</p>
-                      <p className="text-green-600 font-semibold">✅ Paid</p>
+                      <p className={`font-semibold ${
+                        bookingDetails.paymentStatus === 'paid' ? 'text-green-600' :
+                        bookingDetails.paymentStatus === 'pending' ? 'text-yellow-600' :
+                        'text-red-600'
+                      }`}>
+                        {bookingDetails.paymentStatus === 'paid' ? '✅ Paid' :
+                         bookingDetails.paymentStatus === 'pending' ? '⏳ Pending' :
+                         '❌ Failed'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -186,7 +277,10 @@ const BookingSuccessPage = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+            <button
+              onClick={handleDownloadReceipt}
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
               <Download className="w-5 h-5" />
               Download Receipt
             </button>

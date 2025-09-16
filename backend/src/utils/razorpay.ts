@@ -5,18 +5,15 @@ export class RazorpayService {
   private razorpay: Razorpay;
 
   constructor() {
-    console.log("oomb2",process.env.RAZORPAY_KEY_ID);
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET || 
-        process.env.RAZORPAY_KEY_ID === 'your-razorpay-key-id') {
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error('Razorpay credentials are not configured');
-      }
-      console.warn('⚠️ Razorpay credentials not configured - using development mode');
-    }
+    // Direct Razorpay credentials
+    const RAZORPAY_KEY_ID = 'rzp_test_RHyWk20J1eq916';
+    const RAZORPAY_KEY_SECRET = '07kT8SRki1euR7WfpcG4CJ7U';
+
+    console.log('✅ Razorpay credentials configured successfully');
 
     this.razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder123',
-      key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret_key_for_dev',
+      key_id: RAZORPAY_KEY_ID,
+      key_secret: RAZORPAY_KEY_SECRET,
     });
   }
 
@@ -60,9 +57,10 @@ export class RazorpayService {
     signature: string
   ): boolean {
     try {
+      const RAZORPAY_KEY_SECRET = '07kT8SRki1euR7WfpcG4CJ7U';
       const body = orderId + '|' + paymentId;
       const expectedSignature = crypto
-        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+        .createHmac('sha256', RAZORPAY_KEY_SECRET)
         .update(body.toString())
         .digest('hex');
 
