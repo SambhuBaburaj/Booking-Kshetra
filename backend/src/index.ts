@@ -16,6 +16,8 @@ import paymentRoutes from "./routes/paymentRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import roomRoutes from "./routes/roomRoutes";
+import ezeeRoutes from "./routes/ezeeRoutes";
+import ezeePaymentRoutes from "./routes/ezeePaymentRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -181,6 +183,8 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ezee", ezeeRoutes);
+app.use("/api/ezee/payments", ezeePaymentRoutes);
 
 // API info endpoint
 app.get("/api", (req, res) => {
@@ -195,6 +199,8 @@ app.get("/api", (req, res) => {
       payments: "/api/payments",
       notifications: "/api/notifications",
       admin: "/api/admin",
+      ezee: "/api/ezee",
+      ezeePayments: "/api/ezee/payments",
     },
     documentation: "https://github.com/your-repo/api-docs",
   });
