@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Home, 
-  Calendar, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Home,
+  Calendar,
+  Users,
+  Settings,
   LogOut,
   Menu,
   X,
-  Shield
+  Shield,
+  Activity
 } from 'lucide-react';
 
 const AdminNav = () => {
@@ -37,6 +38,8 @@ const AdminNav = () => {
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/rooms', icon: Home, label: 'Rooms' },
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
+    { href: '/admin/yoga', icon: Activity, label: 'Yoga Sessions' },
+    { href: '/admin/teachers', icon: Users, label: 'Teachers' },
     { href: '/admin/users', icon: Users, label: 'Users' },
   ];
 

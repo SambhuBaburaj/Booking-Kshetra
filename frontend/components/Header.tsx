@@ -9,7 +9,7 @@ export default function Header() {
 
   const navigation = [
     { name: "Home", href: "/" },
-    { name: "Rooms & Suites", href: "/rooms" },
+    // { name: "Rooms & Suites", href: "/rooms" },
     { name: "Yoga Sessions", href: "/yoga" },
     { name: "Services", href: "/services" },
     { name: "Contact", href: "/contact" },

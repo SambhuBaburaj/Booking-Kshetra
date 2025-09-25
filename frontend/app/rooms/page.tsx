@@ -166,7 +166,7 @@ const RoomsPage = () => {
   });
 
   const handleBookRoom = (room: Room) => {
-    // Store selected room in localStorage and redirect to booking
+    // Store selected room in localStorage for potential future use
     localStorage.setItem(
       "selectedRoom",
       JSON.stringify({
@@ -178,7 +178,8 @@ const RoomsPage = () => {
       })
     );
 
-    router.push("/booking");
+    // Redirect to external booking system
+    window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank');
   };
 
   const RoomCard = ({ room }: { room: Room }) => (

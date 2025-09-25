@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, Users, Star } from 'lucide-react'
 import Header from '../components/Header'
-import BookingWidget from '../components/BookingWidget'
 
 export default function Home() {
   return (
@@ -50,13 +49,18 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Booking Widget */}
+          {/* Book Now Button */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <BookingWidget />
+            <button
+              onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
+              className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white px-12 py-4 rounded-lg text-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 hover:scale-105 active:transform active:scale-100"
+            >
+              Book Now
+            </button>
           </motion.div>
         </div>
       </section>

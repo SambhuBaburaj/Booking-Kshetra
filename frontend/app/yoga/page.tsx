@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -14,275 +14,205 @@ import {
   MapPin,
   CheckCircle,
   User,
-  Globe
+  Globe,
+  DollarSign,
+  BookOpen,
+  Activity
 } from 'lucide-react'
 import Header from '../../components/Header'
+import { useRouter } from 'next/navigation'
+import { yogaAPI } from '../../lib/api'
 
-interface YogaProgram {
-  id: string
-  title: string
-  duration: string
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels'
+interface YogaSession {
+  _id: string
+  type: '200hr' | '300hr'
+  batchName: string
+  startDate: string
+  endDate: string
+  capacity: number
+  bookedSeats: number
   price: number
-  description: string
-  highlights: string[]
-  schedule: string[]
-  includes: string[]
-  instructor: string
-  maxStudents: number
-  image: string
+  instructor: {
+    _id: string
+    name: string
+    bio: string
+    profileImage?: string
+  }
+  schedule: {
+    days: string[]
+    time: string
+  }
+  isActive: boolean
+  description?: string
+  prerequisites: string[]
+  availableSeats?: number
 }
 
-const yogaPrograms: YogaProgram[] = [
-  {
-    id: '1',
-    title: '200-Hour Yoga Teacher Training',
-    duration: '28 Days',
-    level: 'Beginner',
-    price: 150000,
-    description: 'Comprehensive yoga teacher training program covering asanas, pranayama, meditation, philosophy, anatomy, and teaching methodology. Perfect for beginners looking to deepen their practice or become certified instructors.',
-    highlights: [
-      'Yoga Alliance Certified',
-      'Traditional Hatha & Vinyasa',
-      'Meditation & Pranayama',
-      'Yoga Philosophy & History',
-      'Anatomy & Physiology',
-      'Teaching Methodology'
-    ],
-    schedule: [
-      '6:00 AM - Morning Meditation',
-      '6:30 AM - Asana Practice',
-      '8:30 AM - Breakfast',
-      '10:00 AM - Philosophy Class',
-      '12:00 PM - Lunch',
-      '3:00 PM - Anatomy/Teaching',
-      '5:00 PM - Pranayama',
-      '6:00 PM - Evening Practice',
-      '8:00 PM - Dinner'
-    ],
-    includes: [
-      'All meals (vegetarian)',
-      'Accommodation',
-      'Study materials',
-      'Yoga props',
-      'Certificate',
-      'Post-training support'
-    ],
-    instructor: 'Guru Rajeesh Kumar',
-    maxStudents: 15,
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3'
-  },
-  {
-    id: '2',
-    title: '300-Hour Advanced Teacher Training',
-    duration: '35 Days',
-    level: 'Advanced',
-    price: 200000,
-    description: 'Advanced training for certified teachers looking to deepen their knowledge and expand their teaching skills. Covers advanced asanas, adjustments, sequencing, and business aspects of yoga teaching.',
-    highlights: [
-      'Advanced Asana Practice',
-      'Hands-on Adjustments',
-      'Sequencing & Class Design',
-      'Business of Yoga',
-      'Ayurveda Integration',
-      'Advanced Philosophy'
-    ],
-    schedule: [
-      '5:30 AM - Personal Practice',
-      '7:00 AM - Advanced Asanas',
-      '9:00 AM - Breakfast',
-      '10:30 AM - Philosophy/Business',
-      '12:30 PM - Lunch',
-      '2:30 PM - Adjustments Training',
-      '4:30 PM - Teaching Practice',
-      '6:00 PM - Meditation',
-      '8:00 PM - Dinner'
-    ],
-    includes: [
-      'All meals (organic)',
-      'Private accommodation',
-      'Advanced study materials',
-      'Teaching practice sessions',
-      'Business mentorship',
-      'Lifetime support'
-    ],
-    instructor: 'Acharya Vishnu Das',
-    maxStudents: 12,
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3'
-  },
-  {
-    id: '3',
-    title: 'Weekly Yoga Retreat',
-    duration: '7 Days',
-    level: 'All Levels',
-    price: 35000,
-    description: 'A rejuvenating week-long retreat combining daily yoga practice, meditation, healthy meals, and free time to explore the beautiful Kerala coast.',
-    highlights: [
-      'Daily Yoga Classes',
-      'Guided Meditation',
-      'Ayurvedic Meals',
-      'Beach Access',
-      'Cultural Excursions',
-      'Relaxation Time'
-    ],
-    schedule: [
-      '6:30 AM - Morning Yoga',
-      '8:00 AM - Breakfast',
-      '10:00 AM - Free Time/Activities',
-      '12:00 PM - Lunch',
-      '2:00 PM - Rest/Spa Time',
-      '4:00 PM - Workshop/Excursion',
-      '6:00 PM - Evening Yoga',
-      '7:30 PM - Dinner'
-    ],
-    includes: [
-      'All vegetarian meals',
-      'Accommodation',
-      'Yoga classes',
-      'Meditation sessions',
-      'Local excursions',
-      'Yoga props'
-    ],
-    instructor: 'Various Instructors',
-    maxStudents: 20,
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3'
-  },
-  {
-    id: '4',
-    title: 'Drop-in Yoga Classes',
-    duration: '90 Minutes',
-    level: 'All Levels',
-    price: 1500,
-    description: 'Daily yoga classes open to all levels. Perfect for guests staying at the resort or locals looking for regular practice.',
-    highlights: [
-      'Morning & Evening Sessions',
-      'All Levels Welcome',
-      'Traditional Hatha Yoga',
-      'Experienced Instructors',
-      'Small Group Setting',
-      'Flexible Schedule'
-    ],
-    schedule: [
-      '6:30 AM - Morning Session',
-      '6:00 PM - Evening Session'
-    ],
-    includes: [
-      'Yoga mat provided',
-      'Props available',
-      'Water bottle',
-      'Relaxation music'
-    ],
-    instructor: 'Daily Instructor',
-    maxStudents: 25,
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3'
+interface Teacher {
+  _id: string
+  name: string
+  bio: string
+  specializations: string[]
+  experience: number
+  certifications: string[]
+  email: string
+  phone?: string
+  profileImage?: string
+  isActive: boolean
+  socialMedia?: {
+    instagram?: string
+    facebook?: string
+    website?: string
   }
-]
-
-const instructors = [
-  {
-    name: 'Guru Rajeesh Kumar',
-    title: 'Lead Yoga Instructor',
-    experience: '20+ years',
-    specialization: 'Hatha Yoga, Meditation',
-    description: 'Guru Rajeesh is a traditional yoga master from Rishikesh with over two decades of teaching experience. He specializes in classical Hatha Yoga and Vedic meditation.',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3'
-  },
-  {
-    name: 'Acharya Vishnu Das',
-    title: 'Senior Yoga Teacher',
-    experience: '15+ years',
-    specialization: 'Ashtanga, Philosophy',
-    description: 'A dedicated practitioner and teacher of Ashtanga Yoga with deep knowledge of yoga philosophy and Sanskrit texts. Known for his precise alignment and spiritual teachings.',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3'
-  },
-  {
-    name: 'Maya Krishnan',
-    title: 'Yoga Instructor',
-    experience: '8+ years',
-    specialization: 'Vinyasa, Pranayama',
-    description: 'Maya brings a modern approach to traditional yoga practices, specializing in dynamic Vinyasa flows and advanced breathing techniques.',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3'
-  }
-]
+}
 
 export default function YogaPage() {
-  const [selectedProgram, setSelectedProgram] = useState<YogaProgram | null>(null)
+  const router = useRouter()
+  const [yogaSessions, setYogaSessions] = useState<YogaSession[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedSession, setSelectedSession] = useState<YogaSession | null>(null)
 
-  const handleBookProgram = (program: YogaProgram) => {
-    // Store selected program and redirect to booking
-    localStorage.setItem('selectedYogaProgram', JSON.stringify(program))
-    // In a real app, you'd redirect to booking page or open booking modal
-    alert(`Booking ${program.title} - Implementation needed!`)
+  useEffect(() => {
+    fetchYogaSessions()
+    fetchTeachers()
+  }, [])
+
+  const fetchYogaSessions = async () => {
+    try {
+      const response = await yogaAPI.getAllSessions({ upcoming: 'true' })
+      if (response.data.success) {
+        setYogaSessions(response.data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching yoga sessions:', error)
+    }
   }
 
-  const ProgramCard = ({ program }: { program: YogaProgram }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div className="h-64 bg-gradient-to-br from-orange-400 to-pink-500 relative">
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="absolute top-4 left-4">
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            program.level === 'Beginner' ? 'bg-green-100 text-green-800' :
-            program.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-            program.level === 'Advanced' ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
-          }`}>
-            {program.level}
-          </span>
-        </div>
-        <div className="absolute bottom-4 left-4 text-white">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-4 h-4" />
-            <span>{program.duration}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            <span>Max {program.maxStudents} students</span>
-          </div>
-        </div>
-      </div>
+  const fetchTeachers = async () => {
+    try {
+      const response = await yogaAPI.getAllTeachers()
+      if (response.data.success) {
+        setTeachers(response.data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      <div className="p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">{program.title}</h3>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-3">{program.description}</p>
+  const handleBookSession = (session: YogaSession) => {
+    // Store session data for potential future use
+    localStorage.setItem('selectedYogaSession', JSON.stringify(session))
+    // Redirect to external booking system
+    window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')
+  }
 
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <User className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Instructor: {program.instructor}</span>
+  const handleExternalBooking = () => {
+    window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const SessionCard = ({ session }: { session: YogaSession }) => {
+    const duration = Math.ceil((new Date(session.endDate).getTime() - new Date(session.startDate).getTime()) / (1000 * 60 * 60 * 24))
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
+      >
+        <div className="h-64 bg-gradient-to-br from-orange-400 to-pink-500 relative">
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute top-4 left-4">
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+              session.type === '200hr' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'
+            }`}>
+              {session.type} Training
+            </span>
           </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-2xl font-bold text-orange-600">
-              ₹{program.price.toLocaleString()}
+          <div className="absolute bottom-4 left-4 text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="w-4 h-4" />
+              <span>{duration} days</span>
             </div>
-            <div className="text-sm text-gray-600">per person</div>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedProgram(program)}
-              className="px-4 py-2 border border-orange-600 text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors"
-            >
-              View Details
-            </button>
-            <button
-              onClick={() => handleBookProgram(program)}
-              className="px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
-            >
-              Book Now
-            </button>
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span>{session.capacity - session.bookedSeats}/{session.capacity} available</span>
+            </div>
           </div>
         </div>
+
+        <div className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{session.batchName}</h3>
+          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+            {session.description || `${session.type} Yoga Teacher Training program with comprehensive curriculum covering asanas, pranayama, meditation, and teaching methodology.`}
+          </p>
+
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">Instructor: {session.instructor.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">
+                {formatDate(session.startDate)} - {formatDate(session.endDate)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-500" />
+              <span className="text-sm text-gray-600">
+                {session.schedule.days.join(', ')} at {session.schedule.time}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-2xl font-bold text-orange-600">
+                ₹{session.price.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-600">per person</div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedSession(session)}
+                className="px-4 py-2 border border-orange-600 text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                View Details
+              </button>
+              <button
+                onClick={() => handleBookSession(session)}
+                className="px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
+                disabled={session.bookedSeats >= session.capacity}
+              >
+                {session.bookedSeats >= session.capacity ? 'Full' : 'Book Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
       </div>
-    </motion.div>
-  )
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -323,15 +253,23 @@ export default function YogaPage() {
           >
             <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-4">Our Yoga Programs</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From beginner-friendly classes to intensive teacher training, find the perfect program for your journey
+              From intensive teacher training to daily practice sessions, find the perfect program for your journey
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-16">
-            {yogaPrograms.map((program) => (
-              <ProgramCard key={program.id} program={program} />
-            ))}
-          </div>
+          {yogaSessions.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-8 mb-16">
+              {yogaSessions.map((session) => (
+                <SessionCard key={session._id} session={session} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No active sessions available</h3>
+              <p className="text-gray-600 mb-6">Check back soon for upcoming yoga sessions and teacher training programs.</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -400,52 +338,76 @@ export default function YogaPage() {
       </section>
 
       {/* Instructors Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-4">Meet Our Teachers</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Learn from experienced masters who embody the true spirit of yoga
-            </p>
-          </motion.div>
+      {teachers.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-4">Meet Our Teachers</h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Learn from experienced masters who embody the true spirit of yoga
+              </p>
+            </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {instructors.map((instructor, index) => (
-              <motion.div
-                key={instructor.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-sm overflow-hidden"
-              >
-                <div className="h-64 bg-gray-200">
-                  <img
-                    src={instructor.image}
-                    alt={instructor.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">{instructor.name}</h3>
-                  <p className="text-orange-600 font-medium mb-2">{instructor.title}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                    <span>{instructor.experience}</span>
-                    <span>•</span>
-                    <span>{instructor.specialization}</span>
+            <div className="grid md:grid-cols-3 gap-8">
+              {teachers.slice(0, 6).map((teacher, index) => (
+                <motion.div
+                  key={teacher._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white rounded-xl shadow-sm overflow-hidden"
+                >
+                  <div className="h-64 bg-gray-200 flex items-center justify-center">
+                    {teacher.profileImage ? (
+                      <img
+                        src={teacher.profileImage}
+                        alt={teacher.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center">
+                        <span className="text-2xl font-bold text-orange-600">
+                          {teacher.name[0]}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-gray-600 text-sm">{instructor.description}</p>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">{teacher.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                      <span>{teacher.experience} years experience</span>
+                      <span>•</span>
+                      <span>{teacher.specializations[0]}</span>
+                    </div>
+                    <p className="text-gray-600 text-sm line-clamp-3">{teacher.bio}</p>
+
+                    {teacher.certifications.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {teacher.certifications.slice(0, 2).map((cert, i) => (
+                          <span key={i} className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                            {cert}
+                          </span>
+                        ))}
+                        {teacher.certifications.length > 2 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                            +{teacher.certifications.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Daily Schedule Section */}
       <section className="py-16 bg-white">
@@ -499,7 +461,10 @@ export default function YogaPage() {
               <div className="mt-6 pt-4 border-t border-orange-200">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold text-gray-900">₹1,500 per class</span>
-                  <button className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                  <button
+                    onClick={handleExternalBooking}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                  >
                     Book Now
                   </button>
                 </div>
@@ -542,7 +507,10 @@ export default function YogaPage() {
               <div className="mt-6 pt-4 border-t border-purple-200">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold text-gray-900">₹1,500 per class</span>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                  <button
+                    onClick={handleExternalBooking}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
                     Book Now
                   </button>
                 </div>
@@ -565,10 +533,16 @@ export default function YogaPage() {
               Whether you're a complete beginner or experienced practitioner, we have the perfect program for you
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-white text-orange-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors">
-                View All Programs
+              <button
+                onClick={handleExternalBooking}
+                className="px-8 py-3 bg-white text-orange-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Book Now
               </button>
-              <button className="px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-orange-600 transition-colors">
+              <button
+                onClick={() => router.push('/contact')}
+                className="px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-orange-600 transition-colors"
+              >
                 Contact Us
               </button>
             </div>
@@ -576,8 +550,8 @@ export default function YogaPage() {
         </div>
       </section>
 
-      {/* Program Details Modal */}
-      {selectedProgram && (
+      {/* Session Details Modal */}
+      {selectedSession && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -586,9 +560,9 @@ export default function YogaPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-gray-900">{selectedProgram.title}</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{selectedSession.batchName}</h2>
                 <button
-                  onClick={() => setSelectedProgram(null)}
+                  onClick={() => setSelectedSession(null)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   ✕
@@ -597,52 +571,93 @@ export default function YogaPage() {
 
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Program Highlights</h3>
-                  <ul className="space-y-2 mb-6">
-                    {selectedProgram.highlights.map((highlight, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="text-gray-600">{highlight}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Program Details</h3>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-600">{selectedSession.type} Training Program</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-600">
+                        {formatDate(selectedSession.startDate)} - {formatDate(selectedSession.endDate)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-600">
+                        {selectedSession.schedule.days.join(', ')} at {selectedSession.schedule.time}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-600">
+                        {selectedSession.capacity - selectedSession.bookedSeats} spots available (out of {selectedSession.capacity})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span className="text-gray-600">Instructor: {selectedSession.instructor.name}</span>
+                    </div>
+                  </div>
 
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">What's Included</h3>
-                  <ul className="space-y-2">
-                    {selectedProgram.includes.map((item, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-blue-600" />
-                        <span className="text-gray-600">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {selectedSession.description && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                      <p className="text-gray-600">{selectedSession.description}</p>
+                    </div>
+                  )}
+
+                  {selectedSession.prerequisites.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Prerequisites</h3>
+                      <ul className="space-y-2">
+                        {selectedSession.prerequisites.map((prereq, index) => (
+                          <li key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-blue-600" />
+                            <span className="text-gray-600">{prereq}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Daily Schedule</h3>
-                  <div className="space-y-2 mb-6">
-                    {selectedProgram.schedule.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <div className="text-3xl font-bold text-orange-600 mb-2">
+                      ₹{selectedSession.price.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-600 mb-6">
+                      {selectedSession.type} • {Math.ceil((new Date(selectedSession.endDate).getTime() - new Date(selectedSession.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                    </div>
 
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600 mb-2">
-                      ₹{selectedProgram.price.toLocaleString()}
+                    <div className="space-y-3 mb-6">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Available spots:</span>
+                        <span className="font-semibold">{selectedSession.capacity - selectedSession.bookedSeats}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total capacity:</span>
+                        <span className="font-semibold">{selectedSession.capacity}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-600 mb-4">
-                      Duration: {selectedProgram.duration} • Level: {selectedProgram.level}
-                    </div>
+
                     <button
-                      onClick={() => handleBookProgram(selectedProgram)}
-                      className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
+                      onClick={() => handleBookSession(selectedSession)}
+                      className="w-full px-4 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400"
+                      disabled={selectedSession.bookedSeats >= selectedSession.capacity}
                     >
-                      Book This Program
+                      {selectedSession.bookedSeats >= selectedSession.capacity ? 'Fully Booked' : 'Book This Program'}
                     </button>
                   </div>
+
+                  {selectedSession.instructor.bio && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">About Your Instructor</h3>
+                      <p className="text-gray-600 text-sm">{selectedSession.instructor.bio}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
