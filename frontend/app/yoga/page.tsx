@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   Users,
   Clock,
@@ -17,9 +17,11 @@ import {
   Globe,
   DollarSign,
   BookOpen,
-  Activity
+  Activity,
+  ArrowRight
 } from 'lucide-react'
 import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 import { useRouter } from 'next/navigation'
 import { yogaAPI } from '../../lib/api'
 
@@ -72,6 +74,10 @@ export default function YogaPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSession, setSelectedSession] = useState<YogaSession | null>(null)
+  const [selectedDailySession, setSelectedDailySession] = useState<string>('')
+  const [selectedDate, setSelectedDate] = useState<string>('')
+  const { scrollYProgress } = useScroll()
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%'])
 
   useEffect(() => {
     fetchYogaSessions()
@@ -104,8 +110,22 @@ export default function YogaPage() {
 
   const handleBookSession = (session: YogaSession) => {
     console.log('Booking session:', session._id)
-    // Redirect to our internal booking system
-    router.push(`/yoga/booking/details?session=${session._id}`)
+    // Redirect to our internal booking system with program type
+    router.push(`/yoga/booking/details?session=${session._id}&type=program`)
+  }
+
+  const handleDailySessionBooking = () => {
+    if (!selectedDailySession) {
+      alert('Please select a session time')
+      return
+    }
+    if (!selectedDate) {
+      alert('Please select a date')
+      return
+    }
+
+    // Redirect to booking with daily session details
+    router.push(`/yoga/booking/details?session=${selectedDailySession}&type=daily&date=${selectedDate}`)
   }
 
   const handleExternalBooking = () => {
@@ -219,58 +239,539 @@ export default function YogaPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative min-h-[60vh] flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-pink-600/80" />
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3)'
-          }}
-        />
+      {/* Hero Section with Parallax */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Parallax Background */}
+        <motion.div
+          style={{ y }}
+          className="absolute inset-0 z-0"
+        >
+          <div
+            className="w-full h-[120%] bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: 'url(https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80)'
+            }}
+          />
+        </motion.div>
 
-        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-orange-900/80 via-pink-900/70 to-purple-900/80" />
+
+        {/* Floating Particles Animation */}
+        <div className="absolute inset-0 z-20">
+          {[...Array(15)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-white/20 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [-20, -80, -20],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 4 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 3,
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Hero Content */}
+        <div className="relative z-30 text-center text-white px-4 max-w-6xl mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1 }}
+            className="mb-12"
           >
-            <h1 className="text-4xl md:text-6xl font-light mb-6">Yoga Sessions</h1>
-            <p className="text-xl md:text-2xl font-light opacity-90 max-w-2xl mx-auto leading-relaxed">
-              Transform your life through authentic yoga practice in the serene environment of Kerala
-            </p>
+            {/* Decorative Element */}
+            <motion.div
+              className="flex justify-center mb-8"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            >
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
+                <Activity className="w-10 h-10 text-orange-300" />
+              </div>
+            </motion.div>
+
+            <motion.h1
+              className="text-6xl md:text-8xl font-extralight mb-8 tracking-wide"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+            >
+              <span className="bg-gradient-to-r from-white to-orange-200 bg-clip-text text-transparent">
+                Yoga & Wellness
+              </span>
+            </motion.h1>
+
+            <motion.p
+              className="text-2xl md:text-3xl font-light opacity-90 max-w-4xl mx-auto leading-relaxed mb-8"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.7 }}
+            >
+              Transform your body, mind, and soul through authentic yoga practices in Kerala's most serene retreat
+            </motion.p>
+
+            {/* Quick Stats */}
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto mb-12"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.9 }}
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-300">200+</div>
+                <div className="text-sm text-white/80">Students Trained</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-pink-300">5+</div>
+                <div className="text-sm text-white/80">Expert Teachers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-300">10+</div>
+                <div className="text-sm text-white/80">Years Experience</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-300">24/7</div>
+                <div className="text-sm text-white/80">Support</div>
+              </div>
+            </motion.div>
+
+            {/* CTA Buttons */}
+            <motion.div
+              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 1.1 }}
+            >
+              <button
+                onClick={() => router.push('/yoga/booking/details')}
+                className="group bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white px-10 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 shadow-2xl hover:shadow-orange-500/25 transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <Calendar className="w-6 h-6" />
+                Book Yoga Session
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => {
+                  const element = document.getElementById('programs-section')
+                  element?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="group bg-white/10 backdrop-blur-sm border-2 border-white/30 text-white px-10 py-4 rounded-2xl text-lg font-semibold transition-all duration-300 hover:bg-white/20 flex items-center gap-3"
+              >
+                <BookOpen className="w-6 h-6" />
+                View Programs
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
           </motion.div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+            <motion.div
+              className="w-1 h-3 bg-white/70 rounded-full mt-2"
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </div>
+        </motion.div>
       </section>
 
       {/* Programs Section */}
-      <section className="py-16">
+      <section id="programs-section" className="py-32 bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-12"
+            className="text-center mb-20"
           >
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-4">Our Yoga Programs</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From intensive teacher training to daily practice sessions, find the perfect program for your journey
+            <h2 className="text-5xl md:text-6xl font-extralight text-gray-900 mb-6">
+              Yoga <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">Programs</span>
+            </h2>
+            <p className="text-2xl text-gray-600 max-w-3xl mx-auto">
+              Comprehensive teacher training programs designed to deepen your practice and transform your life
             </p>
           </motion.div>
 
-          {yogaSessions.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-8 mb-16">
-              {yogaSessions.map((session) => (
-                <SessionCard key={session._id} session={session} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No active sessions available</h3>
-              <p className="text-gray-600 mb-6">Check back soon for upcoming yoga sessions and teacher training programs.</p>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center py-20">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                className="w-16 h-16 border-4 border-orange-200 border-t-orange-600 rounded-full"
+              />
             </div>
           )}
+
+          {/* Dynamic Programs from API */}
+          {!loading && yogaSessions.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {yogaSessions.map((session, index) => {
+                const colorTheme = session.type === '200hr'
+                  ? {
+                      primary: 'orange',
+                      gradient: 'from-orange-600 to-pink-600',
+                      bg: 'bg-orange-100',
+                      text: 'text-orange-800',
+                      accent: 'text-orange-500',
+                      bgColor: 'bg-orange-500'
+                    }
+                  : {
+                      primary: 'purple',
+                      gradient: 'from-purple-600 to-pink-600',
+                      bg: 'bg-purple-100',
+                      text: 'text-purple-800',
+                      accent: 'text-purple-500',
+                      bgColor: 'bg-purple-500'
+                    }
+
+                const programImage = session.type === '200hr'
+                  ? 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+                  : 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+
+                return (
+                  <motion.div
+                    key={session._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Compact Image */}
+                    <div className="relative h-48 overflow-hidden">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                        style={{ backgroundImage: `url('${programImage}')` }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+                      {/* Session Type Badge */}
+                      <div className="absolute top-3 left-3">
+                        <span className={`px-3 py-1 ${colorTheme.bgColor} text-white rounded-full text-xs font-semibold`}>
+                          {session.type} TTC
+                        </span>
+                      </div>
+
+                      {/* Available Seats */}
+                      <div className="absolute top-3 right-3">
+                        <span className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white rounded-full text-xs">
+                          {session.availableSeats || session.capacity - session.bookedSeats} seats
+                        </span>
+                      </div>
+
+                      {/* Title and Rating */}
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <h3 className="text-lg font-bold mb-1 truncate">{session.batchName}</h3>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                            <span className="text-sm">4.9</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Compact Content */}
+                    <div className="p-6">
+                      {/* Basic Info */}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-gray-600 text-sm">
+                          <Calendar className="w-4 h-4" />
+                          <span className="truncate">
+                            {new Date(session.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - {new Date(session.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600 text-sm">
+                          <Clock className="w-4 h-4" />
+                          <span>{session.schedule.time}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-600 text-sm">
+                          <Users className="w-4 h-4" />
+                          <span>Max {session.capacity} students</span>
+                        </div>
+                      </div>
+
+                      {/* Price and Actions */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <div className="text-2xl font-bold text-gray-900">₹{session.price.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">All inclusive</div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setSelectedSession(session)}
+                          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                        >
+                          View Details
+                        </button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`flex-1 px-4 py-2 bg-gradient-to-r ${colorTheme.gradient} text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold`}
+                        >
+                          Enroll Now
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          ) : !loading && (
+            /* No Programs Available */
+            <div className="text-center py-20">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="max-w-md mx-auto"
+              >
+                <div className="w-24 h-24 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Activity className="w-12 h-12 text-orange-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">No Programs Available</h3>
+                <p className="text-gray-600 mb-8">Check back soon for upcoming yoga teacher training programs and workshops.</p>
+                <button
+                  onClick={() => router.push('/contact')}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
+                >
+                  Contact Us for Updates
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Daily Yoga Sessions Section */}
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-5xl md:text-6xl font-extralight text-white mb-6">
+              Daily Yoga <span className="bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">Sessions</span>
+            </h2>
+            <p className="text-2xl text-gray-300 max-w-3xl mx-auto">
+              Choose your preferred time and join our transformative yoga classes
+            </p>
+          </motion.div>
+
+          {/* Session Types */}
+          <div className="grid lg:grid-cols-2 gap-12 mb-16">
+            {/* Regular Yoga Sessions */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center">
+                  <Activity className="w-8 h-8 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold text-white">Regular Yoga Sessions</h3>
+                  <p className="text-xl text-orange-200 font-semibold">₹500 per session</p>
+                  <p className="text-orange-300 text-sm">1.5 hour session</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sunrise className="w-5 h-5 text-yellow-400" />
+                    <span className="text-white font-semibold">Morning Sessions</span>
+                  </div>
+                  <div className="space-y-2 ml-8">
+                    <div className="text-yellow-200">7:30 AM - 9:00 AM</div>
+                    <div className="text-yellow-200">9:00 AM - 10:30 AM</div>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sunset className="w-5 h-5 text-orange-400" />
+                    <span className="text-white font-semibold">Evening Session</span>
+                  </div>
+                  <div className="ml-8">
+                    <div className="text-orange-200">4:00 PM - 5:30 PM</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  "Traditional Hatha Yoga",
+                  "Pranayama (Breathing)",
+                  "Meditation Practice",
+                  "Perfect for all levels"
+                ].map((feature, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    className="flex items-center gap-3 text-white/90"
+                  >
+                    <CheckCircle className="w-5 h-5 text-orange-400" />
+                    <span>{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Yoga Therapy Sessions */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+            >
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                  <Heart className="w-8 h-8 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-bold text-white">Yoga Therapy Sessions</h3>
+                  <p className="text-xl text-purple-200 font-semibold">₹1,500 per session</p>
+                  <p className="text-purple-300 text-sm">1.5 hour session</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Clock className="w-5 h-5 text-blue-400" />
+                    <span className="text-white font-semibold">Available Times</span>
+                  </div>
+                  <div className="space-y-2 ml-8">
+                    <div className="text-blue-200">11:00 AM - 12:30 PM</div>
+                    <div className="text-blue-200">5:30 PM - 7:00 PM</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  "Personalized therapy approach",
+                  "Healing-focused practices",
+                  "One-on-one guidance",
+                  "Therapeutic techniques"
+                ].map((feature, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    className="flex items-center gap-3 text-white/90"
+                  >
+                    <CheckCircle className="w-5 h-5 text-purple-400" />
+                    <span>{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Interactive Booking Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-8">
+              <h3 className="text-3xl font-bold text-white mb-4">Book Your Session</h3>
+              <p className="text-gray-300">Select your preferred date and time slot</p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Date Selection */}
+              <div>
+                <label className="block text-white font-semibold mb-4">Select Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                />
+              </div>
+
+              {/* Time Selection */}
+              <div>
+                <label className="block text-white font-semibold mb-4">Select Session Type & Time</label>
+                <select
+                  value={selectedDailySession}
+                  onChange={(e) => setSelectedDailySession(e.target.value)}
+                  className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
+                >
+                  <option value="" className="bg-gray-800">Choose a session...</option>
+                  <optgroup label="Regular Yoga Sessions - ₹500" className="bg-gray-800">
+                    <option value="regular-730" className="bg-gray-800">7:30 AM - 9:00 AM</option>
+                    <option value="regular-900" className="bg-gray-800">9:00 AM - 10:30 AM</option>
+                    <option value="regular-400" className="bg-gray-800">4:00 PM - 5:30 PM</option>
+                  </optgroup>
+                  <optgroup label="Yoga Therapy Sessions - ₹1,500" className="bg-gray-800">
+                    <option value="therapy-1100" className="bg-gray-800">11:00 AM - 12:30 PM</option>
+                    <option value="therapy-530" className="bg-gray-800">5:30 PM - 7:00 PM</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDailySessionBooking}
+                className="bg-gradient-to-r from-orange-600 to-pink-600 hover:from-orange-700 hover:to-pink-700 text-white px-12 py-4 rounded-2xl text-xl font-bold shadow-2xl flex items-center justify-center gap-3 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!selectedDate || !selectedDailySession}
+              >
+                <Calendar className="w-6 h-6" />
+                Book Your Yoga Session
+                <ArrowRight className="w-6 h-6" />
+              </motion.button>
+            </div>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-sm">
+                <Clock className="w-4 h-4 inline mr-2" />
+                Booking confirmation will be sent via email
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -409,117 +910,6 @@ export default function YogaPage() {
           </div>
         </section>
       )}
-
-      {/* Daily Schedule Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-light text-gray-900 mb-4">Daily Yoga Schedule</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Join our regular classes or book private sessions
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-orange-50 to-pink-50 p-8 rounded-xl"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <Sunrise className="w-8 h-8 text-orange-600" />
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-900">Morning Session</h3>
-                  <p className="text-gray-600">6:30 AM - 8:00 AM</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-orange-600" />
-                  <span>Traditional Hatha Yoga</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-orange-600" />
-                  <span>Pranayama (Breathing)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-orange-600" />
-                  <span>Meditation</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-orange-600" />
-                  <span>Perfect for all levels</span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-orange-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-gray-900">₹1,500 per class</span>
-                  <button
-                    onClick={handleExternalBooking}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                  >
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="bg-gradient-to-br from-blue-50 to-purple-50 p-8 rounded-xl"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <Sunset className="w-8 h-8 text-purple-600" />
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-900">Evening Session</h3>
-                  <p className="text-gray-600">6:00 PM - 7:30 PM</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-purple-600" />
-                  <span>Vinyasa Flow</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-purple-600" />
-                  <span>Restorative Poses</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-purple-600" />
-                  <span>Sunset Meditation</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-purple-600" />
-                  <span>Beach-side location</span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-purple-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold text-gray-900">₹1,500 per class</span>
-                  <button
-                    onClick={handleExternalBooking}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    Book Now
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-orange-600 to-pink-600">
@@ -665,6 +1055,8 @@ export default function YogaPage() {
           </motion.div>
         </div>
       )}
+
+      <Footer />
     </div>
   )
 }

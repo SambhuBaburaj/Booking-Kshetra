@@ -17,34 +17,41 @@ import {
   Smartphone,
   Loader,
   Activity,
-  Heart,
-  BookOpen
+  Car,
+  Plane,
+  Waves
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 
-// Types for our simplified booking
-type SessionData = {
-  id: string
+// Types for services booking
+interface Service {
+  _id: string
   name: string
-  type: 'program' | 'daily_regular' | 'daily_therapy'
+  category: 'airport_pickup' | 'vehicle_rental' | 'surfing'
   price: number
-  duration: string
+  priceUnit: string
   description: string
-  schedule?: string
-  instructor?: string
-  startDate?: string
-  endDate?: string
+  duration?: string
+  features: string[]
+  maxQuantity?: number
+  isActive: boolean
 }
 
-type FormData = {
+interface SelectedService extends Service {
+  quantity: number
+}
+
+interface FormData {
   name: string
   email: string
   phone: string
-  experience: 'beginner' | 'intermediate' | 'advanced'
+  specialRequests: string
 }
 
-type BookingData = {
-  session: SessionData
+interface CompleteBookingData {
+  services: SelectedService[]
+  date: string
+  totalAmount: number
   user: FormData
   timestamp: string
 }
@@ -65,36 +72,42 @@ const loadRazorpayScript = (): Promise<boolean> => {
   });
 };
 
-export default function YogaBookingPaymentPage() {
+export default function ServicesBookingPaymentPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [bookingData, setBookingData] = useState<BookingData | null>(null)
+  const [bookingData, setBookingData] = useState<CompleteBookingData | null>(null)
   const [paymentMethods] = useState([
     { id: 'razorpay', name: 'Razorpay', icon: CreditCard, description: 'Credit/Debit Cards, UPI, Net Banking, Wallets' }
   ])
 
   useEffect(() => {
-    // Get booking data from localStorage
-    const storedData = localStorage.getItem('yogaBookingData')
+    // Get complete booking data from localStorage
+    const storedData = localStorage.getItem('servicesCompleteBookingData')
     if (!storedData) {
-      router.push('/yoga')
+      router.push('/services')
       return
     }
 
     try {
-      const data: BookingData = JSON.parse(storedData)
+      const data: CompleteBookingData = JSON.parse(storedData)
       setBookingData(data)
     } catch (error) {
       console.error('Error parsing booking data:', error)
-      router.push('/yoga')
+      router.push('/services')
     }
   }, [router])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount)
+  const getServiceIcon = (category: 'airport_pickup' | 'vehicle_rental' | 'surfing') => {
+    switch (category) {
+      case 'airport_pickup':
+        return Plane
+      case 'vehicle_rental':
+        return Car
+      case 'surfing':
+        return Waves
+      default:
+        return Activity
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -103,6 +116,13 @@ export default function YogaBookingPaymentPage() {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(amount)
   }
 
   const handlePayment = async () => {
@@ -120,15 +140,15 @@ export default function YogaBookingPaymentPage() {
       }
 
       // For demo purposes, create a mock order ID
-      const simulatedOrderId = `yoga_order_${Date.now()}`
+      const simulatedOrderId = `services_order_${Date.now()}`
 
       // Razorpay options
       const options = {
         key: 'rzp_test_RHyWk20J1eq916', // Use your actual Razorpay key
-        amount: bookingData.session.price * 100,
+        amount: bookingData.totalAmount * 100,
         currency: 'INR',
         name: 'Kshetra Retreat Resort',
-        description: bookingData.session.name,
+        description: `Services: ${bookingData.services.map(s => s.name).join(', ')}`,
         order_id: simulatedOrderId,
         handler: async function (response: any) {
           try {
@@ -136,10 +156,11 @@ export default function YogaBookingPaymentPage() {
             console.log('Payment successful:', response)
 
             // Clear localStorage
-            localStorage.removeItem('yogaBookingData')
+            localStorage.removeItem('servicesBookingData')
+            localStorage.removeItem('servicesCompleteBookingData')
 
             // Redirect to success page
-            router.push(`/yoga/booking/success?payment_id=${response.razorpay_payment_id || 'demo_payment'}&order_id=${response.razorpay_order_id || simulatedOrderId}`)
+            router.push(`/services/booking/success?payment_id=${response.razorpay_payment_id || 'demo_payment'}&order_id=${response.razorpay_order_id || simulatedOrderId}`)
           } catch (error) {
             console.error('Payment verification error:', error)
             alert('Payment verification failed. Please contact support.')
@@ -219,65 +240,38 @@ export default function YogaBookingPaymentPage() {
               <h3 className="text-2xl font-bold text-white mb-8">Booking Summary</h3>
 
               <div className="space-y-6">
-                {/* Session Icon */}
-                <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl mx-auto">
-                  {bookingData.session.type === 'program' ? (
-                    <BookOpen className="w-10 h-10 text-white" />
-                  ) : bookingData.session.type === 'daily_therapy' ? (
-                    <Heart className="w-10 h-10 text-white" />
-                  ) : (
-                    <Activity className="w-10 h-10 text-white" />
-                  )}
+                {/* Service Date */}
+                <div className="bg-white/10 rounded-2xl p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 text-orange-400 mb-2">
+                    <Calendar className="w-5 h-5" />
+                    <span className="font-medium">Service Date</span>
+                  </div>
+                  <div className="text-xl font-bold text-white">
+                    {formatDate(bookingData.date)}
+                  </div>
                 </div>
 
-                {/* Session Details */}
-                <div className="bg-white/10 rounded-2xl p-6 space-y-4">
-                  <div className="text-center mb-4">
-                    <h4 className="text-xl font-semibold text-white">{bookingData.session.name}</h4>
-                    <p className="text-gray-300 text-sm mt-2">{bookingData.session.description}</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-5 h-5 text-orange-400" />
-                      <div>
-                        <p className="text-white font-medium">Duration</p>
-                        <p className="text-gray-300 text-sm">{bookingData.session.duration}</p>
-                      </div>
-                    </div>
-
-                    {bookingData.session.schedule && (
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-orange-400" />
-                        <div>
-                          <p className="text-white font-medium">Schedule</p>
-                          <p className="text-gray-300 text-sm">{bookingData.session.schedule}</p>
+                {/* Selected Services */}
+                <div className="space-y-4">
+                  {bookingData.services.map((service) => {
+                    const ServiceIcon = getServiceIcon(service.category)
+                    return (
+                      <div key={service._id} className="bg-white/10 rounded-2xl p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="p-3 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl">
+                            <ServiceIcon className="w-6 h-6 text-orange-400" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-white">{service.name}</h4>
+                            <p className="text-gray-300 text-sm">Quantity: {service.quantity}</p>
+                          </div>
+                          <div className="text-orange-400 font-bold">
+                            {formatCurrency(service.price * service.quantity)}
+                          </div>
                         </div>
                       </div>
-                    )}
-
-                    {bookingData.session.startDate && bookingData.session.endDate && (
-                      <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-orange-400" />
-                        <div>
-                          <p className="text-white font-medium">Program Dates</p>
-                          <p className="text-gray-300 text-sm">
-                            {formatDate(bookingData.session.startDate)} - {formatDate(bookingData.session.endDate)}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {bookingData.session.instructor && (
-                      <div className="flex items-center gap-3">
-                        <User className="w-5 h-5 text-orange-400" />
-                        <div>
-                          <p className="text-white font-medium">Instructor</p>
-                          <p className="text-gray-300 text-sm">{bookingData.session.instructor}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    )
+                  })}
                 </div>
 
                 {/* Customer Details */}
@@ -296,17 +290,22 @@ export default function YogaBookingPaymentPage() {
                       <Phone className="w-4 h-4 text-orange-400" />
                       <span className="text-gray-300">{bookingData.user.phone}</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Activity className="w-4 h-4 text-orange-400" />
-                      <span className="text-gray-300 capitalize">{bookingData.user.experience} Level</span>
-                    </div>
+                    {bookingData.user.specialRequests && (
+                      <div className="flex items-start gap-3 mt-4 pt-4 border-t border-white/20">
+                        <Activity className="w-4 h-4 text-orange-400 mt-0.5" />
+                        <div>
+                          <div className="text-white font-medium mb-1">Special Requests</div>
+                          <span className="text-gray-300 text-sm">{bookingData.user.specialRequests}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Total Amount */}
                 <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-2xl p-6 text-center">
                   <p className="text-gray-300 text-sm mb-2">Total Amount</p>
-                  <p className="text-4xl font-bold text-white">{formatCurrency(bookingData.session.price)}</p>
+                  <p className="text-4xl font-bold text-white">{formatCurrency(bookingData.totalAmount)}</p>
                 </div>
               </div>
             </motion.div>
@@ -328,7 +327,7 @@ export default function YogaBookingPaymentPage() {
                 </button>
                 <div>
                   <h1 className="text-2xl font-bold text-white">Secure Payment</h1>
-                  <p className="text-gray-300">Complete your yoga booking</p>
+                  <p className="text-gray-300">Complete your services booking</p>
                 </div>
               </div>
 
@@ -428,7 +427,7 @@ export default function YogaBookingPaymentPage() {
                   ) : (
                     <>
                       <Lock className="w-5 h-5" />
-                      Pay {formatCurrency(bookingData.session.price)}
+                      Pay {formatCurrency(bookingData.totalAmount)}
                     </>
                   )}
                 </button>

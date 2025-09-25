@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useInView } from 'framer-motion'
 import { Calendar, Users, Star, Hotel, Activity, Car, Bike, Camera, Waves, ChevronLeft, ChevronRight, ArrowRight, Wifi, Coffee, Car as CarIcon, Utensils, Flower2, TreePine, Mountain, Sunset, MapPin, Phone, Mail, Clock, Award, Heart, Shield, CheckCircle2, Bath, Bed, AirVent, Tv } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export default function Home() {
   const router = useRouter()
@@ -116,153 +117,137 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Hero Section with Parallax */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Hero Section - Split Layout with Beach Background */}
+      <section className="relative min-h-screen overflow-hidden bg-gray-50">
         {/* Parallax Background */}
         <motion.div
           style={{ y }}
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 scale-110"
         >
-          <div
-            className="w-full h-[120%] bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: `url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80')`
-            }}
+          <img
+            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+            alt="Varkala Beach"
+            className="w-full h-full object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         </motion.div>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/70 via-black/50 to-black/70" />
+        {/* Content - Split Layout */}
+        <div className="relative z-10 min-h-screen flex items-center">
+          <div className="container mx-auto px-4">
+            <div className="grid lg:grid-cols-2 gap-12 items-center min-h-screen">
 
-        {/* Floating Particles Animation */}
-        <div className="absolute inset-0 z-20">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white/10 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [-20, -100, -20],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-30 text-center text-white px-4 max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-12"
-          >
-            {/* Star Rating */}
-            <motion.div
-              className="flex justify-center mb-8"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              {[...Array(5)].map((_, i) => (
+              {/* Left Side - Content */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 1 }}
+                className="text-white lg:pr-8"
+              >
+                {/* Pre-title */}
                 <motion.div
-                  key={i}
-                  initial={{ rotate: 0 }}
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, delay: i * 0.1 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mb-8"
                 >
-                  <Star className="w-8 h-8 fill-yellow-400 text-yellow-400 mx-1" />
+                  <div className="inline-flex items-center gap-2 text-orange-400 text-sm font-medium uppercase tracking-wider mb-4">
+                    <div className="w-8 h-px bg-orange-400" />
+                    <span>Luxury Resort</span>
+                  </div>
                 </motion.div>
-              ))}
-            </motion.div>
 
-            <motion.h1
-              className="text-6xl md:text-7xl lg:text-8xl font-extralight mb-6 tracking-wide"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.3 }}
-            >
-              <span className="bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-                Welcome to Kshetra
-              </span>
-            </motion.h1>
+                {/* Main Title */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="mb-8"
+                >
+                  <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold leading-none mb-6">
+                    <span className="block text-white">Kshetra</span>
+                    <span className="block text-orange-400 text-5xl md:text-6xl lg:text-7xl font-light">
+                      Retreat Resort
+                    </span>
+                  </h1>
+                </motion.div>
 
-            <motion.h2
-              className="text-4xl md:text-5xl font-light mb-8 opacity-90"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
-            >
-              Retreat Resort
-            </motion.h2>
+                {/* Description */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="mb-10"
+                >
+                  <p className="text-xl md:text-2xl text-white/90 font-light leading-relaxed max-w-lg">
+                    Experience the perfect blend of luxury, wellness, and natural beauty
+                    at Kerala's most stunning beachfront destination.
+                  </p>
+                </motion.div>
 
-            <motion.p
-              className="text-2xl md:text-3xl font-light opacity-90 max-w-4xl mx-auto leading-relaxed mb-8"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.7 }}
-            >
-              Experience luxury, tranquility, and adventure at Kerala's most serene retreat
-            </motion.p>
+                {/* Location */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  className="mb-12"
+                >
+                  <div className="flex items-center gap-3 text-white/80">
+                    <MapPin className="w-5 h-5 text-orange-400" />
+                    <span className="text-lg font-light">Varkala Beach, Kerala</span>
+                  </div>
+                </motion.div>
 
-            {/* Service Quick Access Buttons */}
-            <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.9 }}
-            >
-              <button
-                onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
-                className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
-              >
-                <Hotel className="w-5 h-5" />
-                Book Rooms
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+                {/* CTA Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1 }}
+                  className="flex flex-col sm:flex-row gap-4"
+                >
+                  <button
+                    onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
+                    className="group px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    Book Your Stay
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
 
-              <button
-                onClick={() => router.push('/yoga')}
-                className="group bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
-              >
-                <Activity className="w-5 h-5" />
-                Yoga Sessions
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+                  <button
+                    onClick={() => router.push('/yoga')}
+                    className="group px-8 py-4 bg-transparent border-2 border-white hover:bg-white hover:text-gray-900 text-white font-semibold text-lg rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  >
+                    Explore More
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </motion.div>
 
-              <button
-                onClick={() => router.push('/services')}
-                className="group bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
-              >
-                <Camera className="w-5 h-5" />
-                Adventures
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </motion.div>
-          </motion.div>
+              </motion.div>
+
+              {/* Right Side - Empty for image showcase */}
+              <div className="hidden lg:block">
+                {/* This space intentionally left for the background image to show */}
+              </div>
+
+            </div>
+          </div>
         </div>
 
         {/* Scroll Indicator */}
         <motion.div
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute bottom-8 left-8 flex flex-col items-start"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4 }}
         >
-          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <motion.div
-              className="w-1 h-3 bg-white/70 rounded-full mt-2"
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+          <div className="text-white/60 text-sm mb-4 font-light">
+            Scroll to discover
           </div>
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-px h-16 bg-gradient-to-b from-white/60 to-transparent"
+          />
         </motion.div>
       </section>
 
@@ -1047,6 +1032,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   )
 }

@@ -2,43 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X, Crown, Phone, Mail, Shield } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const navigation = [
     { name: "Home", href: "/" },
+    { name: "Yoga", href: "/yoga" },
+    { name: "Adventure Sports", href: "/services" },
     { name: "Contact", href: "/contact" },
   ];
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 shadow-lg sticky top-0 z-50 backdrop-blur-sm bg-opacity-95">
-      {/* Top bar */}
-      <div className="bg-gray-900 text-white py-2">
-        <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              <span>info@kshetraretreat.com</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              <span>+91 98470 12345</span>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            <span>88 Varkala Beach, Kerala</span>
-            <Link
-              href="/admin/login"
-              className="flex items-center gap-1 text-blue-300 hover:text-blue-100 transition-colors"
-            >
-              <Shield className="w-4 h-4" />
-              <span>Admin</span>
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
@@ -58,16 +37,27 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-gray-200 hover:text-blue-400 font-medium transition-colors duration-200 relative group"
-              >
-                {item.name}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-400 group-hover:w-full transition-all duration-300"></span>
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`font-medium transition-all duration-200 relative group cursor-pointer ${
+                    isActive
+                      ? 'text-orange-400'
+                      : 'text-gray-200 hover:text-orange-400'
+                  }`}
+                >
+                  {item.name}
+                  <span className={`absolute bottom-0 left-0 h-0.5 bg-orange-400 transition-all duration-300 ${
+                    isActive
+                      ? 'w-full'
+                      : 'w-0 group-hover:w-full'
+                  }`}></span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Spacer for balance */}
@@ -92,25 +82,24 @@ export default function Header() {
         <div className="md:hidden bg-gray-800 border-t border-gray-700">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-200 hover:text-blue-400 font-medium py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`font-medium py-2 transition-all duration-200 cursor-pointer ${
+                      isActive
+                        ? 'text-orange-400 border-l-2 border-orange-400 pl-4'
+                        : 'text-gray-200 hover:text-orange-400 hover:border-l-2 hover:border-orange-400 hover:pl-4'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
 
-              <Link
-                href="/admin/login"
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Shield className="w-4 h-4" />
-                Admin Access
-              </Link>
             </div>
           </nav>
         </div>

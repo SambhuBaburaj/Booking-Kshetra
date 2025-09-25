@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   User,
@@ -9,111 +9,97 @@ import {
   Phone,
   ArrowLeft,
   ArrowRight,
-  Clock,
   Calendar,
-  Users,
+  Clock,
   Activity,
-  Heart,
-  BookOpen
+  Car,
+  Plane,
+  Waves
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 
-// Session types for different bookings
-type SessionData = {
-  id: string
+// Types for services booking
+interface Service {
+  _id: string
   name: string
-  type: 'program' | 'daily_regular' | 'daily_therapy'
+  category: 'airport_pickup' | 'vehicle_rental' | 'surfing'
   price: number
-  duration: string
+  priceUnit: string
   description: string
-  schedule?: string
-  instructor?: string
-  startDate?: string
-  endDate?: string
+  duration?: string
+  features: string[]
+  maxQuantity?: number
+  isActive: boolean
 }
 
-type FormData = {
+interface SelectedService extends Service {
+  quantity: number
+  selectedOptions?: {
+    pickupLocation?: string
+    dropLocation?: string
+    rentalDays?: number
+    sessionLevel?: 'beginner' | 'intermediate' | 'advanced'
+  }
+}
+
+interface BookingData {
+  services: SelectedService[]
+  date: string
+  totalAmount: number
+  timestamp: string
+}
+
+interface FormData {
   name: string
   email: string
   phone: string
-  experience: 'beginner' | 'intermediate' | 'advanced'
+  specialRequests: string
 }
 
-export default function YogaBookingDetailsPage() {
+export default function ServicesBookingDetailsPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session') || ''
-  const sessionType = searchParams.get('type') || 'program'
-
   const [loading, setLoading] = useState(true)
-  const [sessionData, setSessionData] = useState<SessionData | null>(null)
+  const [bookingData, setBookingData] = useState<BookingData | null>(null)
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     phone: '',
-    experience: 'beginner'
+    specialRequests: ''
   })
   const [errors, setErrors] = useState<Partial<FormData>>({})
 
   useEffect(() => {
-    // Create session data based on type and ID
-    let session: SessionData
-
-    if (sessionType === 'daily') {
-      // Handle daily yoga sessions
-      if (sessionId.includes('regular')) {
-        const timeSlots = {
-          'regular-730': '7:30 AM - 9:00 AM',
-          'regular-900': '9:00 AM - 10:30 AM',
-          'regular-400': '4:00 PM - 5:30 PM'
-        }
-        session = {
-          id: sessionId,
-          name: 'Regular Yoga Session',
-          type: 'daily_regular',
-          price: 500,
-          duration: '1.5 hours',
-          description: 'Traditional Hatha Yoga, Pranayama (Breathing), Meditation Practice - Perfect for all levels',
-          schedule: timeSlots[sessionId as keyof typeof timeSlots] || 'Selected time slot',
-          instructor: 'Daily Session Instructor'
-        }
-      } else {
-        // Therapy sessions
-        const timeSlots = {
-          'therapy-1100': '11:00 AM - 12:30 PM',
-          'therapy-530': '5:30 PM - 7:00 PM'
-        }
-        session = {
-          id: sessionId,
-          name: 'Yoga Therapy Session',
-          type: 'daily_therapy',
-          price: 1500,
-          duration: '1.5 hours',
-          description: 'Personalized therapy approach, Healing-focused practices, One-on-one guidance, Therapeutic techniques',
-          schedule: timeSlots[sessionId as keyof typeof timeSlots] || 'Selected time slot',
-          instructor: 'Therapy Session Instructor'
-        }
-      }
-    } else {
-      // Handle program sessions (mock data since you said don't worry about API)
-      session = {
-        id: sessionId,
-        name: sessionId.includes('200hr') ? '200 Hour Teacher Training' : '300 Hour Advanced Training',
-        type: 'program',
-        price: sessionId.includes('200hr') ? 45000 : 75000,
-        duration: sessionId.includes('200hr') ? '21 days' : '30 days',
-        description: 'Comprehensive yoga teacher training program with ancient wisdom and modern techniques',
-        instructor: 'Master Yoga Teacher',
-        startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        endDate: new Date(Date.now() + (sessionId.includes('200hr') ? 28 : 37) * 24 * 60 * 60 * 1000).toISOString()
-      }
+    // Get booking data from localStorage
+    const storedData = localStorage.getItem('servicesBookingData')
+    if (!storedData) {
+      router.push('/services')
+      return
     }
 
-    setSessionData(session)
-    setLoading(false)
-  }, [sessionId, sessionType])
+    try {
+      const data: BookingData = JSON.parse(storedData)
+      setBookingData(data)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error parsing booking data:', error)
+      router.push('/services')
+    }
+  }, [router])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const getServiceIcon = (category: 'airport_pickup' | 'vehicle_rental' | 'surfing') => {
+    switch (category) {
+      case 'airport_pickup':
+        return Plane
+      case 'vehicle_rental':
+        return Car
+      case 'surfing':
+        return Waves
+      default:
+        return Activity
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
 
@@ -143,16 +129,18 @@ export default function YogaBookingDetailsPage() {
       return
     }
 
-    // Store booking data in localStorage for payment page
-    const bookingData = {
-      session: sessionData,
+    // Store combined booking data in localStorage
+    const completeBookingData = {
+      services: bookingData?.services,
+      date: bookingData?.date,
+      totalAmount: bookingData?.totalAmount,
       user: formData,
       timestamp: new Date().toISOString()
     }
-    localStorage.setItem('yogaBookingData', JSON.stringify(bookingData))
+    localStorage.setItem('servicesCompleteBookingData', JSON.stringify(completeBookingData))
 
     // Redirect to payment
-    router.push('/yoga/booking/payment')
+    router.push('/services/booking/payment')
   }
 
   const formatDate = (dateString: string) => {
@@ -170,25 +158,12 @@ export default function YogaBookingDetailsPage() {
     }).format(amount)
   }
 
-  if (loading) {
+  if (loading || !bookingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-400"></div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!sessionData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <p className="text-gray-300">Session not found</p>
-          </div>
         </div>
       </div>
     )
@@ -219,80 +194,69 @@ export default function YogaBookingDetailsPage() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
-          {/* Session Details Sidebar */}
+          {/* Services Summary Sidebar */}
           <div>
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 h-fit"
             >
-              <h3 className="text-2xl font-bold text-white mb-6">Your Selection</h3>
+              <h3 className="text-2xl font-bold text-white mb-8">Your Services</h3>
 
               <div className="space-y-6">
-                {/* Session Icon */}
-                <div className="flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl mx-auto">
-                  {sessionData.type === 'program' ? (
-                    <BookOpen className="w-10 h-10 text-white" />
-                  ) : sessionData.type === 'daily_therapy' ? (
-                    <Heart className="w-10 h-10 text-white" />
-                  ) : (
-                    <Activity className="w-10 h-10 text-white" />
-                  )}
-                </div>
-
-                {/* Session Info */}
-                <div className="text-center">
-                  <h4 className="text-xl font-semibold text-white mb-2">{sessionData.name}</h4>
-                  <p className="text-gray-300 text-sm mb-4">{sessionData.description}</p>
-                </div>
-
-                {/* Session Details */}
-                <div className="bg-white/10 rounded-2xl p-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-orange-400" />
-                    <div>
-                      <p className="text-white font-medium">Duration</p>
-                      <p className="text-gray-300 text-sm">{sessionData.duration}</p>
-                    </div>
+                {/* Service Date */}
+                <div className="bg-white/10 rounded-2xl p-6 text-center">
+                  <div className="flex items-center justify-center gap-2 text-orange-400 mb-2">
+                    <Calendar className="w-5 h-5" />
+                    <span className="font-medium">Service Date</span>
                   </div>
-
-                  {sessionData.schedule && (
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-orange-400" />
-                      <div>
-                        <p className="text-white font-medium">Schedule</p>
-                        <p className="text-gray-300 text-sm">{sessionData.schedule}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {sessionData.startDate && sessionData.endDate && (
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-orange-400" />
-                      <div>
-                        <p className="text-white font-medium">Program Dates</p>
-                        <p className="text-gray-300 text-sm">
-                          {formatDate(sessionData.startDate)} - {formatDate(sessionData.endDate)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {sessionData.instructor && (
-                    <div className="flex items-center gap-3">
-                      <User className="w-5 h-5 text-orange-400" />
-                      <div>
-                        <p className="text-white font-medium">Instructor</p>
-                        <p className="text-gray-300 text-sm">{sessionData.instructor}</p>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-2xl font-bold text-white">
+                    {formatDate(bookingData.date)}
+                  </div>
                 </div>
 
-                {/* Price */}
-                <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-2xl p-6 text-center">
-                  <p className="text-gray-300 text-sm mb-2">Total Amount</p>
-                  <p className="text-3xl font-bold text-white">{formatCurrency(sessionData.price)}</p>
+                {/* Selected Services */}
+                <div className="space-y-4">
+                  {bookingData.services.map((service) => {
+                    const ServiceIcon = getServiceIcon(service.category)
+                    return (
+                      <div key={service._id} className="bg-white/10 rounded-2xl p-6">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="p-3 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl">
+                            <ServiceIcon className="w-6 h-6 text-orange-400" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-white">{service.name}</h4>
+                            <p className="text-gray-300 text-sm">{service.description}</p>
+                          </div>
+                        </div>
+
+                        {service.duration && (
+                          <div className="flex items-center gap-2 mb-3">
+                            <Clock className="w-4 h-4 text-orange-400" />
+                            <span className="text-gray-300 text-sm">Duration: {service.duration}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-300">Quantity: {service.quantity}</span>
+                          <span className="text-orange-400 font-bold">
+                            {formatCurrency(service.price * service.quantity)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Total Amount */}
+                <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-2xl p-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-medium text-lg">Total Amount</span>
+                    <span className="text-3xl font-bold text-orange-400">
+                      {formatCurrency(bookingData.totalAmount)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -307,14 +271,14 @@ export default function YogaBookingDetailsPage() {
             >
               <div className="flex items-center gap-3 mb-8">
                 <button
-                  onClick={() => router.push('/yoga')}
+                  onClick={() => router.push('/services')}
                   className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Booking Details</h1>
-                  <p className="text-gray-300">Complete your information to proceed</p>
+                  <h1 className="text-2xl font-bold text-white">Contact Details</h1>
+                  <p className="text-gray-300">Please provide your information</p>
                 </div>
               </div>
 
@@ -376,32 +340,30 @@ export default function YogaBookingDetailsPage() {
                   {errors.phone && <p className="text-red-400 text-sm mt-2">{errors.phone}</p>}
                 </div>
 
-                {/* Experience */}
+                {/* Special Requests */}
                 <div>
                   <label className="flex items-center gap-2 text-white font-medium mb-3">
                     <Activity className="w-4 h-4 text-orange-400" />
-                    Yoga Experience
+                    Special Requests
                   </label>
-                  <select
-                    name="experience"
-                    value={formData.experience}
+                  <textarea
+                    name="specialRequests"
+                    value={formData.specialRequests}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
-                  >
-                    <option value="beginner" className="bg-gray-800 text-white">Beginner</option>
-                    <option value="intermediate" className="bg-gray-800 text-white">Intermediate</option>
-                    <option value="advanced" className="bg-gray-800 text-white">Advanced</option>
-                  </select>
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                    placeholder="Any special requirements or requests..."
+                  />
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-6">
                   <button
                     type="button"
-                    onClick={() => router.push('/yoga')}
+                    onClick={() => router.push('/services')}
                     className="flex-1 px-6 py-3 border border-gray-400 text-gray-300 rounded-xl hover:bg-white/10 transition-colors"
                   >
-                    Back to Yoga
+                    Back to Services
                   </button>
 
                   <button
