@@ -1,72 +1,273 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Calendar, Users, Star } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useScroll, useTransform, useInView } from 'framer-motion'
+import { Calendar, Users, Star, Hotel, Activity, Car, Bike, Camera, Waves, ChevronLeft, ChevronRight, ArrowRight, Wifi, Coffee, Car as CarIcon, Utensils, Flower2, TreePine, Mountain, Sunset, MapPin, Phone, Mail, Clock, Award, Heart, Shield, CheckCircle2, Bath, Bed, AirVent, Tv } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import Header from '../components/Header'
 
 export default function Home() {
+  const router = useRouter()
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const { scrollYProgress } = useScroll()
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%'])
+
+  const mainServices = [
+    {
+      title: "Room Booking",
+      category: "Accommodation",
+      description: "Book your perfect stay at Kshetra Retreat Resort with our comfortable AC and Non-AC rooms, featuring modern amenities and serene views of Kerala's natural beauty.",
+      features: [
+        "AC & Non-AC Rooms Available",
+        "Modern Amenities & Comfort",
+        "Scenic Views of Kerala",
+        "24/7 Room Service",
+        "Free WiFi & Hot Water"
+      ],
+      price: "Starting from ₹2,500/night",
+      image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      icon: Hotel,
+      onClick: () => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank'),
+      color: "from-blue-600 to-blue-800"
+    },
+    {
+      title: "Yoga Sessions",
+      category: "Wellness",
+      description: "Transform your life through authentic yoga practice with our certified instructors. Join our 200hr & 300hr teacher training programs or daily yoga sessions.",
+      features: [
+        "200hr & 300hr Teacher Training",
+        "Daily Morning & Evening Sessions",
+        "Certified International Instructors",
+        "Beach-side Yoga Practice",
+        "Meditation & Pranayama"
+      ],
+      price: "From ₹1,500/session",
+      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      icon: Activity,
+      onClick: () => router.push('/yoga'),
+      color: "from-orange-500 to-pink-600"
+    },
+    {
+      title: "Adventure Services",
+      category: "Activities",
+      description: "Enhance your stay with our curated selection of services including airport transfers, bike rentals, surfing lessons, and local sightseeing tours.",
+      features: [
+        "Airport Pickup & Drop Service",
+        "Bike Rentals for Exploration",
+        "Professional Surfing Lessons",
+        "Local Sightseeing Tours",
+        "Cultural Experience Packages"
+      ],
+      price: "From ₹500/service",
+      image: "https://images.unsplash.com/photo-1502680390469-be75c86b636f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      icon: Camera,
+      onClick: () => router.push('/services'),
+      color: "from-green-500 to-teal-600"
+    }
+  ]
+
+  const testimonials = [
+    {
+      text: "Kshetra Retreat provided the perfect blend of relaxation and adventure. The yoga sessions were transformative!",
+      author: "Sarah Johnson",
+      location: "California, USA",
+      rating: 5
+    },
+    {
+      text: "The room booking process was seamless and the accommodations exceeded our expectations. Beautiful location!",
+      author: "Raj Patel",
+      location: "Mumbai, India",
+      rating: 5
+    },
+    {
+      text: "Amazing services! The surfing lessons were incredible and the bike rentals made exploring Kerala so easy.",
+      author: "Maria Santos",
+      location: "São Paulo, Brazil",
+      rating: 5
+    }
+  ]
+
+  // Carousel auto-slide effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % mainServices.length)
+    }, 6000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Testimonials auto-slide effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % mainServices.length)
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + mainServices.length) % mainServices.length)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-r from-black/60 to-black/40">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <div 
-            className="w-full h-full bg-cover bg-center bg-no-repeat"
+      {/* Hero Section with Parallax */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Parallax Background */}
+        <motion.div
+          style={{ y }}
+          className="absolute inset-0 z-0"
+        >
+          <div
+            className="w-full h-[120%] bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: `url('https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80')`
             }}
           />
+        </motion.div>
+
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-black/70 via-black/50 to-black/70" />
+
+        {/* Floating Particles Animation */}
+        <div className="absolute inset-0 z-20">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-white/10 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [-20, -100, -20],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
+        <div className="relative z-30 text-center text-white px-4 max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="mb-12"
           >
             {/* Star Rating */}
-            <div className="flex justify-center mb-6">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-6 h-6 fill-gold-400 text-gold-400" />
-              ))}
-            </div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extralight mb-6 tracking-wide text-shadow-lg">
-              Welcome to Kshetra
-            </h1>
-            <h2 className="text-3xl md:text-4xl font-light mb-8 opacity-90 text-shadow-md">
-              Retreat Resort
-            </h2>
-            
-            <p className="text-xl md:text-2xl font-light opacity-90 max-w-2xl mx-auto leading-relaxed text-shadow-sm">
-              Experience luxury, tranquility, and adventure at Kerala's most serene retreat
-            </p>
-          </motion.div>
-
-          {/* Book Now Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-          >
-            <button
-              onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
-              className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white px-12 py-4 rounded-lg text-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 hover:scale-105 active:transform active:scale-100"
+            <motion.div
+              className="flex justify-center mb-8"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              Book Now
-            </button>
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, delay: i * 0.1 }}
+                >
+                  <Star className="w-8 h-8 fill-yellow-400 text-yellow-400 mx-1" />
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.h1
+              className="text-6xl md:text-7xl lg:text-8xl font-extralight mb-6 tracking-wide"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            >
+              <span className="bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+                Welcome to Kshetra
+              </span>
+            </motion.h1>
+
+            <motion.h2
+              className="text-4xl md:text-5xl font-light mb-8 opacity-90"
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              Retreat Resort
+            </motion.h2>
+
+            <motion.p
+              className="text-2xl md:text-3xl font-light opacity-90 max-w-4xl mx-auto leading-relaxed mb-8"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+            >
+              Experience luxury, tranquility, and adventure at Kerala's most serene retreat
+            </motion.p>
+
+            {/* Service Quick Access Buttons */}
+            <motion.div
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.9 }}
+            >
+              <button
+                onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
+                className="group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <Hotel className="w-5 h-5" />
+                Book Rooms
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/yoga')}
+                className="group bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <Activity className="w-5 h-5" />
+                Yoga Sessions
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <button
+                onClick={() => router.push('/services')}
+                className="group bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-1 flex items-center gap-3"
+              >
+                <Camera className="w-5 h-5" />
+                Adventures
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </motion.div>
           </motion.div>
         </div>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30"
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+            <motion.div
+              className="w-1 h-3 bg-white/70 rounded-full mt-2"
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </div>
+        </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
+      {/* Main Services Carousel Section */}
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -75,41 +276,161 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6">
-              Why Choose Kshetra
+            <h2 className="text-5xl md:text-6xl font-extralight text-white mb-6">
+              Our Main <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Attractions</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Discover what makes Kshetra the perfect destination for your next getaway
+            <p className="text-2xl text-gray-300 max-w-3xl mx-auto">
+              Discover the three pillars of your perfect retreat experience
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {features.map((feature, index) => (
+          {/* Services Carousel */}
+          <div className="relative max-w-7xl mx-auto">
+            {/* Carousel Container */}
+            <div className="relative overflow-hidden rounded-3xl">
               <motion.div
-                key={feature.title}
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {mainServices.map((service, index) => (
+                  <div key={service.title} className="w-full flex-shrink-0">
+                    <div className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+                      {/* Background Image with Parallax */}
+                      <div
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
+                        style={{ backgroundImage: `url('${service.image}')` }}
+                      />
+                      <div className={`absolute inset-0 bg-gradient-to-r ${service.color} opacity-80`} />
+
+                      {/* Content */}
+                      <div className="relative z-10 text-white text-center px-8 max-w-6xl mx-auto">
+                        <motion.div
+                          initial={{ opacity: 0, y: 50 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.8 }}
+                          className="mb-8"
+                        >
+                          <div className="flex justify-center mb-6">
+                            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                              <service.icon className="w-10 h-10 text-white" />
+                            </div>
+                          </div>
+
+                          <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
+                            {service.category}
+                          </span>
+
+                          <h3 className="text-5xl md:text-6xl font-bold mb-6">
+                            {service.title}
+                          </h3>
+
+                          <p className="text-xl md:text-2xl opacity-90 mb-8 max-w-4xl mx-auto leading-relaxed">
+                            {service.description}
+                          </p>
+
+                          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 max-w-4xl mx-auto">
+                            {service.features.map((feature, idx) => (
+                              <motion.div
+                                key={idx}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
+                              >
+                                <div className="w-2 h-2 bg-white rounded-full flex-shrink-0" />
+                                <span className="text-sm font-medium">{feature}</span>
+                              </motion.div>
+                            ))}
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                            <div className="text-3xl font-bold">
+                              {service.price}
+                            </div>
+                            <button
+                              onClick={service.onClick}
+                              className="group bg-white text-gray-900 px-8 py-4 rounded-xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
+                            >
+                              Book Now
+                              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Carousel Navigation */}
+            <div className="flex items-center justify-center mt-8 gap-4">
+              <button
+                onClick={prevSlide}
+                className="w-12 h-12 bg-white/20 backdrop-blur-sm shadow-lg rounded-full flex items-center justify-center hover:bg-white/30 transition-colors group"
+              >
+                <ChevronLeft className="w-6 h-6 text-white group-hover:text-gray-200" />
+              </button>
+
+              {/* Dots Indicator */}
+              <div className="flex gap-2">
+                {mainServices.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentSlide
+                        ? 'bg-blue-400 w-8'
+                        : 'bg-white/30 hover:bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={nextSlide}
+                className="w-12 h-12 bg-white/20 backdrop-blur-sm shadow-lg rounded-full flex items-center justify-center hover:bg-white/30 transition-colors group"
+              >
+                <ChevronRight className="w-6 h-6 text-white group-hover:text-gray-200" />
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Service Cards */}
+          <div className="mt-20 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {mainServices.map((service, index) => (
+              <motion.div
+                key={`quick-${service.title}`}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="text-center p-8 card hover:shadow-xl transition-shadow duration-300"
+                onClick={service.onClick}
+                className={`group cursor-pointer bg-gradient-to-br ${service.color} p-8 rounded-2xl text-white hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2`}
               >
-                <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <feature.icon className="w-8 h-8 text-primary-600" />
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                    <service.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold">{service.title}</h4>
+                    <p className="text-sm opacity-90">{service.category}</p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
+                <p className="text-lg font-semibold mb-4">{service.price}</p>
+                <div className="flex items-center gap-2 text-white/90 group-hover:text-white transition-colors">
+                  <span className="text-sm font-medium">Book Now</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Services Preview */}
-      <section className="py-20 bg-gray-50">
+
+      {/* Testimonials Carousel */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 via-purple-600 to-teal-600">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -118,31 +439,609 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6">
-              Our Services
+            <h2 className="text-5xl md:text-6xl font-extralight text-white mb-6">
+              What Our Guests Say
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Enhance your stay with our curated selection of experiences
+            <p className="text-xl text-white/90 max-w-2xl mx-auto">
+              Real experiences from travelers who found their perfect retreat
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {services.map((service, index) => (
+          <div className="relative max-w-4xl mx-auto">
+            <div className="overflow-hidden">
               <motion.div
-                key={service.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative group cursor-pointer overflow-hidden rounded-xl"
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateX(-${currentTestimonial * 100}%)` }}
               >
-                <div className="aspect-square bg-gradient-to-br from-primary-500 to-primary-700 p-8 flex flex-col items-center justify-center text-white">
-                  <service.icon className="w-12 h-12 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">{service.name}</h3>
-                  <p className="text-sm text-center opacity-90">{service.description}</p>
-                  <div className="mt-4 text-xl font-bold">₹{service.price}</div>
+                {testimonials.map((testimonial, index) => (
+                  <div key={index} className="w-full flex-shrink-0">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.8 }}
+                      className="bg-white/10 backdrop-blur-sm rounded-3xl p-12 text-center text-white"
+                    >
+                      <div className="flex justify-center mb-6">
+                        {[...Array(testimonial.rating)].map((_, i) => (
+                          <Star key={i} className="w-8 h-8 fill-yellow-400 text-yellow-400 mx-1" />
+                        ))}
+                      </div>
+
+                      <blockquote className="text-2xl md:text-3xl font-light mb-8 leading-relaxed italic">
+                        "{testimonial.text}"
+                      </blockquote>
+
+                      <div className="text-xl font-semibold mb-2">
+                        {testimonial.author}
+                      </div>
+                      <div className="text-lg opacity-80">
+                        {testimonial.location}
+                      </div>
+                    </motion.div>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Testimonial Indicators */}
+            <div className="flex justify-center mt-8 gap-3">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentTestimonial(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentTestimonial
+                      ? 'bg-white w-8'
+                      : 'bg-white/50 hover:bg-white/70'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Detailed Room Booking Section with Parallax */}
+      <section className="relative py-32 overflow-hidden">
+        {/* Parallax Background */}
+        <motion.div
+          style={{ y: useTransform(scrollYProgress, [0.3, 0.7], ['0%', '-20%']) }}
+          className="absolute inset-0 z-0"
+        >
+          <div
+            className="w-full h-[120%] bg-cover bg-center bg-fixed"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+            }}
+          />
+        </motion.div>
+
+        <div className="absolute inset-0 bg-black/60 z-10" />
+
+        <div className="relative z-20 container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center text-white mb-16"
+          >
+            <h2 className="text-6xl md:text-7xl font-extralight mb-6">
+              Luxury <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Accommodation</span>
+            </h2>
+            <p className="text-2xl md:text-3xl opacity-90 max-w-4xl mx-auto leading-relaxed">
+              Choose from our carefully designed rooms that blend traditional Kerala architecture with modern luxury
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Room Details */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="space-y-8"
+            >
+              <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8">
+                <h3 className="text-4xl font-bold text-white mb-6 flex items-center gap-3">
+                  <Hotel className="w-10 h-10 text-blue-400" />
+                  Our Rooms & Suites
+                </h3>
+
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 text-white">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <Bed className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-semibold">Deluxe AC Rooms</h4>
+                      <p className="text-white/80">Starting from ₹3,500/night</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-white">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <TreePine className="w-6 h-6 text-green-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-semibold">Garden View Non-AC</h4>
+                      <p className="text-white/80">Starting from ₹2,500/night</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-white">
+                    <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                      <Mountain className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-semibold">Premium Suites</h4>
+                      <p className="text-white/80">Starting from ₹5,500/night</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <div className="grid md:grid-cols-2 gap-4 mt-8">
+                  {[
+                    { icon: AirVent, text: "Air Conditioning" },
+                    { icon: Wifi, text: "Free WiFi" },
+                    { icon: Tv, text: "Smart TV" },
+                    { icon: Bath, text: "Private Bathroom" },
+                    { icon: Coffee, text: "Tea/Coffee Maker" },
+                    { icon: Shield, text: "24/7 Security" }
+                  ].map((amenity, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: idx * 0.1 }}
+                      className="flex items-center gap-3 text-white/90"
+                    >
+                      <amenity.icon className="w-5 h-5 text-blue-400" />
+                      <span>{amenity.text}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-6 px-8 rounded-2xl text-xl font-bold shadow-2xl flex items-center justify-center gap-3 group"
+              >
+                <Hotel className="w-6 h-6" />
+                Book Your Perfect Room Now
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              </motion.button>
+            </motion.div>
+
+            {/* Room Images Carousel */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="relative"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                ].map((image, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -10 }}
+                    className="relative overflow-hidden rounded-2xl"
+                  >
+                    <img
+                      src={image}
+                      alt={`Room ${idx + 1}`}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Comprehensive Yoga Section with Parallax */}
+      <section className="relative py-32 overflow-hidden">
+        {/* Parallax Background */}
+        <motion.div
+          style={{ y: useTransform(scrollYProgress, [0.4, 0.8], ['0%', '-30%']) }}
+          className="absolute inset-0 z-0"
+        >
+          <div
+            className="w-full h-[130%] bg-cover bg-center bg-fixed"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+            }}
+          />
+        </motion.div>
+
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-900/70 via-pink-900/70 to-purple-900/70 z-10" />
+
+        <div className="relative z-20 container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center text-white mb-20"
+          >
+            <h2 className="text-6xl md:text-7xl font-extralight mb-6">
+              Yoga & <span className="bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">Wellness</span>
+            </h2>
+            <p className="text-2xl md:text-3xl opacity-90 max-w-4xl mx-auto leading-relaxed">
+              Transform your body, mind, and soul with authentic yoga practices in the birthplace of Ayurveda
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-12">
+            {/* Yoga Programs */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center">
+                  <Activity className="w-8 h-8 text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Teacher Training</h3>
+                  <p className="text-orange-200">200hr & 300hr Certified</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  "200hr Hatha Yoga TTC - ₹85,000",
+                  "300hr Advanced TTC - ₹1,25,000",
+                  "Yin Yoga Specialization - ₹45,000",
+                  "Pranayama & Meditation - ₹25,000"
+                ].map((program, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    className="flex items-center gap-3 text-white/90"
+                  >
+                    <CheckCircle2 className="w-5 h-5 text-orange-400" />
+                    <span>{program}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => router.push('/yoga')}
+                className="w-full bg-gradient-to-r from-orange-600 to-pink-600 text-white py-4 px-6 rounded-xl font-semibold shadow-lg flex items-center justify-center gap-2"
+              >
+                <Activity className="w-5 h-5" />
+                Explore Yoga Programs
+              </motion.button>
+            </motion.div>
+
+            {/* Daily Sessions */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center">
+                  <Sunset className="w-8 h-8 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Daily Classes</h3>
+                  <p className="text-blue-200">Morning & Evening</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sunset className="w-5 h-5 text-yellow-400" />
+                    <span className="text-white font-semibold">6:30 AM - Morning Flow</span>
+                  </div>
+                  <p className="text-white/80 text-sm">Hatha Yoga • Pranayama • Meditation</p>
+                  <p className="text-yellow-300 font-bold">₹1,500 per session</p>
+                </div>
+
+                <div className="bg-white/10 rounded-xl p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Mountain className="w-5 h-5 text-purple-400" />
+                    <span className="text-white font-semibold">6:00 PM - Sunset Yoga</span>
+                  </div>
+                  <p className="text-white/80 text-sm">Vinyasa Flow • Beach Location</p>
+                  <p className="text-purple-300 font-bold">₹1,500 per session</p>
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => router.push('/yoga')}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl font-semibold shadow-lg flex items-center justify-center gap-2"
+              >
+                <Calendar className="w-5 h-5" />
+                Book Daily Sessions
+              </motion.button>
+            </motion.div>
+
+            {/* Wellness & Spa */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+            >
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-green-500/20 rounded-2xl flex items-center justify-center">
+                  <Flower2 className="w-8 h-8 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">Ayurveda & Spa</h3>
+                  <p className="text-green-200">Authentic Treatments</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  "Abhyanga Full Body Massage - ₹2,500",
+                  "Shirodhara Therapy - ₹3,000",
+                  "Panchakarma Detox - ₹15,000",
+                  "Ayurvedic Consultation - ₹1,500"
+                ].map((treatment, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    className="flex items-center gap-3 text-white/90"
+                  >
+                    <Heart className="w-5 h-5 text-green-400" />
+                    <span className="text-sm">{treatment}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                onClick={() => router.push('/services')}
+                className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-4 px-6 rounded-xl font-semibold shadow-lg flex items-center justify-center gap-2"
+              >
+                <Flower2 className="w-5 h-5" />
+                Book Wellness
+              </motion.button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resort Food & Dining Section */}
+      <section className="relative py-32 overflow-hidden">
+        {/* Parallax Background */}
+        <motion.div
+          style={{ y: useTransform(scrollYProgress, [0.6, 1], ['0%', '-25%']) }}
+          className="absolute inset-0 z-0"
+        >
+          <div
+            className="w-full h-[125%] bg-cover bg-center bg-fixed"
+            style={{
+              backgroundImage: `url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+            }}
+          />
+        </motion.div>
+
+        <div className="absolute inset-0 bg-gradient-to-r from-green-900/80 via-yellow-900/80 to-orange-900/80 z-10" />
+
+        <div className="relative z-20 container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center text-white mb-20"
+          >
+            <h2 className="text-6xl md:text-7xl font-extralight mb-6">
+              Culinary <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">Experience</span>
+            </h2>
+            <p className="text-2xl md:text-3xl opacity-90 max-w-4xl mx-auto leading-relaxed">
+              Savor authentic Kerala cuisine prepared with organic ingredients and traditional recipes
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Food Details */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="space-y-8"
+            >
+              <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8">
+                <h3 className="text-4xl font-bold text-white mb-8 flex items-center gap-3">
+                  <Utensils className="w-10 h-10 text-yellow-400" />
+                  Our Restaurant
+                </h3>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-semibold text-yellow-300 mb-3">Traditional Kerala Cuisine</h4>
+                    {[
+                      "Fish Curry & Rice - ₹350",
+                      "Appam & Stew - ₹280",
+                      "Kerala Breakfast - ₹250",
+                      "Thali Meals - ₹320"
+                    ].map((dish, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: idx * 0.1 }}
+                        className="flex items-center gap-3 text-white/90"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-yellow-400" />
+                        <span className="text-sm">{dish}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-semibold text-orange-300 mb-3">International Menu</h4>
+                    {[
+                      "Continental Breakfast - ₹450",
+                      "Italian Pasta - ₹380",
+                      "Healthy Salads - ₹250",
+                      "Fresh Juices - ₹120"
+                    ].map((dish, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: idx * 0.1 }}
+                        className="flex items-center gap-3 text-white/90"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-orange-400" />
+                        <span className="text-sm">{dish}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-8 p-6 bg-white/10 rounded-2xl">
+                  <h4 className="text-2xl font-bold text-white mb-4">Special Dining Experiences</h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 p-4 rounded-xl">
+                      <h5 className="font-semibold text-yellow-300 mb-2">Sunset Beach Dinner</h5>
+                      <p className="text-white/80 text-sm mb-2">Romantic candlelight dining by the beach</p>
+                      <p className="text-yellow-300 font-bold">₹2,500 per couple</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-600/20 to-teal-600/20 p-4 rounded-xl">
+                      <h5 className="font-semibold text-green-300 mb-2">Cooking Classes</h5>
+                      <p className="text-white/80 text-sm mb-2">Learn traditional Kerala recipes</p>
+                      <p className="text-green-300 font-bold">₹1,800 per person</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => router.push('/services')}
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white py-6 px-8 rounded-2xl text-xl font-bold shadow-2xl flex items-center justify-center gap-3 group"
+              >
+                <Utensils className="w-6 h-6" />
+                Explore Dining Options
+                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              </motion.button>
+            </motion.div>
+
+            {/* Food Images */}
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="relative"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  "https://images.unsplash.com/photo-1596797038530-2c107229654b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                  "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                ].map((image, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -10 }}
+                    className="relative overflow-hidden rounded-2xl"
+                  >
+                    <img
+                      src={image}
+                      alt={`Food ${idx + 1}`}
+                      className="w-full h-48 object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Resort Amenities Section */}
+      <section className="py-32 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center text-white mb-20"
+          >
+            <h2 className="text-6xl md:text-7xl font-extralight mb-6">
+              Resort <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Amenities</span>
+            </h2>
+            <p className="text-2xl opacity-90 max-w-3xl mx-auto">
+              Everything you need for a perfect retreat experience
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { icon: Wifi, title: "High-Speed WiFi", desc: "Stay connected throughout your stay" },
+              { icon: CarIcon, title: "Free Parking", desc: "Secure parking for all guests" },
+              { icon: Coffee, title: "24/7 Room Service", desc: "Round-the-clock dining service" },
+              { icon: Flower2, title: "Spa & Wellness", desc: "Rejuvenate with Ayurvedic treatments" },
+              { icon: Activity, title: "Yoga Shala", desc: "Dedicated yoga and meditation space" },
+              { icon: Mountain, title: "Beach Access", desc: "Direct access to Varkala Beach" },
+              { icon: Shield, title: "24/7 Security", desc: "Safe and secure environment" },
+              { icon: Phone, title: "Concierge Service", desc: "Personal assistance for all needs" }
+            ].map((amenity, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                whileHover={{ y: -10 }}
+                className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center text-white hover:bg-white/20 transition-all duration-300"
+              >
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <amenity.icon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{amenity.title}</h3>
+                <p className="text-white/80 text-sm">{amenity.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -152,47 +1051,3 @@ export default function Home() {
   )
 }
 
-const features = [
-  {
-    icon: Users,
-    title: 'Authentic Yoga Experience',
-    description: 'Join our certified 200hr and 300hr yoga teacher training programs in the serene environment of Kerala.'
-  },
-  {
-    icon: Calendar,
-    title: 'Flexible Booking',
-    description: 'Easy online booking system with real-time availability and instant confirmation for your convenience.'
-  },
-  {
-    icon: Star,
-    title: 'Premium Amenities',
-    description: 'Enjoy AC and Non-AC rooms, delicious meals, and world-class facilities designed for your comfort.'
-  }
-]
-
-const services = [
-  {
-    icon: Users,
-    name: 'Airport Transfer',
-    description: 'Pickup & Drop service from Kochi/Trivandrum',
-    price: '1,500'
-  },
-  {
-    icon: Calendar,
-    name: 'Bike Rental',
-    description: 'Explore Kerala on two wheels',
-    price: '500/day'
-  },
-  {
-    icon: Star,
-    name: 'Local Sightseeing',
-    description: 'Guided tours to nearby attractions',
-    price: '1,500'
-  },
-  {
-    icon: Users,
-    name: 'Surfing Lessons',
-    description: 'Professional surfing instruction',
-    price: '2,000'
-  }
-]
