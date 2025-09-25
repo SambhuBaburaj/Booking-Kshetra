@@ -103,14 +103,15 @@ export default function YogaPage() {
   }
 
   const handleBookSession = (session: YogaSession) => {
-    // Store session data for potential future use
-    localStorage.setItem('selectedYogaSession', JSON.stringify(session))
-    // Redirect to external booking system
-    window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')
+    console.log('Booking session:', session._id)
+    // Redirect to our internal booking system
+    router.push(`/yoga/booking/details?session=${session._id}`)
   }
 
   const handleExternalBooking = () => {
-    window.open('https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala', '_blank')
+    console.log('External booking button clicked')
+    // Redirect to our internal booking system (for general booking)
+    router.push('/yoga/booking/details')
   }
 
   const formatDate = (dateString: string) => {
