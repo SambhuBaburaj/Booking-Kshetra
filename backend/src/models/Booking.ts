@@ -45,7 +45,7 @@ export interface ISelectedService {
 
 export interface IBooking extends Document {
   userId?: mongoose.Types.ObjectId; // Made optional for public bookings
-  roomId: mongoose.Types.ObjectId;
+  roomId?: mongoose.Types.ObjectId; // Made optional for yoga bookings
   checkIn: Date;
   checkOut: Date;
   guests: IGuestInfo[];
@@ -56,14 +56,14 @@ export interface IBooking extends Document {
   // Primary Guest Information
   primaryGuestInfo?: IPrimaryGuestInfo;
   guestEmail?: string; // For public bookings without user accounts
-  
+
   // Services
   includeFood: boolean;
   includeBreakfast: boolean;
   transport?: ITransportInfo;
   selectedServices: ISelectedService[];
-  yogaSessionId?: mongoose.Types.ObjectId;
-  
+  yogaSessionId?: mongoose.Types.ObjectId | string; // Can be ObjectId for scheduled sessions or string for daily sessions
+
   // Pricing
   roomPrice: number;
   foodPrice: number;
@@ -72,16 +72,19 @@ export interface IBooking extends Document {
   transportPrice: number;
   yogaPrice: number;
   totalAmount: number;
-  
+
   // Status
   status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   paymentId?: string;
-  
+
   // Special requests
   specialRequests?: string;
   notes?: string;
-  
+
+  // Booking type
+  bookingType?: 'room' | 'yoga';
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -251,7 +254,9 @@ const bookingSchema = new Schema<IBooking>(
     roomId: {
       type: Schema.Types.ObjectId,
       ref: 'Room',
-      required: [true, 'Room ID is required']
+      required: function(this: IBooking) {
+        return this.bookingType !== 'yoga'; // Only required for non-yoga bookings
+      }
     },
     checkIn: {
       type: Date,
@@ -302,8 +307,18 @@ const bookingSchema = new Schema<IBooking>(
       default: []
     },
     yogaSessionId: {
-      type: Schema.Types.ObjectId,
-      ref: 'YogaSession'
+      type: Schema.Types.Mixed, // Can be ObjectId for scheduled sessions or string for daily sessions
+      validate: {
+        validator: function(value: any) {
+          if (!value) return true; // Optional field
+          // Allow ObjectId for scheduled sessions
+          if (mongoose.isValidObjectId(value)) return true;
+          // Allow strings for daily sessions
+          if (typeof value === 'string' && value.length > 0) return true;
+          return false;
+        },
+        message: 'yogaSessionId must be a valid ObjectId or non-empty string'
+      }
     },
     
     // Pricing
@@ -375,6 +390,13 @@ const bookingSchema = new Schema<IBooking>(
       type: String,
       trim: true,
       maxlength: [1000, 'Notes cannot be more than 1000 characters']
+    },
+
+    // Booking type
+    bookingType: {
+      type: String,
+      enum: ['room', 'yoga'],
+      default: 'room'
     }
   },
   {

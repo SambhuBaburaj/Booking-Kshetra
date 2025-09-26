@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { body, param, query } from 'express-validator';
 import {
   createBooking,
@@ -16,8 +17,16 @@ const router = express.Router();
 // Validation rules
 const createBookingValidation = [
   body('roomId')
-    .isMongoId()
-    .withMessage('Valid room ID is required'),
+    .custom((value, { req }) => {
+      // Skip roomId validation for yoga bookings
+      if (req.body.bookingType === 'yoga' || req.body.yogaSessionId || value === '000000000000000000000000') {
+        return true;
+      }
+      if (!value || !mongoose.isValidObjectId(value)) {
+        throw new Error('Valid room ID is required for room bookings');
+      }
+      return true;
+    }),
   body('checkIn')
     .isISO8601()
     .toDate()
@@ -54,9 +63,16 @@ const createBookingValidation = [
     .withMessage('transport.drop must be boolean'),
   body('transport.flightNumber')
     .optional()
-    .trim()
-    .isLength({ min: 2, max: 10 })
-    .withMessage('Flight number must be between 2 and 10 characters'),
+    .custom((value) => {
+      // Allow empty string or valid flight number
+      if (value === '' || value === undefined || value === null) {
+        return true;
+      }
+      if (typeof value === 'string' && value.trim().length >= 2 && value.trim().length <= 10) {
+        return true;
+      }
+      throw new Error('Flight number must be between 2 and 10 characters');
+    }),
   body('transport.eta')
     .optional()
     .isISO8601()
@@ -80,8 +96,22 @@ const createBookingValidation = [
     .withMessage('Service quantity must be at least 1'),
   body('yogaSessionId')
     .optional()
-    .isMongoId()
-    .withMessage('Valid yoga session ID is required'),
+    .custom((value) => {
+      // Allow null/undefined for daily yoga sessions
+      if (!value || value === null || value === undefined) {
+        return true;
+      }
+      // Allow string IDs for daily yoga sessions (like "regular-0900")
+      if (typeof value === 'string') {
+        // If it looks like a MongoDB ObjectId, validate it
+        if (value.match(/^[0-9a-fA-F]{24}$/)) {
+          return mongoose.isValidObjectId(value);
+        }
+        // Allow other string formats for daily sessions
+        return true;
+      }
+      return mongoose.isValidObjectId(value);
+    }),
   body('specialRequests')
     .optional()
     .trim()

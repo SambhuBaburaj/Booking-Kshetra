@@ -21,6 +21,8 @@ import {
   BookOpen
 } from 'lucide-react'
 import Header from '../../../../components/Header'
+import { bookingAPI } from '../../../../lib/api'
+import { initiatePayment } from '../../../../utils/razorpay'
 
 // Types for our simplified booking
 type SessionData = {
@@ -49,29 +51,11 @@ type BookingData = {
   timestamp: string
 }
 
-// Load Razorpay script
-const loadRazorpayScript = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    if ((window as any).Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
-};
 
 export default function YogaBookingPaymentPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [bookingData, setBookingData] = useState<BookingData | null>(null)
-  const [paymentMethods] = useState([
-    { id: 'razorpay', name: 'Razorpay', icon: CreditCard, description: 'Credit/Debit Cards, UPI, Net Banking, Wallets' }
-  ])
 
   useEffect(() => {
     // Get booking data from localStorage
@@ -105,68 +89,121 @@ export default function YogaBookingPaymentPage() {
     })
   }
 
+  const createYogaBooking = async () => {
+    if (!bookingData) return null
+
+    try {
+      console.log('🚀 Creating yoga booking...')
+
+      // Create booking payload that passes backend validation
+      // Use a dummy room ID for yoga bookings to satisfy validation
+      const YOGA_DUMMY_ROOM_ID = '000000000000000000000000' // Valid MongoDB ObjectId format
+
+      const bookingPayload = {
+        // Use dummy room ID to pass validation (backend should handle this as special case)
+        roomId: YOGA_DUMMY_ROOM_ID,
+        checkIn: new Date().toISOString(),
+        checkOut: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        primaryGuestInfo: {
+          name: bookingData.user.name,
+          email: bookingData.user.email,
+          phone: bookingData.user.phone,
+          address: '',
+          city: '',
+          state: '',
+          pincode: '',
+          emergencyContact: {
+            name: '',
+            phone: '',
+            relationship: ''
+          }
+        },
+        guests: [{
+          name: bookingData.user.name,
+          age: 25,
+          gender: 'Other' as const
+          // Skip ID fields for yoga bookings - not needed
+        }],
+        includeFood: false,
+        includeBreakfast: false,
+        transport: {
+          pickup: false,
+          drop: false,
+          // Remove flightNumber field entirely to avoid validation error
+          arrivalTime: '',
+          departureTime: '',
+          airportFrom: 'Kochi'
+        },
+        selectedServices: [],
+        specialRequests: `Yoga Session: ${bookingData.session.name} - ${bookingData.session.description} - Experience Level: ${bookingData.user.experience}`,
+        totalAmount: bookingData.session.price,
+        paymentStatus: 'pending',
+        // Add yoga-specific data
+        yogaSessionId: bookingData.session.id,
+        bookingType: 'yoga'
+      }
+
+      const response = await bookingAPI.createPublicBooking(bookingPayload)
+
+      if (response.data?.success) {
+        console.log('✅ Yoga booking created successfully:', response.data.data)
+        const bookingId = response.data.data.booking._id
+        console.log('📋 Extracted booking ID:', bookingId)
+        return bookingId
+      } else {
+        throw new Error(response.data?.message || 'Failed to create yoga booking')
+      }
+    } catch (error) {
+      console.error('Yoga booking creation error:', error)
+      throw error
+    }
+  }
+
+  const handlePaymentSuccess = (paymentData: any) => {
+    console.log('Payment successful:', paymentData)
+
+    // Clear localStorage
+    localStorage.removeItem('yogaBookingData')
+
+    // Redirect to success page with proper parameters
+    router.push(`/yoga/booking/success?payment_id=${paymentData.razorpay_payment_id}&order_id=${paymentData.razorpay_order_id}&booking_id=${paymentData.bookingId}`)
+  }
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment error:', error)
+    alert('Payment failed: ' + (error.message || 'Unknown error'))
+    setLoading(false)
+  }
+
   const handlePayment = async () => {
     if (!bookingData) return
 
     setLoading(true)
 
     try {
-      // Load Razorpay script
-      const scriptLoaded = await loadRazorpayScript()
-      if (!scriptLoaded) {
-        alert('Failed to load payment gateway. Please try again.')
-        setLoading(false)
-        return
-      }
+      console.log('🚀 Starting yoga booking flow...')
 
-      // For demo purposes, create a mock order ID
-      const simulatedOrderId = `yoga_order_${Date.now()}`
+      // Create booking first
+      const createdBookingId = await createYogaBooking()
 
-      // Razorpay options
-      const options = {
-        key: 'rzp_test_RHyWk20J1eq916', // Use your actual Razorpay key
-        amount: bookingData.session.price * 100,
-        currency: 'INR',
-        name: 'Kshetra Retreat Resort',
-        description: bookingData.session.name,
-        order_id: simulatedOrderId,
-        handler: async function (response: any) {
-          try {
-            // In a real app, verify payment on backend
-            console.log('Payment successful:', response)
+      console.log('✅ Yoga booking created, now opening Razorpay...')
 
-            // Clear localStorage
-            localStorage.removeItem('yogaBookingData')
-
-            // Redirect to success page
-            router.push(`/yoga/booking/success?payment_id=${response.razorpay_payment_id || 'demo_payment'}&order_id=${response.razorpay_order_id || simulatedOrderId}`)
-          } catch (error) {
-            console.error('Payment verification error:', error)
-            alert('Payment verification failed. Please contact support.')
-          }
-        },
-        prefill: {
+      // Immediately trigger payment after booking creation using the proper utils
+      await initiatePayment({
+        amount: bookingData.session.price,
+        bookingId: createdBookingId,
+        userDetails: {
           name: bookingData.user.name,
           email: bookingData.user.email,
-          contact: bookingData.user.phone
+          phone: bookingData.user.phone,
         },
-        theme: {
-          color: '#ea580c'
-        },
-        modal: {
-          ondismiss: function() {
-            setLoading(false)
-          }
-        }
-      }
-
-      const razorpay = new (window as any).Razorpay(options)
-      razorpay.open()
+        onSuccess: handlePaymentSuccess,
+        onError: handlePaymentError
+      })
 
     } catch (error) {
-      console.error('Payment error:', error)
-      alert('Payment failed. Please try again.')
-    } finally {
+      console.error('❌ Yoga booking/Payment flow error:', error)
+      alert('Failed to create yoga booking: ' + (error as Error).message)
       setLoading(false)
     }
   }
