@@ -11,6 +11,11 @@ import {
   updateTeacher,
   deleteTeacher,
   getYogaAnalytics,
+  getAllDailyYogaSessions,
+  getDailyYogaSessionById,
+  createDailyYogaSession,
+  updateDailyYogaSession,
+  deleteDailyYogaSession,
 } from "../controllers/yogaController";
 import { authenticate, authorize } from "../middleware/auth";
 
@@ -21,6 +26,8 @@ router.get("/sessions", getAllYogaSessions);
 router.get("/sessions/:id", getYogaSessionById);
 router.get("/teachers", getAllTeachers);
 router.get("/teachers/:id", getTeacherById);
+router.get("/daily-sessions", getAllDailyYogaSessions);
+router.get("/daily-sessions/:id", getDailyYogaSessionById);
 
 // Admin only routes
 router.post("/sessions", authenticate, authorize("admin"), createYogaSession);
@@ -42,5 +49,10 @@ router.put("/teachers/:id", authenticate, authorize("admin"), updateTeacher);
 router.delete("/teachers/:id", authenticate, authorize("admin"), deleteTeacher);
 
 router.get("/analytics", authenticate, authorize("admin"), getYogaAnalytics);
+
+// Daily sessions admin routes
+router.post("/daily-sessions", authenticate, authorize("admin"), createDailyYogaSession);
+router.put("/daily-sessions/:id", authenticate, authorize("admin"), updateDailyYogaSession);
+router.delete("/daily-sessions/:id", authenticate, authorize("admin"), deleteDailyYogaSession);
 
 export default router;

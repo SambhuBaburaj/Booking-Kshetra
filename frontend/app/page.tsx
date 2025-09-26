@@ -774,32 +774,41 @@ export default function Home() {
                   Transform Your Life Through Yoga
                 </h3>
                 <p className="text-xl md:text-2xl text-white/80 leading-relaxed max-w-4xl mx-auto">
-                  Experience authentic yoga practices in the birthplace of Ayurveda. Our comprehensive programs
-                  blend traditional wisdom with modern teaching methods in the serene setting of Varkala Beach.
+                  Experience authentic yoga practices in the birthplace of
+                  Ayurveda. Our comprehensive programs blend traditional wisdom
+                  with modern teaching methods in the serene setting of Varkala
+                  Beach.
                 </p>
               </div>
 
               {/* Key Statistics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-3xl font-bold text-orange-400 mb-1">200+</div>
+                  <div className="text-3xl font-bold text-orange-400 mb-1">
+                    200+
+                  </div>
                   <div className="text-white/70 text-sm">Students Trained</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-3xl font-bold text-pink-400 mb-1">15+</div>
+                  <div className="text-3xl font-bold text-pink-400 mb-1">
+                    15+
+                  </div>
                   <div className="text-white/70 text-sm">Years Experience</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-3xl font-bold text-blue-400 mb-1">5+</div>
+                  <div className="text-3xl font-bold text-blue-400 mb-1">
+                    5+
+                  </div>
                   <div className="text-white/70 text-sm">Expert Teachers</div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-3xl font-bold text-green-400 mb-1">24/7</div>
+                  <div className="text-3xl font-bold text-green-400 mb-1">
+                    24/7
+                  </div>
                   <div className="text-white/70 text-sm">Support</div>
                 </div>
               </div>
             </motion.div>
-
 
             {/* Why Choose Us */}
             <motion.div
@@ -809,31 +818,48 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 mb-12"
             >
-              <h4 className="text-2xl font-bold text-white text-center mb-8">Benefits of Yoga at Kshetra</h4>
+              <h4 className="text-2xl font-bold text-white text-center mb-8">
+                Benefits of Yoga at Kshetra
+              </h4>
 
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <div className="w-16 h-16 bg-orange-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Activity className="w-8 h-8 text-orange-400" />
                   </div>
-                  <h5 className="text-white font-semibold mb-2">Physical Wellness</h5>
-                  <p className="text-white/70 text-sm">Improve flexibility, strength, posture, and overall physical health through guided practice</p>
+                  <h5 className="text-white font-semibold mb-2">
+                    Physical Wellness
+                  </h5>
+                  <p className="text-white/70 text-sm">
+                    Improve flexibility, strength, posture, and overall physical
+                    health through guided practice
+                  </p>
                 </div>
 
                 <div className="text-center">
                   <div className="w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Heart className="w-8 h-8 text-blue-400" />
                   </div>
-                  <h5 className="text-white font-semibold mb-2">Mental Clarity</h5>
-                  <p className="text-white/70 text-sm">Reduce stress, enhance focus, and achieve mental peace through meditation and mindfulness</p>
+                  <h5 className="text-white font-semibold mb-2">
+                    Mental Clarity
+                  </h5>
+                  <p className="text-white/70 text-sm">
+                    Reduce stress, enhance focus, and achieve mental peace
+                    through meditation and mindfulness
+                  </p>
                 </div>
 
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Shield className="w-8 h-8 text-green-400" />
                   </div>
-                  <h5 className="text-white font-semibold mb-2">Spiritual Growth</h5>
-                  <p className="text-white/70 text-sm">Connect with your inner self and discover deeper meaning through ancient wisdom and practices</p>
+                  <h5 className="text-white font-semibold mb-2">
+                    Spiritual Growth
+                  </h5>
+                  <p className="text-white/70 text-sm">
+                    Connect with your inner self and discover deeper meaning
+                    through ancient wisdom and practices
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -858,7 +884,8 @@ export default function Home() {
               </motion.button>
 
               <p className="text-white/60 text-sm mt-4">
-                Discover all our yoga offerings, schedules, and book your perfect session
+                Discover all our yoga offerings, schedules, and book your
+                perfect session
               </p>
             </motion.div>
           </div>
@@ -1117,7 +1144,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
+                transition={{ duration: 0.6 }}
                 whileHover={{ y: -10 }}
                 className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-center text-white hover:bg-white/20 transition-all duration-300"
               >

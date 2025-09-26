@@ -78,12 +78,14 @@ export default function YogaPage() {
   );
   const [selectedDailySession, setSelectedDailySession] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>("");
+  const [dailySessions, setDailySessions] = useState<any[]>([]);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   useEffect(() => {
     fetchYogaSessions();
     fetchTeachers();
+    fetchDailySessions();
   }, []);
 
   const fetchYogaSessions = async () => {
@@ -107,6 +109,17 @@ export default function YogaPage() {
       console.error("Error fetching teachers:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDailySessions = async () => {
+    try {
+      const response = await yogaAPI.getAllDailySessions();
+      if (response.data.success) {
+        setDailySessions(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching daily sessions:", error);
     }
   };
 
@@ -651,139 +664,105 @@ export default function YogaPage() {
             </p>
           </motion.div>
 
-          {/* Session Types */}
+          {/* Dynamic Session Types */}
           <div className="grid lg:grid-cols-2 gap-12 mb-16">
-            {/* Regular Yoga Sessions */}
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-orange-500/20 rounded-2xl flex items-center justify-center">
-                  <Activity className="w-8 h-8 text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-3xl font-bold text-white">
-                    Regular Yoga Sessions
-                  </h3>
-                  <p className="text-xl text-orange-200 font-semibold">
-                    ₹500 per session
-                  </p>
-                  <p className="text-orange-300 text-sm">1.5 hour session</p>
-                </div>
-              </div>
+            {dailySessions.map((session, index) => {
+              const isRegular = session.type === 'regular';
+              const colorTheme = isRegular
+                ? {
+                    bg: 'bg-orange-500/20',
+                    icon: 'text-orange-400',
+                    price: 'text-orange-200',
+                    duration: 'text-orange-300',
+                    check: 'text-orange-400'
+                  }
+                : {
+                    bg: 'bg-purple-500/20',
+                    icon: 'text-purple-400',
+                    price: 'text-purple-200',
+                    duration: 'text-purple-300',
+                    check: 'text-purple-400'
+                  };
 
-              <div className="space-y-4 mb-8">
-                <div className="bg-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Sunrise className="w-5 h-5 text-yellow-400" />
-                    <span className="text-white font-semibold">
-                      Morning Sessions
-                    </span>
+              return (
+                <motion.div
+                  key={session._id}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8 }}
+                  className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
+                >
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className={`w-16 h-16 ${colorTheme.bg} rounded-2xl flex items-center justify-center`}>
+                      {isRegular ? (
+                        <Activity className={`w-8 h-8 ${colorTheme.icon}`} />
+                      ) : (
+                        <Heart className={`w-8 h-8 ${colorTheme.icon}`} />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-white">
+                        {session.name}
+                      </h3>
+                      <p className={`text-xl ${colorTheme.price} font-semibold`}>
+                        ₹{session.price.toLocaleString()} per session
+                      </p>
+                      <p className={`${colorTheme.duration} text-sm`}>
+                        {session.duration} minute session
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-2 ml-8">
-                    <div className="text-yellow-200">7:30 AM - 9:00 AM</div>
-                    <div className="text-yellow-200">9:00 AM - 10:30 AM</div>
-                  </div>
-                </div>
 
-                <div className="bg-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Sunset className="w-5 h-5 text-orange-400" />
-                    <span className="text-white font-semibold">
-                      Evening Session
-                    </span>
-                  </div>
-                  <div className="ml-8">
-                    <div className="text-orange-200">4:00 PM - 5:30 PM</div>
-                  </div>
-                </div>
-              </div>
+                  <div className="space-y-4 mb-8">
+                    <div className="bg-white/10 rounded-xl p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Clock className={`w-5 h-5 ${colorTheme.icon}`} />
+                        <span className="text-white font-semibold">
+                          Available Times
+                        </span>
+                      </div>
+                      <div className="space-y-2 ml-8">
+                        {session.timeSlots?.filter((slot: any) => slot.isActive).map((slot: any, idx: number) => {
+                          const timeFormatted = slot.time.length === 5 ? slot.time : `0${slot.time}`;
+                          const [hours, minutes] = timeFormatted.split(':');
+                          const hour12 = parseInt(hours) > 12 ? parseInt(hours) - 12 : parseInt(hours);
+                          const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                          const displayTime = `${hour12 === 0 ? 12 : hour12}:${minutes} ${ampm}`;
+                          const endHour = parseInt(hours) + Math.floor(session.duration / 60);
+                          const endMinutes = parseInt(minutes) + (session.duration % 60);
+                          const endHour12 = endHour > 12 ? endHour - 12 : endHour;
+                          const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+                          const endDisplayTime = `${endHour12 === 0 ? 12 : endHour12}:${endMinutes.toString().padStart(2, '0')} ${endAmpm}`;
 
-              <div className="space-y-3 mb-8">
-                {[
-                  "Traditional Hatha Yoga",
-                  "Pranayama (Breathing)",
-                  "Meditation Practice",
-                  "Perfect for all levels",
-                ].map((feature, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: idx * 0.1 }}
-                    className="flex items-center gap-3 text-white/90"
-                  >
-                    <CheckCircle className="w-5 h-5 text-orange-400" />
-                    <span>{feature}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Yoga Therapy Sessions */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="bg-white/10 backdrop-blur-lg rounded-3xl p-8"
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-purple-500/20 rounded-2xl flex items-center justify-center">
-                  <Heart className="w-8 h-8 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-3xl font-bold text-white">
-                    Yoga Therapy Sessions
-                  </h3>
-                  <p className="text-xl text-purple-200 font-semibold">
-                    ₹1,500 per session
-                  </p>
-                  <p className="text-purple-300 text-sm">1.5 hour session</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="bg-white/10 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Clock className="w-5 h-5 text-blue-400" />
-                    <span className="text-white font-semibold">
-                      Available Times
-                    </span>
+                          return (
+                            <div key={idx} className={`${colorTheme.price}`}>
+                              {displayTime} - {endDisplayTime}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                  <div className="space-y-2 ml-8">
-                    <div className="text-blue-200">11:00 AM - 12:30 PM</div>
-                    <div className="text-blue-200">5:30 PM - 7:00 PM</div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-3 mb-8">
-                {[
-                  "Personalized therapy approach",
-                  "Healing-focused practices",
-                  "One-on-one guidance",
-                  "Therapeutic techniques",
-                ].map((feature, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: idx * 0.1 }}
-                    className="flex items-center gap-3 text-white/90"
-                  >
-                    <CheckCircle className="w-5 h-5 text-purple-400" />
-                    <span>{feature}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
+                  <div className="space-y-3 mb-8">
+                    {session.features?.map((feature: string, idx: number) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: idx * 0.1 }}
+                        className="flex items-center gap-3 text-white/90"
+                      >
+                        <CheckCircle className={`w-5 h-5 ${colorTheme.check}`} />
+                        <span>{feature}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           {/* Interactive Booking Section */}
@@ -831,31 +810,36 @@ export default function YogaPage() {
                   <option value="" className="bg-gray-800">
                     Choose a session...
                   </option>
-                  <optgroup
-                    label="Regular Yoga Sessions - ₹500"
-                    className="bg-gray-800"
-                  >
-                    <option value="regular-730" className="bg-gray-800">
-                      7:30 AM - 9:00 AM
-                    </option>
-                    <option value="regular-900" className="bg-gray-800">
-                      9:00 AM - 10:30 AM
-                    </option>
-                    <option value="regular-400" className="bg-gray-800">
-                      4:00 PM - 5:30 PM
-                    </option>
-                  </optgroup>
-                  <optgroup
-                    label="Yoga Therapy Sessions - ₹1,500"
-                    className="bg-gray-800"
-                  >
-                    <option value="therapy-1100" className="bg-gray-800">
-                      11:00 AM - 12:30 PM
-                    </option>
-                    <option value="therapy-530" className="bg-gray-800">
-                      5:30 PM - 7:00 PM
-                    </option>
-                  </optgroup>
+                  {dailySessions.map((session) => (
+                    <optgroup
+                      key={session._id}
+                      label={`${session.name} - ₹${session.price.toLocaleString()}`}
+                      className="bg-gray-800"
+                    >
+                      {session.timeSlots?.filter((slot: any) => slot.isActive).map((slot: any, idx: number) => {
+                        const timeFormatted = slot.time.length === 5 ? slot.time : `0${slot.time}`;
+                        const [hours, minutes] = timeFormatted.split(':');
+                        const hour12 = parseInt(hours) > 12 ? parseInt(hours) - 12 : parseInt(hours);
+                        const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+                        const displayTime = `${hour12 === 0 ? 12 : hour12}:${minutes} ${ampm}`;
+                        const endHour = parseInt(hours) + Math.floor(session.duration / 60);
+                        const endMinutes = parseInt(minutes) + (session.duration % 60);
+                        const endHour12 = endHour > 12 ? endHour - 12 : endHour;
+                        const endAmpm = endHour >= 12 ? 'PM' : 'AM';
+                        const endDisplayTime = `${endHour12 === 0 ? 12 : endHour12}:${endMinutes.toString().padStart(2, '0')} ${endAmpm}`;
+
+                        return (
+                          <option
+                            key={idx}
+                            value={`${session.type}-${slot.time.replace(':', '')}`}
+                            className="bg-gray-800"
+                          >
+                            {displayTime} - {endDisplayTime}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
             </div>

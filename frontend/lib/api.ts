@@ -240,6 +240,15 @@ export const yogaAPI = {
   bookSession: async (data: { sessionId: string; participants: number }) => {
     return await ApiInstance.post("/yoga/book", data);
   },
+
+  // Daily yoga sessions
+  getAllDailySessions: async (params?: any) => {
+    return await ApiInstance.get("/yoga/daily-sessions", { params });
+  },
+
+  getDailySessionById: async (id: string) => {
+    return await ApiInstance.get(`/yoga/daily-sessions/${id}`);
+  },
 };
 
 // Notification API calls
@@ -392,6 +401,27 @@ export const adminAPI = {
   // Yoga Analytics
   getYogaAnalytics: async () => {
     return await AdminApiInstance.get("/yoga/analytics");
+  },
+
+  // Daily Yoga Session Management
+  getAllDailyYogaSessions: async (params?: any) => {
+    return await AdminApiInstance.get("/yoga/daily-sessions", { params });
+  },
+
+  getDailyYogaSessionById: async (id: string) => {
+    return await AdminApiInstance.get(`/yoga/daily-sessions/${id}`);
+  },
+
+  createDailyYogaSession: async (data: any) => {
+    return await AdminApiInstance.post("/yoga/daily-sessions", data);
+  },
+
+  updateDailyYogaSession: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/yoga/daily-sessions/${id}`, data);
+  },
+
+  deleteDailyYogaSession: async (id: string) => {
+    return await AdminApiInstance.delete(`/yoga/daily-sessions/${id}`);
   },
 };
 

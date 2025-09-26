@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import YogaSession from '../models/YogaSession';
 import Teacher from '../models/Teacher';
 import YogaCourse from '../models/YogaCourse';
+import DailyYogaSession from '../models/DailyYogaSession';
 
 // Get all active yoga sessions
 export const getAllYogaSessions = async (req: Request, res: Response): Promise<void> => {
@@ -378,6 +379,142 @@ export const getYogaAnalytics = async (req: Request, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       message: 'Failed to fetch analytics',
+      error: error.message
+    });
+  }
+};
+
+// Get all daily yoga sessions
+export const getAllDailyYogaSessions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { type } = req.query;
+
+    const query: any = { isActive: true };
+
+    if (type) {
+      query.type = type;
+    }
+
+    const dailySessions = await DailyYogaSession.find(query)
+      .sort({ type: 1, price: 1 });
+
+    res.json({
+      success: true,
+      data: dailySessions
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch daily yoga sessions',
+      error: error.message
+    });
+  }
+};
+
+// Get daily yoga session by ID
+export const getDailyYogaSessionById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const dailySession = await DailyYogaSession.findById(id);
+
+    if (!dailySession) {
+      res.status(404).json({
+        success: false,
+        message: 'Daily yoga session not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: dailySession
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch daily yoga session',
+      error: error.message
+    });
+  }
+};
+
+// Create new daily yoga session (Admin only)
+export const createDailyYogaSession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const dailySession = new DailyYogaSession(req.body);
+    await dailySession.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Daily yoga session created successfully',
+      data: dailySession
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: 'Failed to create daily yoga session',
+      error: error.message
+    });
+  }
+};
+
+// Update daily yoga session (Admin only)
+export const updateDailyYogaSession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const dailySession = await DailyYogaSession.findByIdAndUpdate(
+      id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!dailySession) {
+      res.status(404).json({
+        success: false,
+        message: 'Daily yoga session not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Daily yoga session updated successfully',
+      data: dailySession
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: 'Failed to update daily yoga session',
+      error: error.message
+    });
+  }
+};
+
+// Delete daily yoga session (Admin only)
+export const deleteDailyYogaSession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const dailySession = await DailyYogaSession.findByIdAndDelete(id);
+
+    if (!dailySession) {
+      res.status(404).json({
+        success: false,
+        message: 'Daily yoga session not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Daily yoga session deleted successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete daily yoga session',
       error: error.message
     });
   }
