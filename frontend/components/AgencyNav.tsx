@@ -4,45 +4,40 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  Home,
-  Calendar,
+  Car,
   Users,
-  Settings,
+  Calendar,
   LogOut,
   Menu,
   X,
-  Shield,
-  Activity,
-  Car
+  Building2,
+  Home
 } from 'lucide-react';
 
-const AdminNav = () => {
+const AgencyNav = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [agency, setAgency] = useState<any>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+    const agencyData = localStorage.getItem('agency');
+    if (agencyData) {
+      setAgency(JSON.parse(agencyData));
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    router.push('/admin/login');
+    localStorage.removeItem('agencyToken');
+    localStorage.removeItem('agency');
+    router.push('/agency/login');
   };
 
   const navItems = [
-    { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/rooms', icon: Home, label: 'Rooms' },
-    { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
-    { href: '/admin/yoga', icon: Activity, label: 'Yoga Sessions' },
-    { href: '/admin/teachers', icon: Users, label: 'Teachers' },
-    { href: '/admin/users', icon: Users, label: 'Users' },
-    { href: '/admin/agencies', icon: Car, label: 'Transport Agencies' },
+    { href: '/agency/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/agency/bookings', icon: Calendar, label: 'Transport Bookings' },
+    { href: '/agency/vehicles', icon: Car, label: 'Vehicles' },
+    { href: '/agency/drivers', icon: Users, label: 'Drivers' },
   ];
 
   return (
@@ -61,16 +56,16 @@ const AdminNav = () => {
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-200 ${
         isOpen ? 'translate-x-0' : '-translate-x-full'
       } lg:translate-x-0`}>
-        
+
         {/* Logo */}
         <div className="p-6 border-b">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
+              <Car className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
-              <p className="text-sm text-gray-600">Kshetra Retreat</p>
+              <h2 className="text-lg font-semibold text-gray-900">Agency Portal</h2>
+              <p className="text-sm text-gray-600">Transport Management</p>
             </div>
           </div>
         </div>
@@ -101,15 +96,18 @@ const AdminNav = () => {
           </div>
         </nav>
 
-        {/* User Info & Logout */}
+        {/* Agency Info & Logout */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
-          {user && (
+          {agency && (
             <div className="mb-3">
-              <p className="text-sm font-medium text-gray-900">{user.name}</p>
-              <p className="text-xs text-gray-600">{user.email}</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="w-4 h-4 text-gray-500" />
+                <p className="text-sm font-medium text-gray-900">{agency.name}</p>
+              </div>
+              <p className="text-xs text-gray-600">{agency.email}</p>
             </div>
           )}
-          
+
           <div className="flex gap-2">
             <button
               onClick={() => router.push('/')}
@@ -118,7 +116,7 @@ const AdminNav = () => {
               <Home className="w-4 h-4" />
               Site
             </button>
-            
+
             <button
               onClick={handleLogout}
               className="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 flex items-center justify-center gap-2"
@@ -141,4 +139,4 @@ const AdminNav = () => {
   );
 };
 
-export default AdminNav;
+export default AgencyNav;

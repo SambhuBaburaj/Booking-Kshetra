@@ -16,6 +16,7 @@ import notificationRoutes from "./routes/notificationRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import roomRoutes from "./routes/roomRoutes";
 import yogaRoutes from "./routes/yogaRoutes";
+import agencyRoutes from "./routes/agencyRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -182,6 +183,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/yoga", yogaRoutes);
+app.use("/api/agency", agencyRoutes);
 
 // API info endpoint
 app.get("/api", (req, res) => {

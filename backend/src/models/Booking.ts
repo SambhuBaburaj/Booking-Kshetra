@@ -34,6 +34,11 @@ export interface ITransportInfo {
   pickupTime?: Date;
   airportFrom?: string;
   airportTo?: string;
+  pickupTerminal?: 'T1' | 'T2' | 'T3';
+  dropTerminal?: 'T1' | 'T2' | 'T3';
+  flightArrivalTime?: Date;
+  flightDepartureTime?: Date;
+  specialInstructions?: string;
 }
 
 export interface ISelectedService {
@@ -212,6 +217,27 @@ const transportInfoSchema = new Schema<ITransportInfo>({
     type: String,
     enum: ['Kochi', 'Trivandrum'],
     trim: true
+  },
+  pickupTerminal: {
+    type: String,
+    enum: ['T1', 'T2', 'T3'],
+    trim: true
+  },
+  dropTerminal: {
+    type: String,
+    enum: ['T1', 'T2', 'T3'],
+    trim: true
+  },
+  flightArrivalTime: {
+    type: Date
+  },
+  flightDepartureTime: {
+    type: Date
+  },
+  specialInstructions: {
+    type: String,
+    trim: true,
+    maxlength: [300, 'Special instructions cannot be more than 300 characters']
   }
 });
 

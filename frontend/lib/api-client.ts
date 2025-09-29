@@ -10,6 +10,7 @@ interface ApiRequestOptions {
   body?: any;
   headers?: Record<string, string>;
   requireAuth?: boolean;
+  useAgencyAuth?: boolean;
 }
 
 class ApiClient {
@@ -22,8 +23,9 @@ class ApiClient {
       "http://localhost:5001/api";
   }
 
-  private getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem("token");
+  private getAuthHeaders(useAgencyAuth = false): Record<string, string> {
+    const tokenKey = useAgencyAuth ? "agencyToken" : "token";
+    const token = localStorage.getItem(tokenKey);
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
@@ -32,8 +34,14 @@ class ApiClient {
       if (!response.ok) {
         // Handle specific HTTP errors
         if (response.status === 401) {
+          // Clear both tokens and redirect to appropriate login
           localStorage.removeItem("token");
-          window.location.href = "/admin/login";
+          localStorage.removeItem("agencyToken");
+          if (window.location.pathname.startsWith("/agency")) {
+            window.location.href = "/agency/login";
+          } else {
+            window.location.href = "/admin/login";
+          }
           throw new Error("Authentication required");
         }
 
@@ -77,7 +85,7 @@ class ApiClient {
     endpoint: string,
     options: ApiRequestOptions = {}
   ): Promise<ApiResponse<T>> {
-    const { method = "GET", body, headers = {}, requireAuth = false } = options;
+    const { method = "GET", body, headers = {}, requireAuth = false, useAgencyAuth = false } = options;
 
     try {
       const url = `${this.baseUrl}${
@@ -90,7 +98,7 @@ class ApiClient {
       };
 
       if (requireAuth) {
-        Object.assign(requestHeaders, this.getAuthHeaders());
+        Object.assign(requestHeaders, this.getAuthHeaders(useAgencyAuth));
       }
 
       const config: RequestInit = {
@@ -166,6 +174,23 @@ class ApiClient {
     requireAuth = false
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: "DELETE", requireAuth });
+  }
+
+  // Agency-specific convenience methods
+  async agencyGet<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: "GET", requireAuth: true, useAgencyAuth: true });
+  }
+
+  async agencyPost<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: "POST", body, requireAuth: true, useAgencyAuth: true });
+  }
+
+  async agencyPut<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: "PUT", body, requireAuth: true, useAgencyAuth: true });
+  }
+
+  async agencyDelete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { method: "DELETE", requireAuth: true, useAgencyAuth: true });
   }
 }
 

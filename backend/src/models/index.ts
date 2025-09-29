@@ -6,6 +6,10 @@ export { default as YogaCourse } from './YogaCourse';
 export { default as Teacher } from './Teacher';
 export { default as Booking } from './Booking';
 export { default as Payment } from './Payment';
+export { default as Agency } from './Agency';
+export { default as Vehicle } from './Vehicle';
+export { default as Driver } from './Driver';
+export { default as TransportAssignment } from './TransportAssignment';
 
 export type { IUser } from './User';
 export type { IRoom } from './Room';
@@ -15,3 +19,7 @@ export type { IYogaCourse } from './YogaCourse';
 export type { ITeacher } from './Teacher';
 export type { IBooking, IGuestInfo, ITransportInfo, ISelectedService } from './Booking';
 export type { IPayment } from './Payment';
+export type { IAgency } from './Agency';
+export type { IVehicle } from './Vehicle';
+export type { IDriver } from './Driver';
+export type { ITransportAssignment } from './TransportAssignment';

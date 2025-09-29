@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Room, Service, YogaSession, User, Payment } from '../models';
+import { validationResult } from 'express-validator';
+import { Booking, Room, Service, YogaSession, User, Payment, Agency } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { uploadMultipleImages, deleteImageFromCloudinary } from '../utils/imageUpload';
 
@@ -778,6 +779,318 @@ export const getRoomStats = async (req: AuthenticatedRequest, res: Response): Pr
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to get room statistics'
+    });
+  }
+};
+
+// Agency Management
+export const createAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+      return;
+    }
+
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const agencyData = {
+      ...req.body,
+      createdBy: req.user._id
+    };
+
+    const agency = new Agency(agencyData);
+    await agency.save();
+
+    // Remove password from response
+    const agencyResponse: any = agency.toObject();
+    delete agencyResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: 'Agency created successfully',
+      data: { agency: agencyResponse }
+    });
+  } catch (error: any) {
+    console.error('Create agency error:', error);
+
+    if (error.code === 11000) {
+      if (error.keyPattern?.email) {
+        res.status(400).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      } else if (error.keyPattern?.username) {
+        res.status(400).json({
+          success: false,
+          message: 'Username already exists'
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: 'Agency with this information already exists'
+        });
+      }
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create agency'
+    });
+  }
+};
+
+export const getAgencies = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const agencies = await Agency.find()
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalAgencies = await Agency.countDocuments();
+
+    res.json({
+      success: true,
+      data: {
+        agencies,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalAgencies / limit),
+          totalAgencies,
+          hasNextPage: page < Math.ceil(totalAgencies / limit),
+          hasPrevPage: page > 1
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Get agencies error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get agencies'
+    });
+  }
+};
+
+export const updateAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+      return;
+    }
+
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const agency = await Agency.findById(id);
+
+    if (!agency) {
+      res.status(404).json({
+        success: false,
+        message: 'Agency not found'
+      });
+      return;
+    }
+
+    // Don't allow updating password through this endpoint
+    const { password, ...updateData } = req.body;
+
+    Object.assign(agency, updateData);
+    await agency.save();
+
+    // Remove password from response
+    const agencyResponse: any = agency.toObject();
+    delete agencyResponse.password;
+
+    res.json({
+      success: true,
+      message: 'Agency updated successfully',
+      data: { agency: agencyResponse }
+    });
+  } catch (error: any) {
+    console.error('Update agency error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update agency'
+    });
+  }
+};
+
+export const activateAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const { id } = req.params;
+
+    // Deactivate all other agencies first (only one can be active)
+    await Agency.updateMany({}, { isActive: false });
+
+    // Activate the selected agency
+    const agency = await Agency.findByIdAndUpdate(
+      id,
+      { isActive: true },
+      { new: true }
+    );
+
+    if (!agency) {
+      res.status(404).json({
+        success: false,
+        message: 'Agency not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Agency activated successfully',
+      data: { agency }
+    });
+  } catch (error: any) {
+    console.error('Activate agency error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to activate agency'
+    });
+  }
+};
+
+export const deactivateAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const { id } = req.params;
+
+    const agency = await Agency.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!agency) {
+      res.status(404).json({
+        success: false,
+        message: 'Agency not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Agency deactivated successfully',
+      data: { agency }
+    });
+  } catch (error: any) {
+    console.error('Deactivate agency error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to deactivate agency'
+    });
+  }
+};
+
+export const deleteAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const { id } = req.params;
+
+    const agency = await Agency.findByIdAndDelete(id);
+
+    if (!agency) {
+      res.status(404).json({
+        success: false,
+        message: 'Agency not found'
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      message: 'Agency deleted successfully'
+    });
+  } catch (error: any) {
+    console.error('Delete agency error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to delete agency'
+    });
+  }
+};
+
+export const getActiveAgency = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin privileges required.'
+      });
+      return;
+    }
+
+    const activeAgency = await Agency.findOne({ isActive: true })
+      .populate('createdBy', 'name email');
+
+    res.json({
+      success: true,
+      data: { agency: activeAgency }
+    });
+  } catch (error: any) {
+    console.error('Get active agency error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get active agency'
     });
   }
 };

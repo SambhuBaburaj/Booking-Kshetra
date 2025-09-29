@@ -1,10 +1,34 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Room, Service, YogaSession, User } from '../models';
+import { Booking, Room, Service, YogaSession, User, Agency } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { pricingCalculator } from '../utils/pricing';
 import { bookingValidator } from '../utils/bookingValidation';
 import { emailService } from '../utils/email';
+
+// Helper function to notify active agency about transport bookings
+const notifyActiveAgencyAboutTransport = async (booking: any) => {
+  try {
+    // Check if booking has transport requirements
+    if (!booking.transport || (!booking.transport.pickup && !booking.transport.drop)) {
+      return;
+    }
+
+    // Find the active agency
+    const activeAgency = await Agency.findOne({ isActive: true });
+    if (!activeAgency) {
+      console.log('No active agency found for transport notification');
+      return;
+    }
+
+    // Send notification to agency
+    await emailService.sendAgencyBookingNotification(booking, activeAgency);
+    console.log(`Transport booking notification sent to agency: ${activeAgency.name}`);
+  } catch (error) {
+    console.error('Failed to notify agency about transport booking:', error);
+    // Don't fail the booking if agency notification fails
+  }
+};
 
 // Helper function to convert userId to ObjectId
 const getUserObjectId = (userId: string | undefined): mongoose.Types.ObjectId => {
@@ -200,6 +224,9 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       console.error('Failed to send booking confirmation email:', emailError);
       // Don't fail the booking creation if email fails
     }
+
+    // Notify agency about transport booking if applicable
+    await notifyActiveAgencyAboutTransport(booking);
 
     res.status(201).json({
       success: true,
@@ -470,6 +497,9 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       console.error('Failed to send booking confirmation email:', emailError);
       // Don't fail the booking creation if email fails
     }
+
+    // Notify agency about transport booking if applicable
+    await notifyActiveAgencyAboutTransport(populatedBooking);
 
     res.status(201).json({
       success: true,

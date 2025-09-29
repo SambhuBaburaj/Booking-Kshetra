@@ -15,7 +15,14 @@ import {
   getAllUsers,
   getRoomAvailability,
   bulkUpdateRoomAvailability,
-  getRoomStats
+  getRoomStats,
+  createAgency,
+  getAgencies,
+  updateAgency,
+  activateAgency,
+  deactivateAgency,
+  deleteAgency,
+  getActiveAgency
 } from '../controllers/adminController';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -208,8 +215,12 @@ const bookingQueryValidation = [
   query('search')
     .optional()
     .trim()
-    .isLength({ min: 2 })
-    .withMessage('Search term must be at least 2 characters')
+    .custom((value) => {
+      if (value && value.length < 2) {
+        throw new Error('Search term must be at least 2 characters');
+      }
+      return true;
+    })
 ];
 
 const updateBookingValidation = [
@@ -298,5 +309,78 @@ const userQueryValidation = [
 ];
 
 router.get('/users', validate(userQueryValidation), getAllUsers);
+
+// Agency management routes
+const agencyValidation = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Agency name is required')
+    .isLength({ max: 100 })
+    .withMessage('Agency name cannot be more than 100 characters'),
+  body('email')
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('username')
+    .trim()
+    .notEmpty()
+    .withMessage('Username is required')
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters'),
+  body('contactPhone')
+    .matches(/^\+?[1-9]\d{1,14}$/)
+    .withMessage('Valid contact phone is required'),
+  body('address')
+    .trim()
+    .notEmpty()
+    .withMessage('Address is required')
+    .isLength({ max: 200 })
+    .withMessage('Address cannot be more than 200 characters')
+];
+
+const agencyUpdateValidation = [
+  body('name')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Agency name cannot be more than 100 characters'),
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Valid email is required'),
+  body('username')
+    .optional()
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('contactPhone')
+    .optional()
+    .matches(/^\+?[1-9]\d{1,14}$/)
+    .withMessage('Valid contact phone is required'),
+  body('address')
+    .optional()
+    .trim()
+    .isLength({ max: 200 })
+    .withMessage('Address cannot be more than 200 characters')
+];
+
+const idValidation = [
+  param('id').isMongoId().withMessage('Invalid agency ID')
+];
+
+router.post('/agencies', validate(agencyValidation), createAgency);
+router.get('/agencies', getAgencies);
+router.put('/agencies/:id', validate([...idValidation, ...agencyUpdateValidation]), updateAgency);
+router.put('/agencies/:id/activate', validate(idValidation), activateAgency);
+router.put('/agencies/:id/deactivate', validate(idValidation), deactivateAgency);
+router.delete('/agencies/:id', validate(idValidation), deleteAgency);
+router.get('/agencies/active', getActiveAgency);
 
 export default router;
