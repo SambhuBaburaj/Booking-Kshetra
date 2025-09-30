@@ -474,8 +474,10 @@ export const getBookings = async (req: AgencyAuthRequest, res: Response) => {
 
     // Find bookings with transport that need assignment or are assigned to this agency
     const bookingsWithTransport = await Booking.find({
-      'transport.pickup': true,
-      'transport.drop': true,
+      $or: [
+        { 'transport.pickup': true },
+        { 'transport.drop': true }
+      ],
       status: { $ne: 'cancelled' }
     })
     .populate('userId', 'name email phone')
@@ -506,10 +508,30 @@ export const getBookings = async (req: AgencyAuthRequest, res: Response) => {
     res.json({
       success: true,
       data: {
-        bookings: filteredBookings.map(booking => ({
-          ...booking.toObject(),
-          assignment: assignmentMap.get(String(booking._id)) || null
-        })),
+        bookings: filteredBookings.map(booking => {
+          const bookingObj = booking.toObject();
+
+          // Transform transport data to match frontend expectations
+          const transformedBooking = {
+            ...bookingObj,
+            bookingId: bookingObj._id,
+            guestName: bookingObj.primaryGuestInfo?.name || bookingObj.guests?.[0]?.name || bookingObj.userId?.name || 'Guest',
+            guestEmail: bookingObj.primaryGuestInfo?.email || bookingObj.userId?.email || 'N/A',
+            guestPhone: bookingObj.primaryGuestInfo?.phone || bookingObj.userId?.phone || 'N/A',
+            transportInfo: bookingObj.transport ? {
+              pickupLocation: `${bookingObj.transport.airportFrom} Airport`,
+              dropLocation: 'Kshetra Retreat Resort',
+              pickupDateTime: bookingObj.transport.arrivalTime || bookingObj.checkIn,
+              pickupTerminal: bookingObj.transport.pickupTerminal,
+              dropTerminal: bookingObj.transport.dropTerminal,
+              pickupFlightNumber: bookingObj.transport.pickupFlightNumber,
+              dropFlightNumber: bookingObj.transport.dropFlightNumber
+            } : null,
+            assignment: assignmentMap.get(String(booking._id)) || null
+          };
+
+          return transformedBooking;
+        }),
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(totalBookings / limit),
@@ -551,8 +573,7 @@ export const assignTransport = async (req: AgencyAuthRequest, res: Response) => 
 
     // Verify booking exists and has transport
     const booking = await Booking.findById(bookingId)
-      .populate('userId', 'name email phone')
-      .populate('primaryGuestInfo');
+      .populate('userId', 'name email phone');
 
     if (!booking) {
       return res.status(404).json({
@@ -561,7 +582,7 @@ export const assignTransport = async (req: AgencyAuthRequest, res: Response) => 
       });
     }
 
-    if (!booking.transport?.pickup || !booking.transport?.drop) {
+    if (!booking.transport?.pickup && !booking.transport?.drop) {
       return res.status(400).json({
         success: false,
         message: 'Booking does not require transport service'

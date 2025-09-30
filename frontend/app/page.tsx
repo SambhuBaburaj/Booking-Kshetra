@@ -35,6 +35,7 @@ import {
   Bed,
   AirVent,
   Tv,
+  Plane,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Header from "../components/Header";
@@ -72,6 +73,25 @@ export default function Home() {
       color: "from-blue-600 to-blue-800",
     },
     {
+      title: "Airport Transport",
+      category: "Transportation",
+      description:
+        "Seamless airport pickup and drop services with professional drivers, flight tracking, and comfortable vehicles. Choose your terminal, add flight details, and enjoy hassle-free transfers.",
+      features: [
+        "Professional Airport Transfers",
+        "Flight Delay Monitoring",
+        "Terminal Selection (T1/T2/T3)",
+        "Meet & Greet Service",
+        "24/7 Support Available",
+      ],
+      price: "From ₹1,500/transfer",
+      image:
+        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      icon: Car,
+      onClick: () => router.push("/airport-transport"),
+      color: "from-purple-600 to-indigo-800",
+    },
+    {
       title: "Yoga Sessions",
       category: "Wellness",
       description:
@@ -94,13 +114,13 @@ export default function Home() {
       title: "Adventure Services",
       category: "Activities",
       description:
-        "Enhance your stay with our curated selection of services including airport transfers, bike rentals, surfing lessons, and local sightseeing tours.",
+        "Enhance your stay with our curated selection of services including bike rentals, surfing lessons, and local sightseeing tours for an unforgettable Kerala experience.",
       features: [
-        "Airport Pickup & Drop Service",
         "Bike Rentals for Exploration",
         "Professional Surfing Lessons",
         "Local Sightseeing Tours",
         "Cultural Experience Packages",
+        "Adventure Activity Packages",
       ],
       price: "From ₹500/service",
       image:

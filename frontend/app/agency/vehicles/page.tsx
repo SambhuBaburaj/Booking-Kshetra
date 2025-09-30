@@ -22,6 +22,7 @@ interface Vehicle {
   _id: string;
   vehicleNumber: string;
   vehicleType: string;
+  brand: string;
   vehicleModel: string;
   capacity: number;
   fuelType: string;
@@ -192,9 +193,9 @@ export default function AgencyVehicles() {
   };
 
   const filteredVehicles = vehicles.filter(vehicle =>
-    vehicle.vehicleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.vehicleType.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.vehicleModel.toLowerCase().includes(searchTerm.toLowerCase())
+    (vehicle.vehicleNumber?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (vehicle.vehicleType?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (vehicle.vehicleModel?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const vehicleTypes = ['sedan', 'suv', 'hatchback', 'pickup', 'van', 'bus'];
@@ -295,7 +296,7 @@ export default function AgencyVehicles() {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-gray-600">
                         <Car className="w-4 h-4 mr-2" />
-                        <span>{vehicle.vehicleType.charAt(0).toUpperCase() + vehicle.vehicleType.slice(1)}</span>
+                        <span>{vehicle.vehicleType ? vehicle.vehicleType.charAt(0).toUpperCase() + vehicle.vehicleType.slice(1) : 'N/A'}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Users className="w-4 h-4 mr-2" />
@@ -303,9 +304,9 @@ export default function AgencyVehicles() {
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Fuel className="w-4 h-4 mr-2" />
-                        <span>{vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1)}</span>
+                        <span>{vehicle.fuelType ? vehicle.fuelType.charAt(0).toUpperCase() + vehicle.fuelType.slice(1) : 'N/A'}</span>
                       </div>
-                      {vehicle.insurance.expiryDate && (
+                      {vehicle.insurance?.expiryDate && (
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="w-4 h-4 mr-2" />
                           <span>Insurance expires: {new Date(vehicle.insurance.expiryDate).toLocaleDateString()}</span>
@@ -381,6 +382,21 @@ export default function AgencyVehicles() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Vehicle Brand *
+                  </label>
+                  <input
+                    type="text"
+                    name="brand"
+                    value={formData.brand}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Toyota"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
                 </div>
 
                 <div>

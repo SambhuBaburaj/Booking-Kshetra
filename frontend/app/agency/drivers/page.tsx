@@ -29,6 +29,12 @@ interface Driver {
   licenseExpiryDate: string;
   experience: number;
   languages: string[];
+  address: string;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
   isAvailable: boolean;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +49,12 @@ interface DriverFormData {
   licenseExpiryDate: string;
   experience: number;
   languages: string[];
+  address: string;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
   isAvailable: boolean;
 }
 
@@ -55,6 +67,12 @@ const initialFormData: DriverFormData = {
   licenseExpiryDate: '',
   experience: 0,
   languages: [],
+  address: '',
+  emergencyContact: {
+    name: '',
+    phone: '',
+    relationship: ''
+  },
   isAvailable: true
 };
 
@@ -192,10 +210,10 @@ export default function AgencyDrivers() {
   };
 
   const filteredDrivers = drivers.filter(driver =>
-    driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.phone.includes(searchTerm) ||
-    driver.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.licenseNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    (driver.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (driver.phone || '').includes(searchTerm) ||
+    (driver.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (driver.licenseNumber?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const licenseTypes = ['light_vehicle', 'heavy_vehicle', 'commercial', 'chauffeur'];

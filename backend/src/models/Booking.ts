@@ -38,6 +38,10 @@ export interface ITransportInfo {
   dropTerminal?: 'T1' | 'T2' | 'T3';
   flightArrivalTime?: Date;
   flightDepartureTime?: Date;
+  arrivalTime?: string;
+  departureTime?: string;
+  pickupFlightNumber?: string;
+  dropFlightNumber?: string;
   specialInstructions?: string;
 }
 
@@ -234,6 +238,24 @@ const transportInfoSchema = new Schema<ITransportInfo>({
   flightDepartureTime: {
     type: Date
   },
+  arrivalTime: {
+    type: String,
+    trim: true
+  },
+  departureTime: {
+    type: String,
+    trim: true
+  },
+  pickupFlightNumber: {
+    type: String,
+    trim: true,
+    uppercase: true
+  },
+  dropFlightNumber: {
+    type: String,
+    trim: true,
+    uppercase: true
+  },
   specialInstructions: {
     type: String,
     trim: true,
@@ -317,7 +339,10 @@ const bookingSchema = new Schema<IBooking>(
       default: 0,
       min: [0, 'Children count cannot be negative']
     },
-    
+
+    // Primary Guest Information
+    primaryGuestInfo: primaryGuestInfoSchema,
+
     // Services
     includeFood: {
       type: Boolean,

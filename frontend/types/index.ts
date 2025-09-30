@@ -36,9 +36,16 @@ export interface AddonService {
 export interface TransportBooking {
   pickup: boolean;
   drop: boolean;
-  flightNumber?: string;
-  eta?: string;
-  pickupTime?: string;
+  pickupDetails?: {
+    flightNumber?: string;
+    arrivalTime?: string;
+    terminal?: 'T1' | 'T2' | 'T3';
+  };
+  dropDetails?: {
+    flightNumber?: string;
+    departureTime?: string;
+    terminal?: 'T1' | 'T2' | 'T3';
+  };
   airportLocation: 'kochi' | 'trivandrum';
 }
 

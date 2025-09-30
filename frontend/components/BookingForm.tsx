@@ -16,14 +16,15 @@ interface BookingFormProps {
 
 export default function BookingForm({ formData, setFormData, pricing }: BookingFormProps) {
   const [currentStep, setCurrentStep] = useState(1)
-  const totalSteps = 5
+  const totalSteps = 6
 
   const steps = [
     { number: 1, title: 'Dates & Guests', icon: Calendar },
     { number: 2, title: 'Room Selection', icon: Users },
-    { number: 3, title: 'Transport & Meals', icon: Car },
-    { number: 4, title: 'Activities & Yoga', icon: Heart },
-    { number: 5, title: 'Review & Book', icon: MessageSquare },
+    { number: 3, title: 'Airport Transport', icon: Plane },
+    { number: 4, title: 'Meals', icon: Coffee },
+    { number: 5, title: 'Activities & Yoga', icon: Heart },
+    { number: 6, title: 'Review & Book', icon: MessageSquare },
   ]
 
   const updateFormData = (section: keyof BookingFormData, data: any) => {
@@ -40,10 +41,12 @@ export default function BookingForm({ formData, setFormData, pricing }: BookingF
       case 2:
         return <RoomSelectionStep formData={formData} updateFormData={updateFormData} />
       case 3:
-        return <TransportAndMealsStep formData={formData} updateFormData={updateFormData} />
+        return <AirportTransportStep formData={formData} updateFormData={updateFormData} />
       case 4:
-        return <ActivitiesAndYogaStep formData={formData} updateFormData={updateFormData} />
+        return <MealsStep formData={formData} updateFormData={updateFormData} />
       case 5:
+        return <ActivitiesAndYogaStep formData={formData} updateFormData={updateFormData} />
+      case 6:
         return <ReviewAndBookStep formData={formData} updateFormData={updateFormData} pricing={pricing} />
       default:
         return null
@@ -279,91 +282,230 @@ function RoomSelectionStep({ formData, updateFormData }: any) {
   )
 }
 
-// Step 3: Transport and Meals
-function TransportAndMealsStep({ formData, updateFormData }: any) {
+// Step 3: Airport Transport
+function AirportTransportStep({ formData, updateFormData }: any) {
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Transport & Meals</h2>
-      
-      {/* Transport Section */}
-      <div className="space-y-4">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Airport Transport Services</h2>
+
+      <div className="space-y-6">
         <div className="flex items-center gap-2 mb-4">
-          <Car className="w-5 h-5 text-primary-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Airport Transport</h3>
+          <Plane className="w-5 h-5 text-primary-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Airport Transfer</h3>
         </div>
-        
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+
+        {/* Airport Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Airport
+          </label>
+          <select
+            value={formData.transport.airportLocation}
+            onChange={(e) => updateFormData('transport', { airportLocation: e.target.value })}
+            className="input-field"
+          >
+            <option value="kochi">Kochi (COK)</option>
+            <option value="trivandrum">Trivandrum (TRV)</option>
+          </select>
+        </div>
+
+        {/* Pickup Service */}
+        <div className="border rounded-lg p-4">
+          <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
             <input
               type="checkbox"
               checked={formData.transport.pickup}
-              onChange={(e) => updateFormData('transport', { pickup: e.target.checked })}
+              onChange={(e) => {
+                updateFormData('transport', {
+                  pickup: e.target.checked,
+                  pickupDetails: e.target.checked ? (formData.transport.pickupDetails || {}) : undefined
+                })
+              }}
               className="w-5 h-5 text-primary-600"
             />
             <div>
-              <div className="font-medium">Airport Pickup</div>
-              <div className="text-sm text-gray-600">₹1,500 from Kochi/Trivandrum</div>
+              <div className="font-medium">Airport Pickup Service</div>
+              <div className="text-sm text-gray-600">₹1,500 from Airport to Resort</div>
             </div>
           </label>
-          
-          <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
+
+          {formData.transport.pickup && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Flight Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.transport.pickupDetails?.flightNumber || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      pickupDetails: {
+                        ...formData.transport.pickupDetails,
+                        flightNumber: e.target.value
+                      }
+                    })}
+                    placeholder="AI123"
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Arrival Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.transport.pickupDetails?.arrivalTime || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      pickupDetails: {
+                        ...formData.transport.pickupDetails,
+                        arrivalTime: e.target.value
+                      }
+                    })}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Terminal
+                  </label>
+                  <select
+                    value={formData.transport.pickupDetails?.terminal || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      pickupDetails: {
+                        ...formData.transport.pickupDetails,
+                        terminal: e.target.value
+                      }
+                    })}
+                    className="input-field"
+                  >
+                    <option value="">Select Terminal</option>
+                    <option value="T1">Terminal 1</option>
+                    <option value="T2">Terminal 2</option>
+                    <option value="T3">Terminal 3</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Drop Service */}
+        <div className="border rounded-lg p-4">
+          <label className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
             <input
               type="checkbox"
               checked={formData.transport.drop}
-              onChange={(e) => updateFormData('transport', { drop: e.target.checked })}
+              onChange={(e) => {
+                updateFormData('transport', {
+                  drop: e.target.checked,
+                  dropDetails: e.target.checked ? (formData.transport.dropDetails || {}) : undefined
+                })
+              }}
               className="w-5 h-5 text-primary-600"
             />
             <div>
-              <div className="font-medium">Airport Drop</div>
-              <div className="text-sm text-gray-600">₹1,500 to Kochi/Trivandrum</div>
+              <div className="font-medium">Airport Drop Service</div>
+              <div className="text-sm text-gray-600">₹1,500 from Resort to Airport</div>
             </div>
           </label>
+
+          {formData.transport.drop && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Flight Number
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.transport.dropDetails?.flightNumber || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      dropDetails: {
+                        ...formData.transport.dropDetails,
+                        flightNumber: e.target.value
+                      }
+                    })}
+                    placeholder="AI123"
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Departure Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.transport.dropDetails?.departureTime || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      dropDetails: {
+                        ...formData.transport.dropDetails,
+                        departureTime: e.target.value
+                      }
+                    })}
+                    className="input-field"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Terminal
+                  </label>
+                  <select
+                    value={formData.transport.dropDetails?.terminal || ''}
+                    onChange={(e) => updateFormData('transport', {
+                      dropDetails: {
+                        ...formData.transport.dropDetails,
+                        terminal: e.target.value
+                      }
+                    })}
+                    className="input-field"
+                  >
+                    <option value="">Select Terminal</option>
+                    <option value="T1">Terminal 1</option>
+                    <option value="T2">Terminal 2</option>
+                    <option value="T3">Terminal 3</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-        
+
         {(formData.transport.pickup || formData.transport.drop) && (
-          <div className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Flight Number (Optional)
-              </label>
-              <input
-                type="text"
-                value={formData.transport.flightNumber}
-                onChange={(e) => updateFormData('transport', { flightNumber: e.target.value })}
-                placeholder="AI123"
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Airport
-              </label>
-              <select
-                value={formData.transport.airportLocation}
-                onChange={(e) => updateFormData('transport', { airportLocation: e.target.value })}
-                className="input-field"
-              >
-                <option value="kochi">Kochi (COK)</option>
-                <option value="trivandrum">Trivandrum (TRV)</option>
-              </select>
-            </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">Service Information</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Professional drivers with airport pickup experience</li>
+              <li>• Vehicle tracking and real-time updates</li>
+              <li>• 24/7 customer support</li>
+              <li>• Flight delay monitoring (when flight number provided)</li>
+              <li>• Meet and greet service at arrivals</li>
+            </ul>
           </div>
         )}
       </div>
-      
-      {/* Breakfast Section */}
+    </div>
+  )
+}
+
+// Step 4: Meals
+function MealsStep({ formData, updateFormData }: any) {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold text-gray-900 mb-6">Meal Services</h2>
+
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
           <Coffee className="w-5 h-5 text-primary-600" />
           <h3 className="text-lg font-semibold text-gray-900">Additional Breakfast</h3>
         </div>
-        
+
         <label className="flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50">
           <input
             type="checkbox"
             checked={formData.breakfast.enabled}
             onChange={(e) => {
-              updateFormData('breakfast', { 
+              updateFormData('breakfast', {
                 enabled: e.target.checked,
                 days: e.target.checked ? formData.dates.nights : 0,
                 persons: e.target.checked ? formData.guests.adults : 0
@@ -376,7 +518,7 @@ function TransportAndMealsStep({ formData, updateFormData }: any) {
             <div className="text-sm text-gray-600">₹200 per person per day</div>
           </div>
         </label>
-        
+
         {formData.breakfast.enabled && (
           <div className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
@@ -407,12 +549,23 @@ function TransportAndMealsStep({ formData, updateFormData }: any) {
             </div>
           </div>
         )}
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="font-semibold text-yellow-900 mb-2">What's Included</h4>
+          <ul className="text-sm text-yellow-800 space-y-1">
+            <li>• Traditional Kerala breakfast items</li>
+            <li>• Fresh fruit and juice</li>
+            <li>• Coffee and tea</li>
+            <li>• Vegetarian and non-vegetarian options</li>
+            <li>• Special dietary requirements accommodated</li>
+          </ul>
+        </div>
       </div>
     </div>
   )
 }
 
-// Step 4: Activities and Yoga
+// Step 5: Activities and Yoga
 function ActivitiesAndYogaStep({ formData, updateFormData }: any) {
   const services = [
     {
@@ -602,7 +755,7 @@ function ActivitiesAndYogaStep({ formData, updateFormData }: any) {
   )
 }
 
-// Step 5: Review and Book
+// Step 6: Review and Book
 function ReviewAndBookStep({ formData, updateFormData, pricing }: any) {
   return (
     <div className="space-y-6">

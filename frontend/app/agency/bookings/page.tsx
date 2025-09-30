@@ -159,8 +159,7 @@ export default function AgencyBookings() {
     setSubmitLoading(true);
 
     try {
-      const response = await apiClient.agencyPost('/agency/assignments', {
-        bookingId: selectedBooking._id,
+      const response = await apiClient.agencyPost(`/agency/bookings/${selectedBooking._id}/assign`, {
         vehicleId: assignmentData.vehicleId,
         driverId: assignmentData.driverId,
         notes: assignmentData.notes
@@ -220,9 +219,9 @@ export default function AgencyBookings() {
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch =
-      booking.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.guestEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.bookingId.toLowerCase().includes(searchTerm.toLowerCase());
+      (booking.guestName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (booking.guestEmail?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (booking.bookingId?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
     const matchesFilter =
       filterStatus === 'all' ||
@@ -349,11 +348,11 @@ export default function AgencyBookings() {
                         <div className="space-y-2">
                           <div className="flex items-center text-sm text-gray-600">
                             <Users className="w-4 h-4 mr-2" />
-                            <span>{booking.guestName}</span>
+                            <span>{booking.guestName || 'N/A'}</span>
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
                             <Mail className="w-4 h-4 mr-2" />
-                            <span>{booking.guestEmail}</span>
+                            <span>{booking.guestEmail || 'N/A'}</span>
                           </div>
                           {booking.guestPhone && (
                             <div className="flex items-center text-sm text-gray-600">
@@ -362,7 +361,7 @@ export default function AgencyBookings() {
                             </div>
                           )}
                           <div className="text-sm text-gray-600">
-                            Guests: {booking.guests.length} person{booking.guests.length > 1 ? 's' : ''}
+                            Guests: {booking.guests?.length || 0} person{(booking.guests?.length || 0) > 1 ? 's' : ''}
                           </div>
                         </div>
                       </div>
