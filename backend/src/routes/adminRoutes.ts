@@ -210,25 +210,66 @@ const bookingQueryValidation = [
     .withMessage('Limit must be between 1 and 100'),
   query('status')
     .optional()
-    .isIn(['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'])
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'].includes(value);
+    })
     .withMessage('Invalid status'),
   query('paymentStatus')
     .optional()
-    .isIn(['pending', 'paid', 'failed', 'refunded'])
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['pending', 'paid', 'failed', 'refunded'].includes(value);
+    })
     .withMessage('Invalid payment status'),
+  query('bookingType')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['room', 'yoga'].includes(value);
+    })
+    .withMessage('Invalid booking type'),
+  query('hasTransport')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['pickup', 'drop', 'both'].includes(value);
+    })
+    .withMessage('Invalid transport filter'),
+  query('hasYoga')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['true', 'false'].includes(value);
+    })
+    .withMessage('Invalid yoga filter'),
+  query('hasServices')
+    .optional()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return ['true', 'false'].includes(value);
+    })
+    .withMessage('Invalid services filter'),
   query('dateFrom')
     .optional()
-    .isISO8601()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return !isNaN(Date.parse(value));
+    })
     .withMessage('Invalid date format for dateFrom'),
   query('dateTo')
     .optional()
-    .isISO8601()
+    .custom((value) => {
+      if (!value || value === '') return true; // Allow empty strings
+      return !isNaN(Date.parse(value));
+    })
     .withMessage('Invalid date format for dateTo'),
   query('search')
     .optional()
     .trim()
     .custom((value) => {
-      if (value && value.length < 2) {
+      if (!value || value === '') return true; // Allow empty strings
+      if (value.length < 2) {
         throw new Error('Search term must be at least 2 characters');
       }
       return true;

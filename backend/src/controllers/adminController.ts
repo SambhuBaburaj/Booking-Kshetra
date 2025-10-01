@@ -336,20 +336,51 @@ export const updateService = async (req: AuthenticatedRequest, res: Response): P
 // Booking Management
 export const getAllBookings = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      status, 
-      paymentStatus, 
-      dateFrom, 
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      paymentStatus,
+      bookingType,
+      hasTransport,
+      hasYoga,
+      hasServices,
+      dateFrom,
       dateTo,
-      search 
+      search
     } = req.query;
 
     const query: any = {};
     if (status) query.status = status;
     if (paymentStatus) query.paymentStatus = paymentStatus;
-    
+    if (bookingType) query.bookingType = bookingType;
+
+    // Filter by transport
+    if (hasTransport) {
+      if (hasTransport === 'pickup') {
+        query['transport.pickup'] = true;
+      } else if (hasTransport === 'drop') {
+        query['transport.drop'] = true;
+      } else if (hasTransport === 'both') {
+        query['transport.pickup'] = true;
+        query['transport.drop'] = true;
+      }
+    }
+
+    // Filter by yoga
+    if (hasYoga === 'true') {
+      query.$or = [
+        { bookingType: 'yoga' },
+        { yogaPrice: { $gt: 0 } },
+        { yogaSessionId: { $exists: true, $ne: null } }
+      ];
+    }
+
+    // Filter by additional services
+    if (hasServices === 'true') {
+      query.servicesPrice = { $gt: 0 };
+    }
+
     if (dateFrom || dateTo) {
       query.createdAt = {};
       if (dateFrom) query.createdAt.$gte = new Date(dateFrom as string);
@@ -370,21 +401,43 @@ export const getAllBookings = async (req: AuthenticatedRequest, res: Response): 
     // Add search functionality
     if (search) {
       const searchRegex = new RegExp(search as string, 'i');
-      // This is a simplified search - in production, you'd want to use text indexing
+
+      // Search in users
       const users = await User.find({
         $or: [
           { name: searchRegex },
-          { email: searchRegex }
+          { email: searchRegex },
+          { phone: searchRegex }
         ]
       }).select('_id');
-      
       const userIds = users.map(user => user._id);
-      query.$or = [
-        { userId: { $in: userIds } },
-        { _id: { $regex: searchRegex } }
-      ];
-      
-      bookingsQuery = Booking.find(query)
+
+      // Search in rooms
+      const rooms = await Room.find({
+        $or: [
+          { roomNumber: searchRegex },
+          { roomType: searchRegex }
+        ]
+      }).select('_id');
+      const roomIds = rooms.map(room => room._id);
+
+      // Build comprehensive search query
+      const searchQuery = {
+        ...query,
+        $or: [
+          { userId: { $in: userIds } },
+          { roomId: { $in: roomIds } },
+          { 'primaryGuestInfo.name': searchRegex },
+          { 'primaryGuestInfo.email': searchRegex },
+          { 'primaryGuestInfo.phone': searchRegex },
+          { guestEmail: searchRegex },
+          { specialRequests: searchRegex },
+          { notes: searchRegex },
+          { 'transport.flightNumber': searchRegex }
+        ]
+      };
+
+      bookingsQuery = Booking.find(searchQuery)
         .populate('userId', 'name email phone')
         .populate('roomId', 'roomNumber roomType pricePerNight')
         .populate('selectedServices.serviceId', 'name category')
@@ -392,6 +445,23 @@ export const getAllBookings = async (req: AuthenticatedRequest, res: Response): 
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(Number(limit));
+
+      // Update total count for search
+      const total = await Booking.countDocuments(searchQuery);
+      const bookings = await bookingsQuery;
+
+      res.json({
+        success: true,
+        data: {
+          bookings,
+          pagination: {
+            current: Number(page),
+            pages: Math.ceil(total / Number(limit)),
+            total
+          }
+        }
+      });
+      return;
     }
 
     const bookings = await bookingsQuery;

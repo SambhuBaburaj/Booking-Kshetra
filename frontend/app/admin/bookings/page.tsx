@@ -21,7 +21,7 @@ import {
 
 interface Booking {
   _id: string;
-  roomId: {
+  roomId?: {
     roomNumber: string;
     roomType: string;
     pricePerNight: number;
@@ -43,11 +43,39 @@ interface Booking {
   adults: number;
   children: number;
   totalAmount: number;
+  roomPrice: number;
+  foodPrice: number;
+  breakfastPrice: number;
+  servicesPrice: number;
+  transportPrice: number;
+  yogaPrice: number;
   status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   specialRequests?: string;
   notes?: string;
   createdAt: string;
+  bookingType?: 'room' | 'yoga';
+  transport?: {
+    pickup: boolean;
+    drop: boolean;
+    flightNumber?: string;
+    airportFrom?: string;
+    airportTo?: string;
+  };
+  selectedServices?: {
+    serviceId: {
+      name: string;
+      category: string;
+    };
+    quantity: number;
+    totalPrice: number;
+  }[];
+  yogaSessionId?: {
+    type: string;
+    batchName: string;
+  } | string;
+  includeFood: boolean;
+  includeBreakfast: boolean;
 }
 
 interface Room {
@@ -75,6 +103,10 @@ const AdminBookingsPage = () => {
   const [filters, setFilters] = useState({
     status: '',
     paymentStatus: '',
+    bookingType: '',
+    hasTransport: '',
+    hasYoga: '',
+    hasServices: '',
     search: '',
     page: 1,
     limit: 10
@@ -350,7 +382,7 @@ const AdminBookingsPage = () => {
 
         {/* Filters */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="relative">
@@ -363,6 +395,33 @@ const AdminBookingsPage = () => {
                   className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type</label>
+              <select
+                value={filters.bookingType}
+                onChange={(e) => handleFilterChange('bookingType', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Types</option>
+                <option value="room">Room Bookings</option>
+                <option value="yoga">Yoga Bookings</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Transport</label>
+              <select
+                value={filters.hasTransport}
+                onChange={(e) => handleFilterChange('hasTransport', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All</option>
+                <option value="pickup">Airport Pickup</option>
+                <option value="drop">Airport Drop</option>
+                <option value="both">Both</option>
+              </select>
             </div>
 
             <div>
@@ -388,7 +447,7 @@ const AdminBookingsPage = () => {
                 onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">All Payment Statuses</option>
+                <option value="">All Payment</option>
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
                 <option value="failed">Failed</option>
@@ -418,13 +477,13 @@ const AdminBookingsPage = () => {
                     Guest
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Room
+                    Booking Details
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Dates
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Guests
+                    Services
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
@@ -447,14 +506,35 @@ const AdminBookingsPage = () => {
                       <div className="text-sm text-gray-500">
                         {booking.userId?.email || booking.primaryGuestInfo?.email || booking.guestEmail}
                       </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.userId?.phone || booking.primaryGuestInfo?.phone}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        Room {booking.roomId.roomNumber}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {booking.roomId.roomType}
-                      </div>
+                      {booking.bookingType === 'yoga' || booking.yogaPrice > 0 ? (
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                            🧘‍♀️ Yoga Session
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {typeof booking.yogaSessionId === 'object' && booking.yogaSessionId?.type
+                              ? `${booking.yogaSessionId.type} - ${booking.yogaSessionId.batchName}`
+                              : 'Daily Session'
+                            }
+                          </div>
+                        </div>
+                      ) : booking.roomId ? (
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            Room {booking.roomId.roomNumber}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {booking.roomId.roomType}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-500">Service Booking</div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -465,15 +545,42 @@ const AdminBookingsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {booking.totalGuests} guests
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {booking.adults} adults, {booking.children} children
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-900">
+                          {booking.totalGuests} guests ({booking.adults}A, {booking.children}C)
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {booking.includeFood && (
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Food</span>
+                          )}
+                          {booking.includeBreakfast && (
+                            <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Breakfast</span>
+                          )}
+                          {booking.transport?.pickup && (
+                            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Pickup</span>
+                          )}
+                          {booking.transport?.drop && (
+                            <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">Drop</span>
+                          )}
+                          {booking.selectedServices && booking.selectedServices.length > 0 && (
+                            <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                              {booking.selectedServices.length} Services
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₹{booking.totalAmount.toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        ₹{booking.totalAmount.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500 space-y-1">
+                        {booking.roomPrice > 0 && <div>Room: ₹{booking.roomPrice}</div>}
+                        {booking.foodPrice > 0 && <div>Food: ₹{booking.foodPrice}</div>}
+                        {booking.yogaPrice > 0 && <div>Yoga: ₹{booking.yogaPrice}</div>}
+                        {booking.transportPrice > 0 && <div>Transport: ₹{booking.transportPrice}</div>}
+                        {booking.servicesPrice > 0 && <div>Services: ₹{booking.servicesPrice}</div>}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
@@ -952,13 +1059,32 @@ const AdminBookingsPage = () => {
                   <h3 className="text-lg font-medium text-gray-900 mb-3">Booking Details</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">Room:</span>
-                        <span className="text-sm font-medium text-gray-900">
-                          {selectedBooking.roomId.roomNumber} ({selectedBooking.roomId.roomType})
-                        </span>
-                      </div>
+                      {selectedBooking.roomId ? (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm text-gray-600">Room:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedBooking.roomId.roomNumber} ({selectedBooking.roomId.roomType})
+                          </span>
+                        </div>
+                      ) : selectedBooking.bookingType === 'yoga' || selectedBooking.yogaPrice > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🧘‍♀️</span>
+                          <span className="text-sm text-gray-600">Yoga Session:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {typeof selectedBooking.yogaSessionId === 'object' && selectedBooking.yogaSessionId?.type
+                              ? `${selectedBooking.yogaSessionId.type} - ${selectedBooking.yogaSessionId.batchName}`
+                              : 'Daily Session'
+                            }
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Booking Type:</span>
+                          <span className="text-sm font-medium text-gray-900">Service Booking</span>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Check-in:</span>
@@ -979,6 +1105,110 @@ const AdminBookingsPage = () => {
                         <span className="text-sm font-medium text-gray-900">
                           ₹{selectedBooking.totalAmount.toLocaleString()}
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Services & Transport */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Services & Add-ons</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Food:</span>
+                        <span className={`text-sm font-medium ${selectedBooking.includeFood ? 'text-green-600' : 'text-gray-400'}`}>
+                          {selectedBooking.includeFood ? '✓ Included' : '✗ Not included'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Breakfast:</span>
+                        <span className={`text-sm font-medium ${selectedBooking.includeBreakfast ? 'text-green-600' : 'text-gray-400'}`}>
+                          {selectedBooking.includeBreakfast ? '✓ Included' : '✗ Not included'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Airport Pickup:</span>
+                        <span className={`text-sm font-medium ${selectedBooking.transport?.pickup ? 'text-green-600' : 'text-gray-400'}`}>
+                          {selectedBooking.transport?.pickup ? '✓ Yes' : '✗ No'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Airport Drop:</span>
+                        <span className={`text-sm font-medium ${selectedBooking.transport?.drop ? 'text-green-600' : 'text-gray-400'}`}>
+                          {selectedBooking.transport?.drop ? '✓ Yes' : '✗ No'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {selectedBooking.transport && (selectedBooking.transport.pickup || selectedBooking.transport.drop) && (
+                      <div className="border-t pt-3">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Transport Details:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                          {selectedBooking.transport.flightNumber && (
+                            <div>Flight: {selectedBooking.transport.flightNumber}</div>
+                          )}
+                          {selectedBooking.transport.airportFrom && (
+                            <div>From: {selectedBooking.transport.airportFrom}</div>
+                          )}
+                          {selectedBooking.transport.airportTo && (
+                            <div>To: {selectedBooking.transport.airportTo}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedBooking.selectedServices && selectedBooking.selectedServices.length > 0 && (
+                      <div className="border-t pt-3">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Additional Services:</h4>
+                        <div className="space-y-1">
+                          {selectedBooking.selectedServices.map((service, index) => (
+                            <div key={index} className="flex justify-between items-center text-sm">
+                              <span>{service.serviceId.name} (x{service.quantity})</span>
+                              <span className="font-medium">₹{service.totalPrice.toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t pt-3">
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">Price Breakdown:</h4>
+                      <div className="space-y-1 text-sm">
+                        {selectedBooking.roomPrice > 0 && (
+                          <div className="flex justify-between">
+                            <span>Room charges:</span>
+                            <span>₹{selectedBooking.roomPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {selectedBooking.foodPrice > 0 && (
+                          <div className="flex justify-between">
+                            <span>Food charges:</span>
+                            <span>₹{selectedBooking.foodPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {selectedBooking.yogaPrice > 0 && (
+                          <div className="flex justify-between">
+                            <span>Yoga charges:</span>
+                            <span>₹{selectedBooking.yogaPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {selectedBooking.transportPrice > 0 && (
+                          <div className="flex justify-between">
+                            <span>Transport charges:</span>
+                            <span>₹{selectedBooking.transportPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {selectedBooking.servicesPrice > 0 && (
+                          <div className="flex justify-between">
+                            <span>Additional services:</span>
+                            <span>₹{selectedBooking.servicesPrice.toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-medium border-t pt-1">
+                          <span>Total:</span>
+                          <span>₹{selectedBooking.totalAmount.toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
