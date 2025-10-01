@@ -14,7 +14,9 @@ import {
   Activity,
   Car,
   Plane,
-  Waves
+  Waves,
+  MapPin,
+  Building
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 
@@ -22,7 +24,7 @@ import Header from '../../../../components/Header'
 interface Service {
   _id: string
   name: string
-  category: 'airport_pickup' | 'vehicle_rental' | 'surfing'
+  category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking'
   price: number
   priceUnit: string
   description: string
@@ -53,6 +55,10 @@ interface FormData {
   name: string
   email: string
   phone: string
+  address: string
+  city: string
+  state: string
+  pincode: string
   specialRequests: string
 }
 
@@ -64,6 +70,10 @@ export default function ServicesBookingDetailsPage() {
     name: '',
     email: '',
     phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
     specialRequests: ''
   })
   const [errors, setErrors] = useState<Partial<FormData>>({})
@@ -86,14 +96,18 @@ export default function ServicesBookingDetailsPage() {
     }
   }, [router])
 
-  const getServiceIcon = (category: 'airport_pickup' | 'vehicle_rental' | 'surfing') => {
+  const getServiceIcon = (category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking') => {
     switch (category) {
-      case 'airport_pickup':
-        return Plane
       case 'vehicle_rental':
         return Car
       case 'surfing':
         return Waves
+      case 'diving':
+        return Waves
+      case 'trekking':
+        return Activity
+      case 'adventure':
+        return Activity
       default:
         return Activity
     }
@@ -117,6 +131,11 @@ export default function ServicesBookingDetailsPage() {
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid'
     if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
     else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) newErrors.phone = 'Phone number is invalid'
+    if (!formData.address.trim()) newErrors.address = 'Address is required'
+    if (!formData.city.trim()) newErrors.city = 'City is required'
+    if (!formData.state.trim()) newErrors.state = 'State is required'
+    if (!formData.pincode.trim()) newErrors.pincode = 'PIN code is required'
+    else if (!/^\d{6}$/.test(formData.pincode)) newErrors.pincode = 'PIN code must be 6 digits'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -338,6 +357,84 @@ export default function ServicesBookingDetailsPage() {
                     placeholder="+91 9999999999"
                   />
                   {errors.phone && <p className="text-red-400 text-sm mt-2">{errors.phone}</p>}
+                </div>
+
+                {/* Address */}
+                <div>
+                  <label className="flex items-center gap-2 text-white font-medium mb-3">
+                    <MapPin className="w-4 h-4 text-orange-400" />
+                    Address *
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
+                      errors.address ? 'border-red-400' : ''
+                    }`}
+                    placeholder="Enter your complete address"
+                  />
+                  {errors.address && <p className="text-red-400 text-sm mt-2">{errors.address}</p>}
+                </div>
+
+                {/* City and State */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-white font-medium mb-3">
+                      <Building className="w-4 h-4 text-orange-400" />
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
+                        errors.city ? 'border-red-400' : ''
+                      }`}
+                      placeholder="Your city"
+                    />
+                    {errors.city && <p className="text-red-400 text-sm mt-2">{errors.city}</p>}
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-white font-medium mb-3">
+                      <MapPin className="w-4 h-4 text-orange-400" />
+                      State *
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
+                        errors.state ? 'border-red-400' : ''
+                      }`}
+                      placeholder="Your state"
+                    />
+                    {errors.state && <p className="text-red-400 text-sm mt-2">{errors.state}</p>}
+                  </div>
+                </div>
+
+                {/* PIN Code */}
+                <div>
+                  <label className="flex items-center gap-2 text-white font-medium mb-3">
+                    <MapPin className="w-4 h-4 text-orange-400" />
+                    PIN Code *
+                  </label>
+                  <input
+                    type="text"
+                    name="pincode"
+                    value={formData.pincode}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
+                      errors.pincode ? 'border-red-400' : ''
+                    }`}
+                    placeholder="6-digit PIN code"
+                    maxLength={6}
+                  />
+                  {errors.pincode && <p className="text-red-400 text-sm mt-2">{errors.pincode}</p>}
                 </div>
 
                 {/* Special Requests */}

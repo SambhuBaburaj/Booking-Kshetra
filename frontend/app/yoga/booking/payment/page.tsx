@@ -42,6 +42,10 @@ type FormData = {
   name: string
   email: string
   phone: string
+  address: string
+  city: string
+  state: string
+  pincode: string
   experience: 'beginner' | 'intermediate' | 'advanced'
 }
 
@@ -108,10 +112,10 @@ export default function YogaBookingPaymentPage() {
           name: bookingData.user.name,
           email: bookingData.user.email,
           phone: bookingData.user.phone,
-          address: '',
-          city: '',
-          state: '',
-          pincode: '',
+          address: bookingData.user.address,
+          city: bookingData.user.city,
+          state: bookingData.user.state,
+          pincode: bookingData.user.pincode,
           emergencyContact: {
             name: '',
             phone: '',

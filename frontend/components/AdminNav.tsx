@@ -45,7 +45,6 @@ const AdminNav = () => {
     { href: '/admin/adventure-sports', icon: Activity, label: 'Adventure Sports' },
     { href: '/admin/vehicle-rentals', icon: Bike, label: 'Vehicle Rentals' },
     { href: '/admin/agencies', icon: Car, label: 'Transport Agencies' },
-    { href: '/admin/users', icon: Users, label: 'Users' },
   ];
 
   return (

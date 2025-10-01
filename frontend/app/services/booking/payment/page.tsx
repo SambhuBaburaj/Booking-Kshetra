@@ -22,12 +22,14 @@ import {
   Waves
 } from 'lucide-react'
 import Header from '../../../../components/Header'
+import { bookingAPI } from '../../../../lib/api'
+import { initiatePayment } from '../../../../utils/razorpay'
 
 // Types for services booking
 interface Service {
   _id: string
   name: string
-  category: 'airport_pickup' | 'vehicle_rental' | 'surfing'
+  category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking'
   price: number
   priceUnit: string
   description: string
@@ -45,6 +47,10 @@ interface FormData {
   name: string
   email: string
   phone: string
+  address: string
+  city: string
+  state: string
+  pincode: string
   specialRequests: string
 }
 
@@ -56,21 +62,6 @@ interface CompleteBookingData {
   timestamp: string
 }
 
-// Load Razorpay script
-const loadRazorpayScript = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    if ((window as any).Razorpay) {
-      resolve(true);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
-};
 
 export default function ServicesBookingPaymentPage() {
   const router = useRouter()
@@ -97,14 +88,18 @@ export default function ServicesBookingPaymentPage() {
     }
   }, [router])
 
-  const getServiceIcon = (category: 'airport_pickup' | 'vehicle_rental' | 'surfing') => {
+  const getServiceIcon = (category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking') => {
     switch (category) {
-      case 'airport_pickup':
-        return Plane
       case 'vehicle_rental':
         return Car
       case 'surfing':
         return Waves
+      case 'diving':
+        return Waves
+      case 'trekking':
+        return Activity
+      case 'adventure':
+        return Activity
       default:
         return Activity
     }
@@ -125,69 +120,119 @@ export default function ServicesBookingPaymentPage() {
     }).format(amount)
   }
 
+  const createServicesBooking = async () => {
+    if (!bookingData) return null
+
+    try {
+      console.log('🚀 Creating services booking...')
+
+      // Create booking payload
+      const bookingPayload = {
+        roomId: '000000000000000000000000', // Dummy room ID for services
+        checkIn: new Date(bookingData.date).toISOString(),
+        checkOut: new Date(new Date(bookingData.date).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+        primaryGuestInfo: {
+          name: bookingData.user.name,
+          email: bookingData.user.email,
+          phone: bookingData.user.phone,
+          address: bookingData.user.address,
+          city: bookingData.user.city,
+          state: bookingData.user.state,
+          pincode: bookingData.user.pincode,
+          emergencyContact: {
+            name: '',
+            phone: '',
+            relationship: ''
+          }
+        },
+        guests: [{
+          name: bookingData.user.name,
+          age: 25,
+          gender: 'Other' as const
+        }],
+        includeFood: false,
+        includeBreakfast: false,
+        transport: {
+          pickup: false,
+          drop: false,
+          arrivalTime: '',
+          departureTime: '',
+          airportFrom: 'Kochi'
+        },
+        selectedServices: bookingData.services.map(service => ({
+          serviceId: service._id,
+          quantity: service.quantity,
+          totalPrice: service.price * service.quantity,
+          details: service.description
+        })),
+        specialRequests: `Services: ${bookingData.services.map(s => s.name).join(', ')}. ${bookingData.user.specialRequests}`,
+        totalAmount: bookingData.totalAmount,
+        paymentStatus: 'pending',
+        bookingType: 'services'
+      }
+
+      const response = await bookingAPI.createPublicBooking(bookingPayload)
+
+      if (response.data?.success) {
+        console.log('✅ Services booking created successfully:', response.data.data)
+        const bookingId = response.data.data.booking._id
+        console.log('📋 Extracted booking ID:', bookingId)
+        return bookingId
+      } else {
+        throw new Error(response.data?.message || 'Failed to create services booking')
+      }
+    } catch (error) {
+      console.error('Services booking creation error:', error)
+      throw error
+    }
+  }
+
+  const handlePaymentSuccess = (paymentData: any) => {
+    console.log('Payment successful:', paymentData)
+
+    // Clear localStorage
+    localStorage.removeItem('servicesBookingData')
+    localStorage.removeItem('servicesCompleteBookingData')
+
+    // Redirect to success page with proper parameters
+    router.push(`/services/booking/success?payment_id=${paymentData.razorpay_payment_id}&order_id=${paymentData.razorpay_order_id}&booking_id=${paymentData.bookingId}`)
+  }
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment error:', error)
+    alert('Payment failed: ' + (error.message || 'Unknown error'))
+    setLoading(false)
+  }
+
   const handlePayment = async () => {
     if (!bookingData) return
 
     setLoading(true)
 
     try {
-      // Load Razorpay script
-      const scriptLoaded = await loadRazorpayScript()
-      if (!scriptLoaded) {
-        alert('Failed to load payment gateway. Please try again.')
-        setLoading(false)
-        return
-      }
+      console.log('🚀 Starting services booking flow...')
 
-      // For demo purposes, create a mock order ID
-      const simulatedOrderId = `services_order_${Date.now()}`
+      // Create booking first
+      const createdBookingId = await createServicesBooking()
 
-      // Razorpay options
-      const options = {
-        key: 'rzp_test_RHyWk20J1eq916', // Use your actual Razorpay key
-        amount: bookingData.totalAmount * 100,
-        currency: 'INR',
-        name: 'Kshetra Retreat Resort',
-        description: `Services: ${bookingData.services.map(s => s.name).join(', ')}`,
-        order_id: simulatedOrderId,
-        handler: async function (response: any) {
-          try {
-            // In a real app, verify payment on backend
-            console.log('Payment successful:', response)
+      console.log('✅ Services booking created, now opening Razorpay...')
 
-            // Clear localStorage
-            localStorage.removeItem('servicesBookingData')
-            localStorage.removeItem('servicesCompleteBookingData')
-
-            // Redirect to success page
-            router.push(`/services/booking/success?payment_id=${response.razorpay_payment_id || 'demo_payment'}&order_id=${response.razorpay_order_id || simulatedOrderId}`)
-          } catch (error) {
-            console.error('Payment verification error:', error)
-            alert('Payment verification failed. Please contact support.')
-          }
-        },
-        prefill: {
+      // Immediately trigger payment after booking creation using the proper utils
+      await initiatePayment({
+        amount: bookingData.totalAmount,
+        bookingId: createdBookingId,
+        userDetails: {
           name: bookingData.user.name,
           email: bookingData.user.email,
-          contact: bookingData.user.phone
+          phone: bookingData.user.phone,
         },
-        theme: {
-          color: '#ea580c'
-        },
-        modal: {
-          ondismiss: function() {
-            setLoading(false)
-          }
-        }
-      }
-
-      const razorpay = new (window as any).Razorpay(options)
-      razorpay.open()
+        onSuccess: handlePaymentSuccess,
+        onError: handlePaymentError
+      })
 
     } catch (error) {
-      console.error('Payment error:', error)
-      alert('Payment failed. Please try again.')
-    } finally {
+      console.error('❌ Services booking/Payment flow error:', error)
+      alert('Failed to create services booking: ' + (error as Error).message)
       setLoading(false)
     }
   }
