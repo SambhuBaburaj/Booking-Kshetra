@@ -13,7 +13,8 @@ import {
   X,
   Shield,
   Activity,
-  Car
+  Car,
+  Bike
 } from 'lucide-react';
 
 const AdminNav = () => {
@@ -41,8 +42,10 @@ const AdminNav = () => {
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
     { href: '/admin/yoga', icon: Activity, label: 'Yoga Sessions' },
     { href: '/admin/teachers', icon: Users, label: 'Teachers' },
-    { href: '/admin/users', icon: Users, label: 'Users' },
+    { href: '/admin/adventure-sports', icon: Activity, label: 'Adventure Sports' },
+    { href: '/admin/vehicle-rentals', icon: Bike, label: 'Vehicle Rentals' },
     { href: '/admin/agencies', icon: Car, label: 'Transport Agencies' },
+    { href: '/admin/users', icon: Users, label: 'Users' },
   ];
 
   return (

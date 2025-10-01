@@ -10,6 +10,8 @@ export { default as Agency } from './Agency';
 export { default as Vehicle } from './Vehicle';
 export { default as Driver } from './Driver';
 export { default as TransportAssignment } from './TransportAssignment';
+export { default as VehicleRental } from './VehicleRental';
+export { default as AdventureSport } from './AdventureSport';
 
 export type { IUser } from './User';
 export type { IRoom } from './Room';
@@ -23,3 +25,5 @@ export type { IAgency } from './Agency';
 export type { IVehicle } from './Vehicle';
 export type { IDriver } from './Driver';
 export type { ITransportAssignment } from './TransportAssignment';
+export type { IVehicleRental } from './VehicleRental';
+export type { IAdventureSport } from './AdventureSport';

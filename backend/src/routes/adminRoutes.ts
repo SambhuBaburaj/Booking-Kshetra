@@ -24,6 +24,18 @@ import {
   deleteAgency,
   getActiveAgency
 } from '../controllers/adminController';
+import {
+  getVehiclesForAdmin,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle
+} from '../controllers/vehicleRentalController';
+import {
+  getAdventureSportsForAdmin,
+  createAdventureSport,
+  updateAdventureSport,
+  deleteAdventureSport
+} from '../controllers/adventureSportController';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validation';
 import { uploadMultiple } from '../middleware/upload';
@@ -382,5 +394,184 @@ router.put('/agencies/:id/activate', validate(idValidation), activateAgency);
 router.put('/agencies/:id/deactivate', validate(idValidation), deactivateAgency);
 router.delete('/agencies/:id', validate(idValidation), deleteAgency);
 router.get('/agencies/active', getActiveAgency);
+
+// Vehicle Rental Management
+const vehicleValidation = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Vehicle name is required'),
+  body('type')
+    .isIn(['2-wheeler', '4-wheeler'])
+    .withMessage('Invalid vehicle type'),
+  body('category')
+    .isIn(['scooter', 'bike', 'car', 'suv'])
+    .withMessage('Invalid vehicle category'),
+  body('brand')
+    .trim()
+    .notEmpty()
+    .withMessage('Brand is required'),
+  body('vehicleModel')
+    .trim()
+    .notEmpty()
+    .withMessage('Vehicle model is required'),
+  body('year')
+    .isInt({ min: 1990, max: new Date().getFullYear() + 1 })
+    .withMessage('Invalid year'),
+  body('fuelType')
+    .isIn(['petrol', 'diesel', 'electric'])
+    .withMessage('Invalid fuel type'),
+  body('transmission')
+    .isIn(['manual', 'automatic'])
+    .withMessage('Invalid transmission type'),
+  body('seatingCapacity')
+    .isInt({ min: 1, max: 20 })
+    .withMessage('Invalid seating capacity'),
+  body('pricePerDay')
+    .isFloat({ min: 0 })
+    .withMessage('Price per day must be a positive number'),
+  body('description')
+    .trim()
+    .notEmpty()
+    .withMessage('Description is required'),
+  body('location.pickupLocation')
+    .trim()
+    .notEmpty()
+    .withMessage('Pickup location is required'),
+  body('depositAmount')
+    .isFloat({ min: 0 })
+    .withMessage('Deposit amount must be a positive number'),
+  body('contactInfo.phone')
+    .trim()
+    .notEmpty()
+    .withMessage('Contact phone is required'),
+  body('contactInfo.email')
+    .isEmail()
+    .withMessage('Valid contact email is required')
+];
+
+const vehicleQueryValidation = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('type')
+    .optional()
+    .isIn(['2-wheeler', '4-wheeler'])
+    .withMessage('Invalid vehicle type'),
+  query('category')
+    .optional()
+    .isIn(['scooter', 'bike', 'car', 'suv'])
+    .withMessage('Invalid vehicle category'),
+  query('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be boolean')
+];
+
+router.get('/vehicles', validate(vehicleQueryValidation), getVehiclesForAdmin);
+router.post('/vehicles', validate(vehicleValidation), createVehicle);
+router.put('/vehicles/:id',
+  param('id').isMongoId().withMessage('Valid vehicle ID required'),
+  validate(vehicleValidation),
+  updateVehicle
+);
+router.delete('/vehicles/:id',
+  param('id').isMongoId().withMessage('Valid vehicle ID required'),
+  deleteVehicle
+);
+
+// Adventure Sports Management
+const adventureSportValidation = [
+  body('name')
+    .notEmpty()
+    .withMessage('Activity name is required')
+    .isLength({ max: 100 })
+    .withMessage('Activity name cannot exceed 100 characters'),
+
+  body('category')
+    .isIn(['adventure', 'surfing', 'diving', 'trekking'])
+    .withMessage('Category must be adventure, surfing, diving, or trekking'),
+
+  body('price')
+    .isNumeric()
+    .withMessage('Price must be a number')
+    .isFloat({ min: 0 })
+    .withMessage('Price cannot be negative'),
+
+  body('priceUnit')
+    .isIn(['per_session', 'per_person', 'per_day', 'per_trip'])
+    .withMessage('Price unit must be per_session, per_person, per_day, or per_trip'),
+
+  body('description')
+    .notEmpty()
+    .withMessage('Description is required')
+    .isLength({ max: 500 })
+    .withMessage('Description cannot exceed 500 characters'),
+
+  body('detailedDescription')
+    .optional()
+    .isLength({ max: 2000 })
+    .withMessage('Detailed description cannot exceed 2000 characters'),
+
+  body('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Difficulty must be beginner, intermediate, or advanced'),
+
+  body('maxQuantity')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Maximum quantity must be at least 1'),
+
+  body('ageRestriction.minAge')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Minimum age cannot be negative'),
+
+  body('ageRestriction.maxAge')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Maximum age cannot be negative')
+];
+
+const adventureSportQueryValidation = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be a positive integer'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+  query('category')
+    .optional()
+    .isIn(['adventure', 'surfing', 'diving', 'trekking'])
+    .withMessage('Invalid category'),
+  query('difficulty')
+    .optional()
+    .isIn(['beginner', 'intermediate', 'advanced'])
+    .withMessage('Invalid difficulty'),
+  query('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be boolean')
+];
+
+router.get('/adventure-sports', validate(adventureSportQueryValidation), getAdventureSportsForAdmin);
+router.post('/adventure-sports', validate(adventureSportValidation), createAdventureSport);
+router.put('/adventure-sports/:id',
+  param('id').isMongoId().withMessage('Valid adventure sport ID required'),
+  validate(adventureSportValidation),
+  updateAdventureSport
+);
+router.delete('/adventure-sports/:id',
+  param('id').isMongoId().withMessage('Valid adventure sport ID required'),
+  deleteAdventureSport
+);
 
 export default router;

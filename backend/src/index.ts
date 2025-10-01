@@ -17,6 +17,8 @@ import adminRoutes from "./routes/adminRoutes";
 import roomRoutes from "./routes/roomRoutes";
 import yogaRoutes from "./routes/yogaRoutes";
 import agencyRoutes from "./routes/agencyRoutes";
+import vehicleRentalRoutes from "./routes/vehicleRentalRoutes";
+import adventureSportRoutes from "./routes/adventureSportRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -184,6 +186,8 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/yoga", yogaRoutes);
 app.use("/api/agency", agencyRoutes);
+app.use("/api/vehicles", vehicleRentalRoutes);
+app.use("/api/adventure-sports", adventureSportRoutes);
 
 // API info endpoint
 app.get("/api", (req, res) => {
@@ -199,6 +203,8 @@ app.get("/api", (req, res) => {
       notifications: "/api/notifications",
       admin: "/api/admin",
       yoga: "/api/yoga",
+      vehicles: "/api/vehicles",
+      adventureSports: "/api/adventure-sports",
     },
     documentation: "https://github.com/your-repo/api-docs",
   });

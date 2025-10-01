@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import {
@@ -15,8 +15,13 @@ import {
   Users,
   MapPin,
   CheckCircle,
-  Plane,
-  Activity
+  Activity,
+  Eye,
+  Filter,
+  Fuel,
+  Settings,
+  IndianRupee,
+  Shield
 } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
@@ -24,24 +29,88 @@ import Footer from '../../components/Footer';
 interface Service {
   _id: string;
   name: string;
-  category: 'airport_pickup' | 'vehicle_rental' | 'surfing';
+  category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking';
   price: number;
   priceUnit: string;
   description: string;
   duration?: string;
   features: string[];
   image?: string;
+  images?: string[];
   maxQuantity?: number;
+  isActive: boolean;
+  detailedDescription?: string;
+  includedItems?: string[];
+  requirements?: string[];
+  ageRestriction?: {
+    minAge?: number;
+    maxAge?: number;
+  };
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  location?: string;
+  instructor?: {
+    name: string;
+    experience: string;
+    certifications: string[];
+  };
+  safety?: string[];
+  whatToBring?: string[];
+  cancellationPolicy?: string;
+}
+
+interface Vehicle {
+  _id: string;
+  name: string;
+  type: '2-wheeler' | '4-wheeler';
+  category: 'scooter' | 'bike' | 'car' | 'suv';
+  brand: string;
+  vehicleModel: string;
+  year: number;
+  fuelType: 'petrol' | 'diesel' | 'electric';
+  transmission: 'manual' | 'automatic';
+  seatingCapacity: number;
+  pricePerDay: number;
+  images: string[];
+  features: string[];
+  description: string;
+  specifications: {
+    engine?: string;
+    mileage?: string;
+    fuelCapacity?: string;
+    power?: string;
+    torque?: string;
+    topSpeed?: string;
+  };
+  availability: {
+    isAvailable: boolean;
+    availableFrom?: Date;
+    availableTo?: Date;
+  };
+  location: {
+    pickupLocation: string;
+    dropLocation?: string;
+  };
+  insurance: {
+    included: boolean;
+    coverage?: string;
+  };
+  driverOption: {
+    withDriver: boolean;
+    withoutDriver: boolean;
+    driverChargePerDay?: number;
+  };
+  depositAmount: number;
+  termsAndConditions: string[];
+  contactInfo: {
+    phone: string;
+    email: string;
+  };
   isActive: boolean;
 }
 
 interface SelectedService extends Service {
   quantity: number;
   selectedOptions?: {
-    // Airport pickup options
-    airport?: 'trivandrum' | 'ernakulam' | 'calicut';
-    pickupDate?: string;
-    pickupTime?: string;
     // Vehicle rental options
     rentalDays?: number;
     // Surfing options
@@ -49,82 +118,106 @@ interface SelectedService extends Service {
   };
 }
 
-// Main services data
-const mainServices: Service[] = [
-  {
-    _id: "1",
-    name: "Airport Pickup Service",
-    category: "airport_pickup",
-    price: 1500,
-    priceUnit: "per_trip",
-    description: "Comfortable and reliable airport transfer service from Trivandrum, Ernakulam (Kochi), or Calicut airports directly to Kshetra Retreat",
-    duration: "1.5-4 hours",
-    features: [
-      "Professional drivers",
-      "Comfortable air-conditioned vehicles",
-      "Flight tracking for delays",
-      "Meet & greet service",
-      "Luggage assistance",
-      "Available from all major Kerala airports"
-    ],
-    maxQuantity: 4,
-    isActive: true
-  },
-  {
-    _id: "2",
-    name: "Vehicle Rental",
-    category: "vehicle_rental",
-    price: 800,
-    priceUnit: "per_day",
-    description: "Rent a variety of vehicles to explore Kerala's scenic beauty at your own pace",
-    features: [
-      "Well-maintained vehicles",
-      "Scooters & motorcycles available",
-      "Cars with/without driver",
-      "Helmets & safety gear included",
-      "Local area maps provided",
-      "24/7 roadside assistance"
-    ],
-    maxQuantity: 3,
-    isActive: true
-  },
-  {
-    _id: "3",
-    name: "Surfing Lessons",
-    category: "surfing",
-    price: 2500,
-    priceUnit: "per_session",
-    description: "Learn to surf at world-famous Varkala Beach with certified instructors and all equipment provided",
-    duration: "2 hours",
-    features: [
-      "Certified surf instructors",
-      "All equipment included",
-      "Beginner to advanced levels",
-      "Safety briefing included",
-      "Small group sessions (max 4)",
-      "Photo/video package available"
-    ],
-    maxQuantity: 4,
-    isActive: true
-  }
-];
+interface SelectedVehicle extends Vehicle {
+  quantity: number;
+  rentalDays: number;
+  withDriver: boolean;
+}
+
+// Adventure sports will be fetched from API
 
 const ServicesPage = () => {
   const router = useRouter();
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  const [selectedVehicles, setSelectedVehicles] = useState<SelectedVehicle[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [adventureSports, setAdventureSports] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
-  const [showAirportOptions, setShowAirportOptions] = useState<string | null>(null);
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<'all' | '2-wheeler' | '4-wheeler'>('all');
+  const [selectedVehicleDetails, setSelectedVehicleDetails] = useState<Vehicle | null>(null);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [selectedServiceDetails, setSelectedServiceDetails] = useState<Service | null>(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '50%']);
 
-  const getServiceIcon = (category: 'airport_pickup' | 'vehicle_rental' | 'surfing') => {
+  // Fetch vehicles and adventure sports from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchVehicles(),
+        fetchAdventureSports()
+      ]);
+      setLoading(false);
+    };
+    fetchData();
+  }, [vehicleTypeFilter]);
+
+  const fetchVehicles = async () => {
+    try {
+      const url = vehicleTypeFilter === 'all'
+        ? 'http://localhost:5001/api/vehicles'
+        : `http://localhost:5001/api/vehicles/type/${vehicleTypeFilter}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success) {
+        setVehicles(data.data.vehicles || []);
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+    }
+  };
+
+  const fetchAdventureSports = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/adventure-sports');
+      const data = await response.json();
+      if (data.success) {
+        // Transform the adventure sports data to match Service interface
+        const transformedSports = data.data.sports.map((sport: any) => ({
+          _id: sport._id,
+          name: sport.name,
+          category: sport.category,
+          price: sport.price,
+          priceUnit: sport.priceUnit,
+          description: sport.description,
+          detailedDescription: sport.detailedDescription,
+          duration: sport.duration,
+          difficulty: sport.difficulty,
+          location: sport.location,
+          features: sport.features || [],
+          includedItems: sport.includedItems || [],
+          requirements: sport.requirements || [],
+          images: sport.images || [],
+          ageRestriction: sport.ageRestriction,
+          instructor: sport.instructor,
+          safety: sport.safety || [],
+          whatToBring: sport.whatToBring || [],
+          cancellationPolicy: sport.cancellationPolicy,
+          maxQuantity: sport.maxQuantity,
+          isActive: sport.isActive
+        }));
+        setAdventureSports(transformedSports);
+      }
+    } catch (error) {
+      console.error('Error fetching adventure sports:', error);
+    }
+  };
+
+  const getServiceIcon = (category: 'vehicle_rental' | 'surfing' | 'adventure' | 'diving' | 'trekking') => {
     switch (category) {
-      case 'airport_pickup':
-        return Plane;
       case 'vehicle_rental':
         return Car;
       case 'surfing':
+      case 'diving':
         return Waves;
+      case 'adventure':
+      case 'trekking':
+        return Activity;
       default:
         return Activity;
     }
@@ -165,11 +258,6 @@ const ServicesPage = () => {
         selectedOptions: {}
       };
 
-      // For airport pickup, show options immediately
-      if (service.category === 'airport_pickup') {
-        setShowAirportOptions(service._id);
-      }
-
       setSelectedServices(prev => [...prev, newService]);
     }
   };
@@ -199,15 +287,75 @@ const ServicesPage = () => {
     }
   };
 
+  const addVehicle = (vehicle: Vehicle, rentalDays: number = 1, withDriver: boolean = false) => {
+    const existingVehicle = selectedVehicles.find(v => v._id === vehicle._id);
+    if (existingVehicle) {
+      setSelectedVehicles(prev =>
+        prev.map(v =>
+          v._id === vehicle._id
+            ? { ...v, quantity: v.quantity + 1 }
+            : v
+        )
+      );
+    } else {
+      const newVehicle: SelectedVehicle = {
+        ...vehicle,
+        quantity: 1,
+        rentalDays,
+        withDriver
+      };
+      setSelectedVehicles(prev => [...prev, newVehicle]);
+    }
+  };
+
+  const removeVehicle = (vehicleId: string) => {
+    const existingVehicle = selectedVehicles.find(v => v._id === vehicleId);
+    if (existingVehicle && existingVehicle.quantity > 1) {
+      setSelectedVehicles(prev =>
+        prev.map(v =>
+          v._id === vehicleId
+            ? { ...v, quantity: v.quantity - 1 }
+            : v
+        )
+      );
+    } else {
+      setSelectedVehicles(prev => prev.filter(v => v._id !== vehicleId));
+    }
+  };
+
+  const updateVehicleOptions = (vehicleId: string, rentalDays?: number, withDriver?: boolean) => {
+    setSelectedVehicles(prev =>
+      prev.map(v =>
+        v._id === vehicleId
+          ? {
+              ...v,
+              ...(rentalDays !== undefined && { rentalDays }),
+              ...(withDriver !== undefined && { withDriver })
+            }
+          : v
+      )
+    );
+  };
+
   const getTotalAmount = () => {
-    return selectedServices.reduce((total, service) => {
+    const servicesTotal = selectedServices.reduce((total, service) => {
       return total + (service.price * service.quantity);
     }, 0);
+
+    const vehiclesTotal = selectedVehicles.reduce((total, vehicle) => {
+      const basePrice = vehicle.pricePerDay * vehicle.rentalDays * vehicle.quantity;
+      const driverCharge = vehicle.withDriver && vehicle.driverOption.driverChargePerDay
+        ? vehicle.driverOption.driverChargePerDay * vehicle.rentalDays * vehicle.quantity
+        : 0;
+      return total + basePrice + driverCharge;
+    }, 0);
+
+    return servicesTotal + vehiclesTotal;
   };
 
   const handleBookServices = () => {
-    if (selectedServices.length === 0) {
-      alert('Please select at least one service');
+    if (selectedServices.length === 0 && selectedVehicles.length === 0) {
+      alert('Please select at least one service or vehicle');
       return;
     }
     if (!selectedDate) {
@@ -218,6 +366,7 @@ const ServicesPage = () => {
     // Store booking data in localStorage
     const bookingData = {
       services: selectedServices,
+      vehicles: selectedVehicles,
       date: selectedDate,
       totalAmount: getTotalAmount(),
       timestamp: new Date().toISOString()
@@ -273,6 +422,18 @@ const ServicesPage = () => {
                   {formatPrice(service.price, service.priceUnit)}
                 </div>
               </div>
+
+              {/* View Details Button */}
+              <button
+                onClick={() => {
+                  setSelectedServiceDetails(service);
+                  setShowServiceModal(true);
+                }}
+                className="mb-4 text-orange-400 hover:text-orange-300 font-medium text-sm flex items-center gap-2 transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                View Details
+              </button>
             </div>
 
             {/* Quantity Controls */}
@@ -316,54 +477,184 @@ const ServicesPage = () => {
             </div>
           </div>
 
-          {/* Airport Pickup Options */}
-          {service.category === 'airport_pickup' && quantity > 0 && (
-            <div className="border-t border-white/20 pt-6 mt-6">
-              <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-                <Plane className="w-4 h-4 text-orange-400" />
-                Pickup Details
-              </h4>
+        </div>
+      </div>
+    );
+  };
 
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Airport Selection */}
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Select Airport</label>
-                  <select
-                    value={selectedService?.selectedOptions?.airport || ''}
-                    onChange={(e) => updateServiceOptions(service._id, { airport: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-orange-400 focus:outline-none"
+  const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
+    const selectedVehicle = selectedVehicles.find(v => v._id === vehicle._id);
+    const quantity = selectedVehicle?.quantity || 0;
+    const [rentalDays, setRentalDays] = useState(selectedVehicle?.rentalDays || 1);
+    const [withDriver, setWithDriver] = useState(selectedVehicle?.withDriver || false);
+
+    const VehicleIcon = vehicle.type === '2-wheeler' ? Bike : Car;
+
+    const getTotalPrice = () => {
+      const basePrice = vehicle.pricePerDay * rentalDays;
+      const driverCharge = withDriver && vehicle.driverOption.driverChargePerDay
+        ? vehicle.driverOption.driverChargePerDay * rentalDays
+        : 0;
+      return basePrice + driverCharge;
+    };
+
+    return (
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 hover:border-white/40 transition-all duration-300 overflow-hidden">
+        <div className="p-6">
+          {/* Vehicle Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
+                <VehicleIcon className="w-6 h-6 text-orange-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">{vehicle.name}</h3>
+                <p className="text-gray-300 text-sm">{vehicle.brand} {vehicle.vehicleModel}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedVehicleDetails(vehicle);
+                setShowVehicleModal(true);
+              }}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+            >
+              <Eye className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Vehicle Details */}
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="flex items-center gap-2 text-gray-300 text-sm">
+              <Users className="w-4 h-4 text-orange-400" />
+              <span>{vehicle.seatingCapacity} seats</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300 text-sm">
+              <Fuel className="w-4 h-4 text-orange-400" />
+              <span>{vehicle.fuelType}</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300 text-sm">
+              <Settings className="w-4 h-4 text-orange-400" />
+              <span>{vehicle.transmission}</span>
+            </div>
+            <div className="flex items-center gap-2 text-gray-300 text-sm">
+              <MapPin className="w-4 h-4 text-orange-400" />
+              <span>{vehicle.location.pickupLocation}</span>
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {vehicle.features.slice(0, 3).map((feature, index) => (
+              <span key={index} className="px-2 py-1 bg-white/10 rounded-lg text-gray-300 text-xs">
+                {feature}
+              </span>
+            ))}
+            {vehicle.features.length > 3 && (
+              <span className="px-2 py-1 bg-white/10 rounded-lg text-gray-300 text-xs">
+                +{vehicle.features.length - 3} more
+              </span>
+            )}
+          </div>
+
+          {/* Price */}
+          <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl p-3 mb-4">
+            <div className="flex items-center gap-2">
+              <IndianRupee className="w-5 h-5 text-orange-400" />
+              <span className="text-xl font-bold text-orange-400">
+                {vehicle.pricePerDay.toLocaleString()}
+              </span>
+              <span className="text-gray-300 text-sm">per day</span>
+            </div>
+            {vehicle.driverOption.withDriver && vehicle.driverOption.driverChargePerDay && (
+              <div className="text-gray-400 text-xs mt-1">
+                +₹{vehicle.driverOption.driverChargePerDay.toLocaleString()}/day with driver
+              </div>
+            )}
+          </div>
+
+          {/* Rental Options */}
+          {quantity > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Rental Days:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const newDays = Math.max(1, rentalDays - 1);
+                      setRentalDays(newDays);
+                      updateVehicleOptions(vehicle._id, newDays, withDriver);
+                    }}
+                    className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded flex items-center justify-center text-white"
                   >
-                    <option value="" className="bg-gray-800">Choose airport</option>
-                    <option value="trivandrum" className="bg-gray-800">Trivandrum (TRV) - 55km</option>
-                    <option value="ernakulam" className="bg-gray-800">Ernakulam/Kochi (COK) - 140km</option>
-                    <option value="calicut" className="bg-gray-800">Calicut (CCJ) - 200km</option>
-                  </select>
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-white font-medium w-8 text-center">{rentalDays}</span>
+                  <button
+                    onClick={() => {
+                      const newDays = rentalDays + 1;
+                      setRentalDays(newDays);
+                      updateVehicleOptions(vehicle._id, newDays, withDriver);
+                    }}
+                    className="w-6 h-6 bg-white/10 hover:bg-white/20 rounded flex items-center justify-center text-white"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
+              </div>
 
-                {/* Pickup Date */}
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Pickup Date</label>
-                  <input
-                    type="date"
-                    value={selectedService?.selectedOptions?.pickupDate || ''}
-                    onChange={(e) => updateServiceOptions(service._id, { pickupDate: e.target.value })}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-orange-400 focus:outline-none"
-                  />
+              {vehicle.driverOption.withDriver && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 text-sm">With Driver:</span>
+                  <button
+                    onClick={() => {
+                      const newWithDriver = !withDriver;
+                      setWithDriver(newWithDriver);
+                      updateVehicleOptions(vehicle._id, rentalDays, newWithDriver);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                      withDriver
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-white/10 text-gray-300'
+                    }`}
+                  >
+                    {withDriver ? 'Yes' : 'No'}
+                  </button>
                 </div>
+              )}
 
-                {/* Pickup Time */}
-                <div>
-                  <label className="block text-gray-300 text-sm font-medium mb-2">Pickup Time</label>
-                  <input
-                    type="time"
-                    value={selectedService?.selectedOptions?.pickupTime || ''}
-                    onChange={(e) => updateServiceOptions(service._id, { pickupTime: e.target.value })}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-orange-400 focus:outline-none"
-                  />
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 text-sm">Quantity:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => removeVehicle(vehicle._id)}
+                    className="w-6 h-6 bg-red-500/20 hover:bg-red-500/30 rounded flex items-center justify-center text-red-400"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="text-white font-medium w-8 text-center">{quantity}</span>
+                  <button
+                    onClick={() => addVehicle(vehicle, rentalDays, withDriver)}
+                    className="w-6 h-6 bg-green-500/20 hover:bg-green-500/30 rounded flex items-center justify-center text-green-400"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/10">
+                <div className="text-orange-400 font-semibold">
+                  Total: ₹{(getTotalPrice() * quantity).toLocaleString()}
                 </div>
               </div>
             </div>
+          ) : (
+            <button
+              onClick={() => addVehicle(vehicle, 1, false)}
+              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+            >
+              Add to Booking
+            </button>
           )}
         </div>
       </div>
@@ -413,7 +704,7 @@ const ServicesPage = () => {
         <div className="container mx-auto px-4 py-20">
           {/* Services Grid */}
           <div className="grid gap-8 max-w-4xl mx-auto">
-            {mainServices.map((service, index) => (
+            {adventureSports.map((service, index) => (
               <motion.div
                 key={service._id}
                 initial={{ opacity: 0, y: 30 }}
@@ -425,11 +716,93 @@ const ServicesPage = () => {
               </motion.div>
             ))}
           </div>
+
+          {/* Vehicle Rental Section */}
+          <div className="mt-16">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-4xl font-bold text-white mb-4">Vehicle Rentals</h2>
+              <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+                Explore Varkala and beyond with our premium vehicle rental service. From scooters to luxury cars.
+              </p>
+            </motion.div>
+
+            {/* Vehicle Type Filter */}
+            <div className="flex justify-center mb-8">
+              <div className="flex bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
+                <button
+                  onClick={() => setVehicleTypeFilter('all')}
+                  className={`px-6 py-3 font-medium transition-all ${
+                    vehicleTypeFilter === 'all'
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Filter className="w-4 h-4 inline mr-2" />
+                  All Vehicles
+                </button>
+                <button
+                  onClick={() => setVehicleTypeFilter('2-wheeler')}
+                  className={`px-6 py-3 font-medium transition-all ${
+                    vehicleTypeFilter === '2-wheeler'
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Bike className="w-4 h-4 inline mr-2" />
+                  2-Wheeler
+                </button>
+                <button
+                  onClick={() => setVehicleTypeFilter('4-wheeler')}
+                  className={`px-6 py-3 font-medium transition-all ${
+                    vehicleTypeFilter === '4-wheeler'
+                      ? 'bg-orange-500 text-white'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Car className="w-4 h-4 inline mr-2" />
+                  4-Wheeler
+                </button>
+              </div>
+            </div>
+
+            {/* Vehicles Grid */}
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="inline-block w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-gray-300 mt-4">Loading vehicles...</p>
+              </div>
+            ) : vehicles.length === 0 ? (
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 p-12 text-center">
+                <Car className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">No vehicles available</h3>
+                <p className="text-gray-300">Check back later for vehicle rental options.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {vehicles.map((vehicle, index) => (
+                  <motion.div
+                    key={vehicle._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <VehicleCard vehicle={vehicle} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Selected Services Summary & Booking */}
-      {selectedServices.length > 0 && (
+      {(selectedServices.length > 0 || selectedVehicles.length > 0) && (
         <div className="bg-white border-t border-gray-200 sticky bottom-0 z-20 shadow-lg">
           <div className="container mx-auto px-4 py-6">
             <div className="max-w-4xl mx-auto">
@@ -438,22 +811,46 @@ const ServicesPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col lg:flex-row gap-6 items-center"
               >
-                {/* Selected Services Summary */}
+                {/* Selected Items Summary */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-4">
-                    <h4 className="text-lg font-bold text-gray-900">
-                      Selected Services ({selectedServices.length})
-                    </h4>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {selectedServices.map(service => (
-                        <div key={service._id} className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-1 min-w-fit">
-                          <div className="p-1 bg-orange-100 rounded">
-                            {React.createElement(getServiceIcon(service.category), { className: "w-3 h-3 text-orange-600" })}
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{service.quantity}x {service.name}</span>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {selectedServices.length > 0 && (
+                      <>
+                        <h4 className="text-lg font-bold text-gray-900">
+                          Services ({selectedServices.length})
+                        </h4>
+                        <div className="flex gap-2 overflow-x-auto">
+                          {selectedServices.map(service => (
+                            <div key={service._id} className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-1 min-w-fit">
+                              <div className="p-1 bg-orange-100 rounded">
+                                {React.createElement(getServiceIcon(service.category), { className: "w-3 h-3 text-orange-600" })}
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">{service.quantity}x {service.name}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                      </>
+                    )}
+
+                    {selectedVehicles.length > 0 && (
+                      <>
+                        <h4 className="text-lg font-bold text-gray-900">
+                          Vehicles ({selectedVehicles.length})
+                        </h4>
+                        <div className="flex gap-2 overflow-x-auto">
+                          {selectedVehicles.map(vehicle => (
+                            <div key={vehicle._id} className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-1 min-w-fit">
+                              <div className="p-1 bg-blue-100 rounded">
+                                {React.createElement(vehicle.type === '2-wheeler' ? Bike : Car, { className: "w-3 h-3 text-blue-600" })}
+                              </div>
+                              <span className="text-sm font-medium text-gray-900">
+                                {vehicle.quantity}x {vehicle.name} ({vehicle.rentalDays}d)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -479,7 +876,7 @@ const ServicesPage = () => {
 
                   <button
                     onClick={handleBookServices}
-                    disabled={selectedServices.length === 0 || !selectedDate}
+                    disabled={(selectedServices.length === 0 && selectedVehicles.length === 0) || !selectedDate}
                     className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
                   >
                     <Calendar className="w-4 h-4" />
@@ -494,7 +891,7 @@ const ServicesPage = () => {
       )}
 
       {/* Empty State */}
-      {selectedServices.length === 0 && (
+      {selectedServices.length === 0 && selectedVehicles.length === 0 && (
         <div className="bg-slate-800 py-20">
           <div className="container mx-auto px-4">
             <motion.div
@@ -508,10 +905,377 @@ const ServicesPage = () => {
               </div>
               <h3 className="text-2xl font-bold text-white mb-4">Select Your Perfect Experience</h3>
               <p className="text-gray-300 text-lg leading-relaxed">
-                Choose from our premium services above to create your personalized adventure package.
-                Each service is designed to enhance your stay with unforgettable memories.
+                Choose from our premium services and vehicle rentals above to create your personalized adventure package.
+                Each option is designed to enhance your stay with unforgettable memories.
               </p>
             </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* Service Details Modal */}
+      {showServiceModal && selectedServiceDetails && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
+                    {React.createElement(getServiceIcon(selectedServiceDetails.category), { className: "w-6 h-6 text-orange-600" })}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedServiceDetails.name}</h2>
+                    <p className="text-gray-600 flex items-center gap-2">
+                      {selectedServiceDetails.location && (
+                        <>
+                          <MapPin className="w-4 h-4" />
+                          {selectedServiceDetails.location}
+                        </>
+                      )}
+                      {selectedServiceDetails.duration && (
+                        <>
+                          <Clock className="w-4 h-4 ml-4" />
+                          {selectedServiceDetails.duration}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowServiceModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Service Images */}
+              {selectedServiceDetails.images && selectedServiceDetails.images.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Photos</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {selectedServiceDetails.images.slice(0, 6).map((image, index) => (
+                      <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <img src={image} alt={`${selectedServiceDetails.name} ${index + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pricing and Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing & Details</h3>
+                  <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <IndianRupee className="w-5 h-5 text-orange-600" />
+                      <span className="text-2xl font-bold text-orange-600">
+                        ₹{selectedServiceDetails.price.toLocaleString()}
+                      </span>
+                      <span className="text-gray-600">{selectedServiceDetails.priceUnit.replace('_', ' ')}</span>
+                    </div>
+                    {selectedServiceDetails.duration && (
+                      <div className="text-gray-600 text-sm">Duration: {selectedServiceDetails.duration}</div>
+                    )}
+                    {selectedServiceDetails.difficulty && (
+                      <div className="text-gray-600 text-sm">Difficulty: {selectedServiceDetails.difficulty.charAt(0).toUpperCase() + selectedServiceDetails.difficulty.slice(1)}</div>
+                    )}
+                    {selectedServiceDetails.maxQuantity && (
+                      <div className="text-gray-600 text-sm">Max participants: {selectedServiceDetails.maxQuantity}</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Age Restrictions */}
+                {selectedServiceDetails.ageRestriction && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Age Requirements</h3>
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <div className="flex items-center gap-2 text-blue-800">
+                        <Users className="w-5 h-5" />
+                        <span className="font-medium">
+                          Ages {selectedServiceDetails.ageRestriction.minAge} - {selectedServiceDetails.ageRestriction.maxAge} years
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Detailed Description */}
+              {selectedServiceDetails.detailedDescription && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">About This Experience</h3>
+                  <p className="text-gray-600 leading-relaxed">{selectedServiceDetails.detailedDescription}</p>
+                </div>
+              )}
+
+              {/* What's Included */}
+              {selectedServiceDetails.includedItems && selectedServiceDetails.includedItems.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">What's Included</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {selectedServiceDetails.includedItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <span className="text-gray-600 text-sm">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Requirements */}
+              {selectedServiceDetails.requirements && selectedServiceDetails.requirements.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Requirements</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {selectedServiceDetails.requirements.map((requirement, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <span className="text-orange-500 mt-1">•</span>
+                        <span className="text-gray-600 text-sm">{requirement}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Instructor Info */}
+              {selectedServiceDetails.instructor && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Instructor</h3>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <div className="mb-2">
+                      <h4 className="font-medium text-gray-900">{selectedServiceDetails.instructor.name}</h4>
+                      <p className="text-gray-600 text-sm">{selectedServiceDetails.instructor.experience}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Certifications:</span>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {selectedServiceDetails.instructor.certifications.map((cert, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg">
+                            {cert}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Safety Information */}
+              {selectedServiceDetails.safety && selectedServiceDetails.safety.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Safety Measures</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {selectedServiceDetails.safety.map((safety, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <Shield className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-600 text-sm">{safety}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* What to Bring */}
+              {selectedServiceDetails.whatToBring && selectedServiceDetails.whatToBring.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">What to Bring</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {selectedServiceDetails.whatToBring.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <span className="text-orange-500 mt-1">•</span>
+                        <span className="text-gray-600 text-sm">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancellation Policy */}
+              {selectedServiceDetails.cancellationPolicy && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Cancellation Policy</h3>
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <p className="text-gray-700 text-sm">{selectedServiceDetails.cancellationPolicy}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    ₹{selectedServiceDetails.price.toLocaleString()}
+                  </div>
+                  <div className="text-gray-500 text-sm">{selectedServiceDetails.priceUnit.replace('_', ' ')}</div>
+                </div>
+                <button
+                  onClick={() => {
+                    addService(selectedServiceDetails);
+                    setShowServiceModal(false);
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                >
+                  Add to Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vehicle Details Modal */}
+      {showVehicleModal && selectedVehicleDetails && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
+                    {React.createElement(selectedVehicleDetails.type === '2-wheeler' ? Bike : Car, { className: "w-6 h-6 text-orange-600" })}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">{selectedVehicleDetails.name}</h2>
+                    <p className="text-gray-600">{selectedVehicleDetails.brand} {selectedVehicleDetails.vehicleModel} ({selectedVehicleDetails.year})</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowVehicleModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Vehicle Images */}
+              {selectedVehicleDetails.images.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Photos</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedVehicleDetails.images.slice(0, 4).map((image, index) => (
+                      <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                        <img src={image} alt={`${selectedVehicleDetails.name} ${index + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                <p className="text-gray-600 leading-relaxed">{selectedVehicleDetails.description}</p>
+              </div>
+
+              {/* Specifications */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Specifications</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{selectedVehicleDetails.seatingCapacity} passengers</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Fuel className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{selectedVehicleDetails.fuelType}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{selectedVehicleDetails.transmission}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{selectedVehicleDetails.location.pickupLocation}</span>
+                  </div>
+                  {selectedVehicleDetails.specifications.mileage && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">⛽</span>
+                      <span className="text-gray-600">{selectedVehicleDetails.specifications.mileage}</span>
+                    </div>
+                  )}
+                  {selectedVehicleDetails.specifications.engine && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">🔧</span>
+                      <span className="text-gray-600">{selectedVehicleDetails.specifications.engine}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Features */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {selectedVehicleDetails.features.map((feature, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      <span className="text-gray-600 text-sm">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pricing */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Pricing & Options</h3>
+                <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <IndianRupee className="w-5 h-5 text-orange-600" />
+                    <span className="text-2xl font-bold text-orange-600">
+                      ₹{selectedVehicleDetails.pricePerDay.toLocaleString()}
+                    </span>
+                    <span className="text-gray-600">per day</span>
+                  </div>
+                  {selectedVehicleDetails.driverOption.withDriver && selectedVehicleDetails.driverOption.driverChargePerDay && (
+                    <div className="text-gray-600 text-sm">
+                      Driver available: +₹{selectedVehicleDetails.driverOption.driverChargePerDay.toLocaleString()}/day
+                    </div>
+                  )}
+                  <div className="text-gray-600 text-sm mt-2">
+                    Security deposit: ₹{selectedVehicleDetails.depositAmount.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Terms and Conditions */}
+              {selectedVehicleDetails.termsAndConditions.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Terms & Conditions</h3>
+                  <ul className="space-y-1">
+                    {selectedVehicleDetails.termsAndConditions.map((term, index) => (
+                      <li key={index} className="text-gray-600 text-sm flex items-start gap-2">
+                        <span className="text-orange-500 mt-1">•</span>
+                        <span>{term}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Contact Info */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">📞</span>
+                    <span className="text-gray-600">{selectedVehicleDetails.contactInfo.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">✉️</span>
+                    <span className="text-gray-600">{selectedVehicleDetails.contactInfo.email}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
