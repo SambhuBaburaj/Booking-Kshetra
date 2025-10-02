@@ -18,6 +18,7 @@ import { apiClient } from '../../../lib/api-client';
 import AgencyNav from '../../../components/AgencyNav';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import ErrorMessage from '../../../components/ErrorMessage';
+import ImageUpload from '../../../components/ImageUpload';
 
 interface Driver {
   _id: string;
@@ -27,6 +28,8 @@ interface Driver {
   licenseNumber: string;
   licenseType: string;
   licenseExpiryDate: string;
+  licenseImage?: string;
+  profilePhoto?: string;
   experience: number;
   languages: string[];
   address: string;
@@ -227,6 +230,70 @@ export default function AgencyDrivers() {
     }));
   };
 
+  const uploadDriverLicense = async (driverId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiClient.agencyPost(
+        `/agency/drivers/${driverId}/upload-license`,
+        formData
+      );
+
+      if (response.success && response.data) {
+        const data = response.data as any;
+        // Update the driver in the local state
+        setDrivers(prev => prev.map(d =>
+          d._id === driverId
+            ? { ...d, licenseImage: data.licenseImageUrl }
+            : d
+        ));
+
+        // Update editing driver if it's the same one
+        if (editingDriver && editingDriver._id === driverId) {
+          setEditingDriver(prev => prev ? { ...prev, licenseImage: data.licenseImageUrl } : null);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to upload license image');
+      }
+    } catch (error) {
+      console.error('License upload error:', error);
+      throw error;
+    }
+  };
+
+  const uploadDriverPhoto = async (driverId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiClient.agencyPost(
+        `/agency/drivers/${driverId}/upload-photo`,
+        formData
+      );
+
+      if (response.success && response.data) {
+        const data = response.data as any;
+        // Update the driver in the local state
+        setDrivers(prev => prev.map(d =>
+          d._id === driverId
+            ? { ...d, profilePhoto: data.profilePhotoUrl }
+            : d
+        ));
+
+        // Update editing driver if it's the same one
+        if (editingDriver && editingDriver._id === driverId) {
+          setEditingDriver(prev => prev ? { ...prev, profilePhoto: data.profilePhotoUrl } : null);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to upload profile photo');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      throw error;
+    }
+  };
+
   const filteredDrivers = drivers.filter(driver =>
     (driver.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (driver.phone || '').includes(searchTerm) ||
@@ -313,13 +380,28 @@ export default function AgencyDrivers() {
                 <div key={driver._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {driver.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {driver.licenseType.replace('_', ' ').toUpperCase()} License
-                        </p>
+                      <div className="flex items-center space-x-3">
+                        {driver.profilePhoto ? (
+                          <img
+                            src={driver.profilePhoto}
+                            alt={`${driver.name}'s profile`}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-500 font-medium text-lg">
+                              {driver.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {driver.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {driver.licenseType.replace('_', ' ').toUpperCase()} License
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         {driver.isAvailable ? (
@@ -639,6 +721,37 @@ export default function AgencyDrivers() {
                   </button>
                 </div>
               </div>
+
+              {/* Image Upload Section - Only show for existing drivers */}
+              {editingDriver && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Driver Images</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <ImageUpload
+                        label="License Image"
+                        placeholder="Upload driver's license document"
+                        currentImageUrl={editingDriver.licenseImage}
+                        onUpload={async (file) => {
+                          await uploadDriverLicense(editingDriver._id, file);
+                        }}
+                        maxSizeMB={10}
+                      />
+                    </div>
+                    <div>
+                      <ImageUpload
+                        label="Profile Photo"
+                        placeholder="Upload driver's profile photo"
+                        currentImageUrl={editingDriver.profilePhoto}
+                        onUpload={async (file) => {
+                          await uploadDriverPhoto(editingDriver._id, file);
+                        }}
+                        maxSizeMB={5}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button

@@ -13,9 +13,13 @@ import {
   deleteDriver,
   getBookings,
   assignTransport,
-  updateAssignmentStatus
+  updateAssignmentStatus,
+  uploadDriverLicense,
+  uploadDriverPhoto,
+  uploadVehicleImages
 } from '../controllers/agencyController';
 import { agencyAuth } from '../middleware/agencyAuth';
+import { uploadSingle, uploadMultiple } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -262,6 +266,20 @@ router.put('/drivers/:id', agencyAuth, [
 router.delete('/drivers/:id', agencyAuth, [
   param('id').isMongoId().withMessage('Invalid driver ID')
 ], deleteDriver);
+
+// Driver image upload routes
+router.post('/drivers/:id/upload-license', agencyAuth, uploadSingle, [
+  param('id').isMongoId().withMessage('Invalid driver ID')
+], uploadDriverLicense);
+
+router.post('/drivers/:id/upload-photo', agencyAuth, uploadSingle, [
+  param('id').isMongoId().withMessage('Invalid driver ID')
+], uploadDriverPhoto);
+
+// Vehicle image upload routes
+router.post('/vehicles/:id/upload-images', agencyAuth, uploadMultiple, [
+  param('id').isMongoId().withMessage('Invalid vehicle ID')
+], uploadVehicleImages);
 
 // Booking management routes
 router.get('/bookings', agencyAuth, getBookings);

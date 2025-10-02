@@ -6,6 +6,7 @@ export interface IVehicle extends Document {
   brand: string;
   vehicleModel: string;
   capacity: number;
+  vehicleImages: string[]; // Array of image URLs
   agencyId: mongoose.Types.ObjectId;
   isAvailable: boolean;
   features: string[];
@@ -48,6 +49,16 @@ const vehicleSchema = new Schema<IVehicle>(
       required: [true, 'Vehicle capacity is required'],
       min: [1, 'Capacity must be at least 1'],
       max: [50, 'Capacity cannot be more than 50']
+    },
+    vehicleImages: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(images: string[]) {
+          return images.length <= 10; // Limit to 10 images per vehicle
+        },
+        message: 'Cannot have more than 10 images per vehicle'
+      }
     },
     agencyId: {
       type: Schema.Types.ObjectId,

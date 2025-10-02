@@ -1,5 +1,5 @@
 import express from 'express';
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 import {
   getVehicles,
   getVehicleById,
@@ -7,9 +7,11 @@ import {
   createVehicle,
   updateVehicle,
   deleteVehicle,
-  getVehiclesForAdmin
+  getVehiclesForAdmin,
+  uploadVehicleRentalImages
 } from '../controllers/vehicleRentalController';
 import { adminAuth } from '../middleware/adminAuth';
+import { uploadMultiple } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -63,5 +65,10 @@ router.put('/admin/:id',
 );
 
 router.delete('/admin/:id', adminAuth, deleteVehicle);
+
+// Vehicle image upload route
+router.post('/admin/:id/upload-images', adminAuth, uploadMultiple, [
+  param('id').isMongoId().withMessage('Invalid vehicle ID')
+], uploadVehicleRentalImages);
 
 export default router;

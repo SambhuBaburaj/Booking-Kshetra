@@ -16,8 +16,10 @@ import {
   MapPin,
   IndianRupee,
   Eye,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
+import ImageUpload from '../../../components/ImageUpload';
 
 interface Vehicle {
   _id: string;
@@ -385,6 +387,46 @@ export default function AdminVehicleRentals() {
       ...prev,
       termsAndConditions: prev.termsAndConditions.filter((_, i) => i !== index)
     }));
+  };
+
+  const uploadVehicleImages = async (vehicleId: string, files: File[]) => {
+    try {
+      const uploadFormData = new FormData();
+      files.forEach(file => {
+        uploadFormData.append('images', file);
+      });
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/vehicle-rentals/admin/${vehicleId}/upload-images`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: uploadFormData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the vehicle in local state
+        setVehicles(prev => prev.map(v =>
+          v._id === vehicleId
+            ? { ...v, images: result.data.vehicle.images }
+            : v
+        ));
+
+        // Update editing vehicle if it's the same one
+        if (editingVehicle && editingVehicle._id === vehicleId) {
+          setEditingVehicle(prev => prev ? { ...prev, images: result.data.vehicle.images } : null);
+          setFormData(prev => ({ ...prev, images: result.data.vehicle.images }));
+        }
+      } else {
+        throw new Error(result.message || 'Failed to upload images');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      throw error;
+    }
   };
 
   const addImage = () => {
@@ -957,42 +999,65 @@ export default function AdminVehicleRentals() {
 
               {/* Images */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Images</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
+
+                {/* ImageKit Upload Component - Only show for existing vehicles */}
+                {editingVehicle && (
+                  <div className="mb-6">
+                    <ImageUpload
+                      variant="multiple"
+                      label="Upload Vehicle Images"
+                      placeholder="Upload multiple vehicle images (max 10 total)"
+                      currentImageUrls={formData.images}
+                      maxFiles={10 - formData.images.length}
+                      onUpload={async (files: File[]) => {
+                        await uploadVehicleImages(editingVehicle._id, files);
+                      }}
+                      maxSizeMB={5}
+                    />
+                  </div>
+                )}
+
+                {/* Manual URL Input - Keep as fallback option */}
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <input
                       type="url"
                       value={newImage}
                       onChange={(e) => setNewImage(e.target.value)}
-                      placeholder="Add image URL..."
+                      placeholder="Or add image URL manually..."
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <button
                       type="button"
                       onClick={addImage}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                      Add
+                      Add URL
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {formData.images.map((image, index) => (
-                      <div key={index} className="relative">
-                        <img
-                          src={image}
-                          alt={`Vehicle image ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+
+                  {/* Current Images Display */}
+                  {formData.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {formData.images.map((image, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={image}
+                            alt={`Vehicle image ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

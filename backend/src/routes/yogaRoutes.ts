@@ -1,4 +1,5 @@
 import express from "express";
+import { param } from 'express-validator';
 import {
   getAllYogaSessions,
   getYogaSessionById,
@@ -10,6 +11,7 @@ import {
   createTeacher,
   updateTeacher,
   deleteTeacher,
+  uploadTeacherProfileImage,
   getYogaAnalytics,
   getAllDailyYogaSessions,
   getDailyYogaSessionById,
@@ -18,6 +20,7 @@ import {
   deleteDailyYogaSession,
 } from "../controllers/yogaController";
 import { authenticate, authorize } from "../middleware/auth";
+import { uploadSingle } from '../middleware/upload';
 
 const router = express.Router();
 
@@ -47,6 +50,11 @@ router.delete(
 router.post("/teachers", authenticate, authorize("admin"), createTeacher);
 router.put("/teachers/:id", authenticate, authorize("admin"), updateTeacher);
 router.delete("/teachers/:id", authenticate, authorize("admin"), deleteTeacher);
+
+// Teacher image upload route
+router.post("/teachers/:id/upload-profile-image", authenticate, authorize("admin"), uploadSingle, [
+  param('id').isMongoId().withMessage('Invalid teacher ID')
+], uploadTeacherProfileImage);
 
 router.get("/analytics", authenticate, authorize("admin"), getYogaAnalytics);
 
