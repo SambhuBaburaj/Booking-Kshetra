@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../../../lib/api';
+import toast from 'react-hot-toast';
 import {
   Plus,
   Edit,
@@ -85,8 +86,10 @@ const YogaAdmin = () => {
     try {
       await adminAPI.deleteYogaSession(sessionId);
       await fetchYogaSessions();
+      toast.success('Yoga session deleted successfully!');
     } catch (error) {
       console.error('Error deleting yoga session:', error);
+      toast.error('Failed to delete yoga session. Please try again.');
     }
   };
 
@@ -96,8 +99,10 @@ const YogaAdmin = () => {
     try {
       await adminAPI.deleteDailyYogaSession(sessionId);
       await fetchDailySessions();
+      toast.success('Daily session deleted successfully!');
     } catch (error) {
       console.error('Error deleting daily session:', error);
+      toast.error('Failed to delete daily session. Please try again.');
     }
   };
 
@@ -522,8 +527,10 @@ const YogaAdmin = () => {
                       try {
                         if (editingDailySession) {
                           await adminAPI.updateDailyYogaSession(editingDailySession._id, sessionData);
+                          toast.success('Daily session updated successfully!');
                         } else {
                           await adminAPI.createDailyYogaSession(sessionData);
+                          toast.success('Daily session created successfully!');
                         }
 
                         await fetchDailySessions();
@@ -531,6 +538,7 @@ const YogaAdmin = () => {
                         setEditingDailySession(null);
                       } catch (error) {
                         console.error('Error saving daily session:', error);
+                        toast.error('Failed to save daily session. Please try again.');
                       }
                     }}
                     onCancel={() => {
@@ -545,8 +553,10 @@ const YogaAdmin = () => {
                       try {
                         if (editingSession) {
                           await adminAPI.updateYogaSession(editingSession._id, sessionData);
+                          toast.success('Yoga training program updated successfully!');
                         } else {
                           await adminAPI.createYogaSession(sessionData);
+                          toast.success('Yoga training program created successfully!');
                         }
 
                         await fetchYogaSessions();
@@ -554,6 +564,7 @@ const YogaAdmin = () => {
                         setEditingSession(null);
                       } catch (error) {
                         console.error('Error saving yoga session:', error);
+                        toast.error('Failed to save yoga training program. Please try again.');
                       }
                     }}
                     onCancel={() => {

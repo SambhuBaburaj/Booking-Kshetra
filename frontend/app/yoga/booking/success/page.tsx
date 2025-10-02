@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import toast from 'react-hot-toast'
 import {
   CheckCircle,
   Download,
@@ -15,8 +16,9 @@ import {
   ArrowLeft,
   Share2,
   Home,
-  Star,
-  Heart
+  Copy,
+  Package,
+  CheckCircle2
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 
@@ -25,8 +27,10 @@ export default function YogaBookingSuccessPage() {
   const searchParams = useSearchParams()
   const paymentId = searchParams.get('payment_id')
   const orderId = searchParams.get('order_id')
+  const bookingId = searchParams.get('booking_id')
 
   const [bookingDetails] = useState({
+    bookingId: bookingId || `68de0794dd1de844fe67e37d`,
     bookingReference: `YB${Date.now().toString().slice(-6)}`,
     paymentId: paymentId || 'demo_payment_id',
     orderId: orderId || 'demo_order_id',
@@ -63,9 +67,29 @@ export default function YogaBookingSuccessPage() {
     })
   }
 
-  const handleDownloadReceipt = () => {
-    // In a real app, this would generate and download a PDF receipt
-    alert('Receipt download functionality would be implemented here')
+  const handleDownloadReceipt = async () => {
+    try {
+      const response = await fetch(`/api/yoga/booking/${bookingDetails.bookingId}/receipt`, {
+        method: 'GET',
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `yoga-booking-receipt-${bookingDetails.bookingId}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        alert('Error downloading receipt. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error)
+      alert('Error downloading receipt. Please try again.')
+    }
   }
 
   const handleShareBooking = () => {
@@ -80,6 +104,15 @@ export default function YogaBookingSuccessPage() {
       navigator.clipboard.writeText(window.location.href)
       alert('Booking link copied to clipboard!')
     }
+  }
+
+  const handleCopyBookingId = () => {
+    navigator.clipboard.writeText(bookingDetails.bookingId)
+    toast.success('Booking ID copied to clipboard!')
+  }
+
+  const handleTrackBooking = () => {
+    router.push(`/track-booking?booking_id=${bookingDetails.bookingId}`)
   }
 
   return (
@@ -133,10 +166,21 @@ export default function YogaBookingSuccessPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Booking Reference</span>
-                  <p className="font-bold text-lg text-orange-600">{bookingDetails.bookingReference}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="min-w-0">
+                  <span className="text-gray-600">Booking ID</span>
+                  <div className="flex items-start gap-2 mt-1">
+                    <p className="font-bold text-sm md:text-lg text-orange-600 font-mono break-all flex-1 leading-relaxed">
+                      {bookingDetails.bookingId}
+                    </p>
+                    <button
+                      onClick={handleCopyBookingId}
+                      className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors flex-shrink-0 mt-0.5"
+                      title="Copy Booking ID"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <span className="text-gray-600">Booking Date</span>
@@ -240,7 +284,10 @@ export default function YogaBookingSuccessPage() {
 
               <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800">
-                  <strong>Note:</strong> Please save your booking reference <strong>{bookingDetails.bookingReference}</strong> for future correspondence.
+                  <strong>Note:</strong> Please save your booking ID for future correspondence and tracking.
+                </p>
+                <p className="text-sm text-yellow-800 mt-2 font-mono break-all bg-yellow-100 p-2 rounded border">
+                  <strong>{bookingDetails.bookingId}</strong>
                 </p>
               </div>
             </motion.div>
@@ -252,6 +299,14 @@ export default function YogaBookingSuccessPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h3>
 
               <div className="space-y-4">
+                <button
+                  onClick={handleTrackBooking}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Package className="w-4 h-4" />
+                  Track Booking
+                </button>
+
                 <button
                   onClick={handleDownloadReceipt}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
@@ -285,33 +340,19 @@ export default function YogaBookingSuccessPage() {
                 </button>
               </div>
 
-              {/* Rating Request */}
-              <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+              {/* Booking Status */}
+              <div className="mt-8 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
                 <div className="text-center">
-                  <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                  <h4 className="font-semibold text-gray-900 mb-2">Enjoying Kshetra?</h4>
+                  <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <h4 className="font-semibold text-gray-900 mb-2">Booking Status</h4>
                   <p className="text-sm text-gray-600 mb-3">
-                    Share your experience with others
-                  </p>
-                  <button className="text-sm text-purple-600 font-medium hover:text-purple-700">
-                    Leave a Review
-                  </button>
-                </div>
-              </div>
-
-              {/* Social Sharing */}
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg">
-                <div className="text-center">
-                  <Heart className="w-8 h-8 text-red-500 mx-auto mb-2" />
-                  <h4 className="font-semibold text-gray-900 mb-2">Spread the Love</h4>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Tell your friends about your yoga journey
+                    Your booking is confirmed and ready
                   </p>
                   <button
-                    onClick={handleShareBooking}
-                    className="text-sm text-blue-600 font-medium hover:text-blue-700"
+                    onClick={handleTrackBooking}
+                    className="text-sm text-green-600 font-medium hover:text-green-700"
                   >
-                    Share on Social Media
+                    Track Progress
                   </button>
                 </div>
               </div>

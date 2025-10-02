@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../../../lib/api';
+import toast from 'react-hot-toast';
 import {
   Plus,
   Edit,
@@ -61,8 +62,10 @@ const TeachersAdmin = () => {
     try {
       await adminAPI.deleteYogaTeacher(teacherId);
       await fetchTeachers();
+      toast.success('Teacher deleted successfully!');
     } catch (error) {
       console.error('Error deleting teacher:', error);
+      toast.error('Failed to delete teacher. Please try again.');
     }
   };
 
@@ -310,8 +313,10 @@ const TeachersAdmin = () => {
                     try {
                       if (editingTeacher) {
                         await adminAPI.updateYogaTeacher(editingTeacher._id, teacherData);
+                        toast.success('Teacher updated successfully!');
                       } else {
                         await adminAPI.createYogaTeacher(teacherData);
+                        toast.success('Teacher created successfully!');
                       }
 
                       await fetchTeachers();
@@ -319,6 +324,7 @@ const TeachersAdmin = () => {
                       setEditingTeacher(null);
                     } catch (error) {
                       console.error('Error saving teacher:', error);
+                      toast.error('Failed to save teacher. Please try again.');
                     }
                   }}
                   onCancel={() => {
