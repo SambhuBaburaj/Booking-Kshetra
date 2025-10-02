@@ -125,8 +125,8 @@ export default function YogaPage() {
 
   const handleBookSession = (session: YogaSession) => {
     console.log("Booking session:", session._id);
-    // Redirect to our internal booking system with program type
-    router.push(`/yoga/booking/details?session=${session._id}&type=program`);
+    // Redirect to our internal booking system with program type and price
+    router.push(`/yoga/booking/details?session=${session._id}&type=program&price=${session.price}&name=${encodeURIComponent(session.batchName)}&description=${encodeURIComponent(session.description || '')}&instructor=${encodeURIComponent(session.instructor.name)}&startDate=${session.startDate}&endDate=${session.endDate}&duration=${Math.ceil((new Date(session.endDate).getTime() - new Date(session.startDate).getTime()) / (1000 * 60 * 60 * 24))}&sessionType=${session.type}`);
   };
 
   const handleDailySessionBooking = () => {

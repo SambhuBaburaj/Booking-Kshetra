@@ -50,6 +50,14 @@ export default function YogaBookingDetailsPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session') || ''
   const sessionType = searchParams.get('type') || 'program'
+  const sessionPrice = searchParams.get('price')
+  const sessionName = searchParams.get('name')
+  const sessionDescription = searchParams.get('description')
+  const sessionInstructor = searchParams.get('instructor')
+  const sessionStartDate = searchParams.get('startDate')
+  const sessionEndDate = searchParams.get('endDate')
+  const sessionDuration = searchParams.get('duration')
+  const sessionTypeParam = searchParams.get('sessionType')
 
   const [loading, setLoading] = useState(true)
   const [sessionData, setSessionData] = useState<SessionData | null>(null)
@@ -105,23 +113,23 @@ export default function YogaBookingDetailsPage() {
         }
       }
     } else {
-      // Handle program sessions (mock data since you said don't worry about API)
+      // Handle program sessions - use data from URL parameters (real session data)
       session = {
         id: sessionId,
-        name: sessionId.includes('200hr') ? '200 Hour Teacher Training' : '300 Hour Advanced Training',
+        name: sessionName ? decodeURIComponent(sessionName) : (sessionTypeParam === '200hr' ? '200 Hour Teacher Training' : '300 Hour Advanced Training'),
         type: 'program',
-        price: sessionId.includes('200hr') ? 45000 : 75000,
-        duration: sessionId.includes('200hr') ? '21 days' : '30 days',
-        description: 'Comprehensive yoga teacher training program with ancient wisdom and modern techniques',
-        instructor: 'Master Yoga Teacher',
-        startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        endDate: new Date(Date.now() + (sessionId.includes('200hr') ? 28 : 37) * 24 * 60 * 60 * 1000).toISOString()
+        price: sessionPrice ? parseInt(sessionPrice) : (sessionTypeParam === '200hr' ? 45000 : 75000), // Use real price from URL
+        duration: sessionDuration ? `${sessionDuration} days` : (sessionTypeParam === '200hr' ? '21 days' : '30 days'),
+        description: sessionDescription ? decodeURIComponent(sessionDescription) : 'Comprehensive yoga teacher training program with ancient wisdom and modern techniques',
+        instructor: sessionInstructor ? decodeURIComponent(sessionInstructor) : 'Master Yoga Teacher',
+        startDate: sessionStartDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: sessionEndDate || new Date(Date.now() + (sessionTypeParam === '200hr' ? 28 : 37) * 24 * 60 * 60 * 1000).toISOString()
       }
     }
 
     setSessionData(session)
     setLoading(false)
-  }, [sessionId, sessionType])
+  }, [sessionId, sessionType, sessionPrice, sessionName, sessionDescription, sessionInstructor, sessionStartDate, sessionEndDate, sessionDuration, sessionTypeParam])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
