@@ -478,7 +478,7 @@ Thank you for choosing Kshetra Retreat Resort!
               </motion.div>
 
               {/* Rating Prompt */}
-              <motion.div
+              {/* <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.0 }}
@@ -496,7 +496,7 @@ Thank you for choosing Kshetra Retreat Resort!
                 <button className="text-orange-600 hover:text-orange-700 font-medium text-sm">
                   Leave a Review →
                 </button>
-              </motion.div>
+              </motion.div> */}
             </div>
           </div>
         </div>

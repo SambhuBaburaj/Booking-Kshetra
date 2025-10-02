@@ -116,16 +116,17 @@ export default function AgencyDrivers() {
 
   const handleEditDriver = (driver: Driver) => {
     setEditingDriver(driver);
+   const date=new Date(driver.licenseExpiryDate).toLocaleDateString()
     setFormData({
       name: driver.name,
       phone: driver.phone,
       email: driver.email,
       licenseNumber: driver.licenseNumber,
       licenseType: driver.licenseType,
-      licenseExpiryDate: driver.licenseExpiryDate,
+      licenseExpiryDate:date,
       experience: driver.experience,
       languages: [...driver.languages],
-      isAvailable: driver.isAvailable
+      isAvailable: driver.isAvailable,
     });
     setShowModal(true);
   };
@@ -291,8 +292,9 @@ export default function AgencyDrivers() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredDrivers.map((driver) => (
-                <div key={driver._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+              {filteredDrivers.map((driver) => {
+                console.log(new Date(driver.licenseExpiryDate).toLocaleDateString());
+                return <div key={driver._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -369,7 +371,7 @@ export default function AgencyDrivers() {
                     </div>
                   </div>
                 </div>
-              ))}
+              })}
             </div>
           )}
         </main>

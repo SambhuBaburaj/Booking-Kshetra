@@ -7,7 +7,7 @@ import { VehicleRental } from '../models';
 export const getVehicles = async (req: Request, res: Response) => {
   try {
     const { type, category, minPrice, maxPrice, sortBy = 'pricePerDay', sortOrder = 'asc' } = req.query;
-
+    console.log('sahgdsahgsdaad');
     // Build filter object
     const filter: any = { isActive: true, 'availability.isAvailable': true };
 

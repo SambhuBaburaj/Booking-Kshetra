@@ -362,13 +362,13 @@ const AdminBookingsPage = () => {
               <h1 className="text-2xl font-bold text-gray-900">Bookings Management</h1>
               <p className="text-gray-600">Manage all resort bookings</p>
             </div>
-            <button
+            {/* <button
               onClick={() => setShowCreateModal(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Create Booking
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -593,7 +593,7 @@ const AdminBookingsPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center justify-center space-x-2">
                         <button
                           onClick={() => {
                             setSelectedBooking(booking);
@@ -603,7 +603,7 @@ const AdminBookingsPage = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
+                        {/* <button
                           onClick={() => {
                             // Handle edit booking
                             console.log('Edit booking:', booking._id);
@@ -611,7 +611,7 @@ const AdminBookingsPage = () => {
                           className="text-green-600 hover:text-green-900"
                         >
                           <Edit3 className="w-4 h-4" />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
