@@ -157,7 +157,7 @@ export default function YogaBookingDetailsPage() {
     if (!validateForm()) {
       return
     }
-
+    
     // Store booking data in localStorage for payment page
     const bookingData = {
       session: sessionData,

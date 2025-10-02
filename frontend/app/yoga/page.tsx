@@ -596,6 +596,7 @@ export default function YogaPage() {
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
+                          onClick={()=>handleBookSession(session)}
                           className={`flex-1 px-4 py-2 bg-gradient-to-r ${colorTheme.gradient} text-white rounded-lg hover:shadow-lg transition-all duration-300 text-sm font-semibold`}
                         >
                           Enroll Now
