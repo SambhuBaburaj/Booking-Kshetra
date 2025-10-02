@@ -350,7 +350,7 @@ const BookingPage = () => {
         setCouponError('');
       }
     } catch (error: any) {
-      setCouponError(error.message || 'Invalid coupon code');
+      setCouponError(error.response?.data?.message || error.message || 'Invalid coupon code');
       setAppliedCoupon(null);
       setCouponDiscount(0);
     } finally {
