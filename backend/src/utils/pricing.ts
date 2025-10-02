@@ -1,5 +1,6 @@
 import { IGuestInfo, ISelectedService } from '../models/Booking';
 import { IService } from '../models/Service';
+import { ICoupon } from '../models/Coupon';
 
 export interface PricingCalculation {
   roomPrice: number;
@@ -9,6 +10,8 @@ export interface PricingCalculation {
   transportPrice: number;
   yogaPrice: number;
   totalAmount: number;
+  couponDiscount?: number;
+  finalAmount?: number;
   breakdown: {
     nights: number;
     adults: number;
@@ -30,7 +33,8 @@ export class PricingCalculator {
     breakfastPrice: number = 0,
     selectedServices: ISelectedService[] = [],
     transportPrice: number = 0,
-    yogaPrice: number = 0
+    yogaPrice: number = 0,
+    coupon?: ICoupon
   ): PricingCalculation {
     const nights = this.calculateNights(checkIn, checkOut);
     const adults = guests.filter(guest => !guest.isChild).length;
@@ -52,6 +56,18 @@ export class PricingCalculator {
     // Total calculation
     const totalAmount = roomPrice + foodPrice + totalBreakfastPrice + servicesPrice + transportPrice + yogaPrice;
 
+    // Apply coupon discount if provided
+    let couponDiscount = 0;
+    let finalAmount = totalAmount;
+
+    if (coupon) {
+      const validation = this.validateCouponForService(coupon, 'airport'); // Default service type for pricing calculation
+      if (validation.valid) {
+        couponDiscount = this.calculateCouponDiscount(coupon, totalAmount);
+        finalAmount = totalAmount - couponDiscount;
+      }
+    }
+
     return {
       roomPrice,
       foodPrice,
@@ -60,6 +76,8 @@ export class PricingCalculator {
       transportPrice,
       yogaPrice,
       totalAmount,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      finalAmount: couponDiscount > 0 ? finalAmount : undefined,
       breakdown: {
         nights,
         adults,
@@ -133,6 +151,75 @@ export class PricingCalculator {
     }
 
     return { valid: true };
+  }
+
+  calculateCouponDiscount(coupon: ICoupon, orderValue: number): number {
+    // Check minimum order value
+    if (coupon.minOrderValue && orderValue < coupon.minOrderValue) {
+      return 0;
+    }
+
+    let discount = 0;
+    if (coupon.discountType === 'percentage') {
+      discount = (orderValue * coupon.discountValue) / 100;
+    } else {
+      discount = coupon.discountValue;
+    }
+
+    // Apply maximum discount limit if specified
+    if (coupon.maxDiscount && discount > coupon.maxDiscount) {
+      discount = coupon.maxDiscount;
+    }
+
+    return Math.min(discount, orderValue); // Discount cannot exceed order value
+  }
+
+  validateCouponForService(coupon: ICoupon, serviceType: string): { valid: boolean; message?: string } {
+    if (!coupon.isActive) {
+      return { valid: false, message: 'Coupon is not active' };
+    }
+
+    const now = new Date();
+    if (now < coupon.validFrom) {
+      return { valid: false, message: 'Coupon is not yet valid' };
+    }
+
+    if (now > coupon.validUntil) {
+      return { valid: false, message: 'Coupon has expired' };
+    }
+
+    if (coupon.usageLimit && coupon.currentUsageCount >= coupon.usageLimit) {
+      return { valid: false, message: 'Coupon usage limit exceeded' };
+    }
+
+    if (!coupon.applicableServices.includes(serviceType as any)) {
+      return { valid: false, message: `Coupon is not applicable for ${serviceType} bookings` };
+    }
+
+    return { valid: true };
+  }
+
+  calculateServiceSpecificPrice(
+    basePrice: number,
+    serviceType: 'airport' | 'yoga' | 'rental' | 'adventure',
+    coupon?: ICoupon
+  ): { totalAmount: number; couponDiscount?: number; finalAmount?: number } {
+    let couponDiscount = 0;
+    let finalAmount = basePrice;
+
+    if (coupon) {
+      const validation = this.validateCouponForService(coupon, serviceType);
+      if (validation.valid) {
+        couponDiscount = this.calculateCouponDiscount(coupon, basePrice);
+        finalAmount = basePrice - couponDiscount;
+      }
+    }
+
+    return {
+      totalAmount: basePrice,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      finalAmount: couponDiscount > 0 ? finalAmount : undefined
+    };
   }
 }
 

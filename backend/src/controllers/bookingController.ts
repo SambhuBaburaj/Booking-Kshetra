@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Room, Service, YogaSession, User, Agency } from '../models';
+import { Booking, Room, Service, YogaSession, User, Agency, Coupon, CouponUsage } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { pricingCalculator } from '../utils/pricing';
 import { bookingValidator } from '../utils/bookingValidation';
@@ -56,7 +56,8 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       selectedServices = [],
       yogaSessionId,
       specialRequests,
-      bookingType
+      bookingType,
+      couponCode
     } = req.body;
 
     // For public bookings, we don't have a userId, so we'll use the primary guest email as identifier
@@ -174,6 +175,64 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       );
     }
 
+    // Process coupon if provided
+    let coupon = null;
+    let couponDiscount = 0;
+    let finalAmount = pricing.totalAmount;
+
+    if (couponCode) {
+      // Find and validate coupon
+      coupon = await Coupon.findOne({ code: couponCode.toUpperCase() }).session(session);
+      if (!coupon) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid coupon code'
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Determine service type for coupon validation
+      let serviceType = 'airport'; // default
+      if (isYogaBooking) {
+        serviceType = 'yoga';
+      } else if (transport?.pickup || transport?.drop) {
+        serviceType = 'airport';
+      }
+      // Add logic for rental and adventure based on your booking structure
+
+      // Validate coupon for service
+      const validation = pricingCalculator.validateCouponForService(coupon, serviceType);
+      if (!validation.valid) {
+        res.status(400).json({
+          success: false,
+          message: validation.message
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Check if user has already used this coupon
+      const phoneNumber = primaryGuestInfo.phone;
+      const hasUsed = await CouponUsage.hasUserUsedCoupon(coupon._id, undefined, phoneNumber);
+      if (hasUsed) {
+        res.status(400).json({
+          success: false,
+          message: 'You have already used this coupon'
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Calculate discount
+      couponDiscount = pricingCalculator.calculateCouponDiscount(coupon, pricing.totalAmount);
+      finalAmount = pricing.totalAmount - couponDiscount;
+
+      // Update coupon usage count
+      coupon.currentUsageCount += 1;
+      await coupon.save({ session });
+    }
+
     // Create booking for public user (no userId)
     const booking = new Booking({
       roomId: isYogaBooking ? null : roomId, // No room for yoga bookings
@@ -197,6 +256,9 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       adults: guests.filter((g: any) => parseInt(g.age) >= 5).length,
       children: guests.filter((g: any) => parseInt(g.age) < 5).length,
       totalAmount: pricing.totalAmount,
+      couponCode: couponCode || undefined,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      finalAmount: couponDiscount > 0 ? finalAmount : undefined,
       roomPrice: pricing.roomPrice,
       foodPrice: pricing.foodPrice,
       breakfastPrice: pricing.breakfastPrice,
@@ -215,6 +277,9 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
     });
 
     await booking.save({ session });
+
+    // Coupon usage will be tracked only after successful payment
+
     await session.commitTransaction();
 
     // Send email notification for public booking
@@ -272,7 +337,8 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       transport,
       selectedServices = [],
       yogaSessionId,
-      specialRequests
+      specialRequests,
+      couponCode
     } = req.body;
 
     const userId = req.user?.userId;
@@ -429,6 +495,60 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       yogaPrice
     );
 
+    // Process coupon if provided
+    let coupon = null;
+    let couponDiscount = 0;
+    let finalAmount = pricing.totalAmount;
+
+    if (couponCode) {
+      // Find and validate coupon
+      coupon = await Coupon.findOne({ code: couponCode.toUpperCase() }).session(session);
+      if (!coupon) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid coupon code'
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Determine service type (for authenticated bookings, it's mostly room bookings)
+      let serviceType = 'airport'; // default for room bookings with transport
+      if (yogaSessionId) {
+        serviceType = 'yoga';
+      }
+
+      // Validate coupon for service
+      const validation = pricingCalculator.validateCouponForService(coupon, serviceType);
+      if (!validation.valid) {
+        res.status(400).json({
+          success: false,
+          message: validation.message
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Check if user has already used this coupon
+      const hasUsed = await CouponUsage.hasUserUsedCoupon(coupon._id, userObjectId);
+      if (hasUsed) {
+        res.status(400).json({
+          success: false,
+          message: 'You have already used this coupon'
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Calculate discount
+      couponDiscount = pricingCalculator.calculateCouponDiscount(coupon, pricing.totalAmount);
+      finalAmount = pricing.totalAmount - couponDiscount;
+
+      // Update coupon usage count
+      coupon.currentUsageCount += 1;
+      await coupon.save({ session });
+    }
+
     // Create booking
     const booking = new Booking({
       userId: userObjectId,
@@ -441,6 +561,9 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       adults: guests.filter((g: any) => !g.isChild).length,
       children: guests.filter((g: any) => g.isChild).length,
       totalAmount: pricing.totalAmount,
+      couponCode: couponCode || undefined,
+      couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
+      finalAmount: couponDiscount > 0 ? finalAmount : undefined,
       roomPrice: pricing.roomPrice,
       foodPrice: pricing.foodPrice,
       breakfastPrice: pricing.breakfastPrice,
@@ -458,6 +581,8 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
     });
 
     await booking.save({ session });
+
+    // Coupon usage will be tracked only after successful payment
 
     // Update yoga session booked seats if applicable
     if (yogaSessionId) {

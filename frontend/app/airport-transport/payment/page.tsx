@@ -23,6 +23,7 @@ import {
 import Header from '../../../components/Header'
 import { bookingAPI } from '../../../lib/api'
 import { initiatePayment } from '../../../utils/razorpay'
+import { validateCoupon } from '../../../lib/api/coupons'
 
 interface BookingDetails {
   pickup: boolean
@@ -78,6 +79,13 @@ export default function PaymentPage() {
   })
   const [loading, setLoading] = useState(false)
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponError, setCouponError] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
+
   useEffect(() => {
     // Load booking details from localStorage
     const bookingData = localStorage.getItem('airportTransportBooking')
@@ -109,6 +117,46 @@ export default function PaymentPage() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !bookingDetails) return
+
+    setValidatingCoupon(true)
+    setCouponError('')
+
+    try {
+      const response = await validateCoupon({
+        code: couponCode.trim(),
+        serviceType: 'airport',
+        orderValue: bookingDetails.totalAmount,
+        phoneNumber: personalInfo.phone
+      })
+
+      if (response.data.success && response.data.data) {
+        setAppliedCoupon(response.data.data.coupon)
+        setCouponDiscount(response.data.data.discount)
+        setCouponError('')
+      }
+    } catch (error: any) {
+      setCouponError(error.message || 'Invalid coupon code')
+      setAppliedCoupon(null)
+      setCouponDiscount(0)
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('')
+    setAppliedCoupon(null)
+    setCouponDiscount(0)
+    setCouponError('')
+  }
+
+  const getFinalAmount = () => {
+    if (!bookingDetails) return 0
+    return bookingDetails.totalAmount - couponDiscount
   }
 
   const createTransportBooking = async () => {
@@ -159,6 +207,7 @@ export default function PaymentPage() {
         selectedServices: [],
         specialRequests: `Airport Transport Service - ${bookingDetails.pickup ? 'Pickup' : ''} ${bookingDetails.pickup && bookingDetails.drop ? '& ' : ''}${bookingDetails.drop ? 'Drop' : ''} - Airport: ${bookingDetails.airportLocation}`,
         totalAmount: bookingDetails.totalAmount,
+        couponCode: appliedCoupon ? couponCode : undefined,
         paymentStatus: 'pending',
         bookingType: 'transport'
       }
@@ -227,7 +276,7 @@ export default function PaymentPage() {
 
       // Immediately trigger payment after booking creation
       await initiatePayment({
-        amount: bookingDetails.totalAmount,
+        amount: getFinalAmount(),
         bookingId: createdBookingId,
         userDetails: {
           name: `${personalInfo.firstName} ${personalInfo.lastName}`,
@@ -396,10 +445,83 @@ export default function PaymentPage() {
                   </div>
                 </div>
 
+                {/* Coupon Section */}
+                <div className="bg-gradient-to-r from-green-500/20 to-teal-500/20 rounded-2xl p-6">
+                  <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
+                    <Percent className="w-5 h-5" />
+                    Have a Coupon Code?
+                  </h4>
+
+                  {!appliedCoupon ? (
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          placeholder="Enter coupon code"
+                          className="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:border-green-400 focus:outline-none"
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={!couponCode.trim() || validatingCoupon}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {validatingCoupon ? (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Apply'
+                          )}
+                        </button>
+                      </div>
+                      {couponError && (
+                        <p className="text-red-400 text-sm">{couponError}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-green-600/20 rounded-lg border border-green-400/30">
+                        <div>
+                          <p className="text-green-400 font-medium">{appliedCoupon.code}</p>
+                          <p className="text-green-300 text-sm">{appliedCoupon.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-green-400 font-bold">-{formatCurrency(couponDiscount)}</p>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            className="text-red-400 text-sm hover:text-red-300"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Total Amount */}
                 <div className="bg-gradient-to-r from-purple-500/20 to-indigo-500/20 rounded-2xl p-6 text-center">
-                  <p className="text-gray-300 text-sm mb-2">Total Amount</p>
-                  <p className="text-4xl font-bold text-white">{formatCurrency(bookingDetails.totalAmount)}</p>
+                  {appliedCoupon && (
+                    <div className="mb-4 pb-4 border-b border-white/20">
+                      <div className="flex justify-between text-gray-300 text-sm mb-2">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(bookingDetails.totalAmount)}</span>
+                      </div>
+                      <div className="flex justify-between text-green-400 text-sm">
+                        <span>Coupon Discount</span>
+                        <span>-{formatCurrency(couponDiscount)}</span>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-gray-300 text-sm mb-2">
+                    {appliedCoupon ? 'Final Amount' : 'Total Amount'}
+                  </p>
+                  <p className="text-4xl font-bold text-white">{formatCurrency(getFinalAmount())}</p>
+                  {appliedCoupon && (
+                    <p className="text-green-400 text-sm mt-2">
+                      You saved {formatCurrency(couponDiscount)}!
+                    </p>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -1,13 +1,22 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Payment, User } from '../models';
+import { Booking, Payment, User, Coupon, CouponUsage } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { razorpayService } from '../utils/razorpay';
 
 export const createPaymentOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId, amount } = req.body;
     const userId = req.user?.userId;
+
+    // Validate required fields
+    if (!amount || amount <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Valid payment amount is required'
+      });
+      return;
+    }
 
     // Find and validate booking
     const booking = await Booking.findOne({
@@ -21,6 +30,15 @@ export const createPaymentOrder = async (req: AuthenticatedRequest, res: Respons
       res.status(404).json({
         success: false,
         message: 'Booking not found or not eligible for payment'
+      });
+      return;
+    }
+
+    // Validate that amount doesn't exceed original booking amount
+    if (amount > booking.totalAmount) {
+      res.status(400).json({
+        success: false,
+        message: 'Payment amount cannot exceed booking total'
       });
       return;
     }
@@ -58,7 +76,7 @@ export const createPaymentOrder = async (req: AuthenticatedRequest, res: Respons
     };
 
     const orderResult = await razorpayService.createOrder(
-      booking.totalAmount,
+      amount,
       (booking._id as any).toString(),
       customerInfo
     );
@@ -75,7 +93,7 @@ export const createPaymentOrder = async (req: AuthenticatedRequest, res: Respons
     const payment = new Payment({
       bookingId: booking._id,
       razorpayOrderId: orderResult.data!.orderId,
-      amount: booking.totalAmount,
+      amount: amount,
       currency: 'INR',
       status: 'created'
     });
@@ -191,6 +209,29 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
       booking.paymentId = razorpay_payment_id;
       booking.status = 'confirmed';
       await booking.save({ session });
+
+      // Create coupon usage record if coupon was used
+      if (booking.couponCode && booking.couponDiscount && booking.couponDiscount > 0) {
+        try {
+          const coupon = await Coupon.findOne({ code: booking.couponCode.toUpperCase() });
+          if (coupon) {
+            const couponUsage = new CouponUsage({
+              couponId: coupon._id,
+              userId: userId ? new mongoose.Types.ObjectId(userId) : undefined,
+              phoneNumber: (booking.userId as any)?.phone || booking.primaryGuestInfo?.phone,
+              email: (booking.userId as any)?.email || booking.primaryGuestInfo?.email,
+              bookingId: booking._id,
+              discountAmount: booking.couponDiscount,
+              orderValue: booking.totalAmount,
+              serviceType: booking.yogaSessionId ? 'yoga' : 'airport'
+            });
+            await couponUsage.save({ session });
+          }
+        } catch (couponError) {
+          console.error('Error creating coupon usage record:', couponError);
+          // Don't fail the payment if coupon usage tracking fails
+        }
+      }
     } else {
       booking.paymentStatus = 'failed';
       await booking.save({ session });
@@ -375,7 +416,16 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response): P
 // Public payment endpoints (no authentication required)
 export const createPublicPaymentOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId, amount } = req.body;
+
+    // Validate required fields
+    if (!amount || amount <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Valid payment amount is required'
+      });
+      return;
+    }
 
     // Find and validate public booking
     const booking = await Booking.findOne({
@@ -389,6 +439,15 @@ export const createPublicPaymentOrder = async (req: Request, res: Response): Pro
       res.status(404).json({
         success: false,
         message: 'Booking not found or not eligible for payment'
+      });
+      return;
+    }
+
+    // Validate that amount doesn't exceed original booking amount
+    if (amount > booking.totalAmount) {
+      res.status(400).json({
+        success: false,
+        message: 'Payment amount cannot exceed booking total'
       });
       return;
     }
@@ -421,7 +480,7 @@ export const createPublicPaymentOrder = async (req: Request, res: Response): Pro
     };
 
     const orderResult = await razorpayService.createOrder(
-      booking.totalAmount,
+      amount,
       (booking._id as any).toString(),
       customerInfo
     );
@@ -438,7 +497,7 @@ export const createPublicPaymentOrder = async (req: Request, res: Response): Pro
     const payment = new Payment({
       bookingId: booking._id,
       razorpayOrderId: orderResult.data!.orderId,
-      amount: booking.totalAmount,
+      amount: amount,
       currency: 'INR',
       status: 'created'
     });
@@ -552,6 +611,28 @@ export const verifyPublicPayment = async (req: Request, res: Response): Promise<
       booking.paymentId = razorpay_payment_id;
       booking.status = 'confirmed';
       await booking.save({ session });
+
+      // Create coupon usage record if coupon was used
+      if (booking.couponCode && booking.couponDiscount && booking.couponDiscount > 0) {
+        try {
+          const coupon = await Coupon.findOne({ code: booking.couponCode.toUpperCase() });
+          if (coupon) {
+            const couponUsage = new CouponUsage({
+              couponId: coupon._id,
+              phoneNumber: booking.primaryGuestInfo?.phone || booking.guestEmail,
+              email: booking.primaryGuestInfo?.email || booking.guestEmail,
+              bookingId: booking._id,
+              discountAmount: booking.couponDiscount,
+              orderValue: booking.totalAmount,
+              serviceType: booking.yogaSessionId ? 'yoga' : 'airport'
+            });
+            await couponUsage.save({ session });
+          }
+        } catch (couponError) {
+          console.error('Error creating coupon usage record:', couponError);
+          // Don't fail the payment if coupon usage tracking fails
+        }
+      }
     } else {
       booking.paymentStatus = 'failed';
       await booking.save({ session });

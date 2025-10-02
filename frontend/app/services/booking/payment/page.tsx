@@ -19,11 +19,13 @@ import {
   Activity,
   Car,
   Plane,
-  Waves
+  Waves,
+  Percent
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 import { bookingAPI } from '../../../../lib/api'
 import { initiatePayment } from '../../../../utils/razorpay'
+import { validateCoupon } from '../../../../lib/api/coupons'
 
 // Types for services booking
 interface Service {
@@ -70,6 +72,13 @@ export default function ServicesBookingPaymentPage() {
   const [paymentMethods] = useState([
     { id: 'razorpay', name: 'Razorpay', icon: CreditCard, description: 'Credit/Debit Cards, UPI, Net Banking, Wallets' }
   ])
+
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponError, setCouponError] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [validatingCoupon, setValidatingCoupon] = useState(false)
 
   useEffect(() => {
     // Get complete booking data from localStorage
@@ -120,6 +129,51 @@ export default function ServicesBookingPaymentPage() {
     }).format(amount)
   }
 
+  const getServiceType = (): 'rental' | 'adventure' => {
+    if (!bookingData) return 'adventure'
+    return bookingData.services.some(s => s.category === 'vehicle_rental') ? 'rental' : 'adventure'
+  }
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !bookingData) return
+
+    setValidatingCoupon(true)
+    setCouponError('')
+
+    try {
+      const response = await validateCoupon({
+        code: couponCode.trim(),
+        serviceType: getServiceType(),
+        orderValue: bookingData.totalAmount,
+        phoneNumber: bookingData.user.phone
+      })
+
+      if (response.data.success && response.data.data) {
+        setAppliedCoupon(response.data.data.coupon)
+        setCouponDiscount(response.data.data.discount)
+        setCouponError('')
+      }
+    } catch (error: any) {
+      setCouponError(error.message || 'Invalid coupon code')
+      setAppliedCoupon(null)
+      setCouponDiscount(0)
+    } finally {
+      setValidatingCoupon(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('')
+    setAppliedCoupon(null)
+    setCouponDiscount(0)
+    setCouponError('')
+  }
+
+  const getFinalAmount = () => {
+    if (!bookingData) return 0
+    return bookingData.totalAmount - couponDiscount
+  }
+
   const createServicesBooking = async () => {
     if (!bookingData) return null
 
@@ -167,6 +221,7 @@ export default function ServicesBookingPaymentPage() {
         })),
         specialRequests: `Services: ${bookingData.services.map(s => s.name).join(', ')}. ${bookingData.user.specialRequests}`,
         totalAmount: bookingData.totalAmount,
+        couponCode: appliedCoupon ? couponCode : undefined,
         paymentStatus: 'pending',
         bookingType: 'services'
       }
@@ -219,7 +274,7 @@ export default function ServicesBookingPaymentPage() {
 
       // Immediately trigger payment after booking creation using the proper utils
       await initiatePayment({
-        amount: bookingData.totalAmount,
+        amount: getFinalAmount(),
         bookingId: createdBookingId,
         userDetails: {
           name: bookingData.user.name,
@@ -347,10 +402,83 @@ export default function ServicesBookingPaymentPage() {
                   </div>
                 </div>
 
-                {/* Total Amount */}
-                <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-2xl p-6 text-center">
-                  <p className="text-gray-300 text-sm mb-2">Total Amount</p>
-                  <p className="text-4xl font-bold text-white">{formatCurrency(bookingData.totalAmount)}</p>
+                {/* Coupon Section */}
+                <div className="bg-white/10 rounded-2xl p-6">
+                  <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <Percent className="w-5 h-5 text-orange-400" />
+                    Apply Coupon
+                  </h4>
+
+                  {!appliedCoupon ? (
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={!couponCode.trim() || validatingCoupon}
+                        className="px-6 py-3 bg-orange-500 text-white rounded-xl font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {validatingCoupon ? (
+                          <Loader className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'Apply'
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-green-500/10 border border-green-400/30 rounded-xl p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 text-green-400 font-medium">
+                            <CheckCircle className="w-4 h-4" />
+                            {appliedCoupon.code}
+                          </div>
+                          <p className="text-sm text-gray-300 mt-1">{appliedCoupon.description}</p>
+                          <p className="text-sm text-green-400 mt-1">
+                            Discount: {formatCurrency(couponDiscount)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleRemoveCoupon}
+                          className="text-red-400 hover:text-red-300 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {couponError && (
+                    <p className="text-red-400 text-sm mt-2">{couponError}</p>
+                  )}
+                </div>
+
+                {/* Price Breakdown */}
+                <div className="bg-white/10 rounded-2xl p-6">
+                  <h4 className="font-semibold text-white mb-4">Price Details</h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-gray-300">
+                      <span>Subtotal</span>
+                      <span>{formatCurrency(bookingData.totalAmount)}</span>
+                    </div>
+                    {appliedCoupon && (
+                      <div className="flex justify-between text-green-400">
+                        <span>Coupon Discount</span>
+                        <span>-{formatCurrency(couponDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-white/20 pt-3">
+                      <div className="flex justify-between">
+                        <span className="text-lg font-semibold text-white">Total Amount</span>
+                        <span className="text-lg font-bold text-orange-400">{formatCurrency(getFinalAmount())}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -472,7 +600,7 @@ export default function ServicesBookingPaymentPage() {
                   ) : (
                     <>
                       <Lock className="w-5 h-5" />
-                      Pay {formatCurrency(bookingData.totalAmount)}
+                      Pay {formatCurrency(getFinalAmount())}
                     </>
                   )}
                 </button>

@@ -82,6 +82,11 @@ export interface IBooking extends Document {
   yogaPrice: number;
   totalAmount: number;
 
+  // Coupon Information
+  couponCode?: string;
+  couponDiscount?: number;
+  finalAmount?: number;
+
   // Status
   status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
@@ -408,7 +413,32 @@ const bookingSchema = new Schema<IBooking>(
       required: true,
       min: [0, 'Total amount cannot be negative']
     },
-    
+
+    // Coupon Information
+    couponCode: {
+      type: String,
+      trim: true,
+      uppercase: true
+    },
+    couponDiscount: {
+      type: Number,
+      min: [0, 'Coupon discount cannot be negative'],
+      default: 0
+    },
+    finalAmount: {
+      type: Number,
+      min: [0, 'Final amount cannot be negative'],
+      validate: {
+        validator: function(this: IBooking, value?: number) {
+          if (value !== undefined) {
+            return value <= this.totalAmount;
+          }
+          return true;
+        },
+        message: 'Final amount cannot be greater than total amount'
+      }
+    },
+
     // Status
     status: {
       type: String,
