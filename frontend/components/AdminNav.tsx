@@ -14,7 +14,8 @@ import {
   Shield,
   Activity,
   Car,
-  Bike
+  Bike,
+  Percent
 } from 'lucide-react';
 
 const AdminNav = () => {
@@ -45,6 +46,7 @@ const AdminNav = () => {
     { href: '/admin/adventure-sports', icon: Activity, label: 'Adventure Sports' },
     { href: '/admin/vehicle-rentals', icon: Bike, label: 'Vehicle Rentals' },
     { href: '/admin/agencies', icon: Car, label: 'Transport Agencies' },
+    { href: '/admin/coupons', icon: Percent, label: 'Coupons' },
   ];
 
   return (

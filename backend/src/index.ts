@@ -20,6 +20,7 @@ import yogaRoutes from "./routes/yogaRoutes";
 import agencyRoutes from "./routes/agencyRoutes";
 import vehicleRentalRoutes from "./routes/vehicleRentalRoutes";
 import adventureSportRoutes from "./routes/adventureSportRoutes";
+import couponRoutes from "./routes/couponRoutes";
 
 // Load environment variables
 dotenv.config();
@@ -189,6 +190,7 @@ app.use("/api/yoga", yogaRoutes);
 app.use("/api/agency", agencyRoutes);
 app.use("/api/vehicles", vehicleRentalRoutes);
 app.use("/api/adventure-sports", adventureSportRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // API info endpoint
 app.get("/api", (req, res) => {

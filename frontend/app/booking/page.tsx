@@ -27,11 +27,13 @@ import {
   Camera,
   Clock,
   Heart,
-  Zap
+  Zap,
+  Percent
 } from "lucide-react";
 import Header from "../../components/Header";
 import { bookingAPI } from "../../lib/api";
 import { initiatePayment } from "../../utils/razorpay";
+import { validateCoupon } from "../../lib/api/coupons";
 
 interface Room {
   _id: string;
@@ -201,6 +203,13 @@ const BookingPage = () => {
     total: 0,
   });
 
+  // Coupon state
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
   // Check for yoga session booking from URL params or localStorage
   useEffect(() => {
     const urlBookingType = searchParams.get('type');
@@ -302,6 +311,62 @@ const BookingPage = () => {
       setCurrentStep(step);
       setIsTransitioning(false);
     }, 400);
+  };
+
+  // Coupon helper functions
+  const getServiceType = () => {
+    if (bookingData.services.transport.pickup || bookingData.services.transport.drop) {
+      return 'airport';
+    }
+    if (bookingData.services.yoga.enabled) {
+      return 'yoga';
+    }
+    if (bookingData.services.bikeRental.enabled) {
+      return 'rental';
+    }
+    if (bookingData.services.sightseeing || bookingData.services.surfing) {
+      return 'adventure';
+    }
+    return 'airport'; // Default to airport for room bookings
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    setValidatingCoupon(true);
+    setCouponError('');
+
+    try {
+      const response = await validateCoupon({
+        code: couponCode.trim(),
+        serviceType: getServiceType(),
+        orderValue: priceBreakdown.total,
+        phoneNumber: bookingData.primaryGuest.phone
+      });
+
+      if (response.data.success && response.data.data) {
+        setAppliedCoupon(response.data.data.coupon);
+        setCouponDiscount(response.data.data.discount);
+        setCouponError('');
+      }
+    } catch (error: any) {
+      setCouponError(error.message || 'Invalid coupon code');
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode('');
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponError('');
+  };
+
+  const getFinalAmount = () => {
+    return priceBreakdown.total - couponDiscount;
   };
 
   // Calculate pricing
@@ -1417,6 +1482,7 @@ const BookingPage = () => {
           selectedServices: [], // Map services if needed
           specialRequests: bookingData.specialRequests,
           totalAmount: priceBreakdown.total,
+          couponCode: appliedCoupon ? couponCode : undefined,
           paymentStatus: 'pending'
         };
 
@@ -1464,7 +1530,7 @@ const BookingPage = () => {
 
         // Immediately trigger payment after booking creation
         await initiatePayment({
-          amount: priceBreakdown.total,
+          amount: getFinalAmount(),
           bookingId: createdBookingId,
           userDetails: {
             name: bookingData.primaryGuest.name,
@@ -1642,6 +1708,62 @@ const BookingPage = () => {
 
           {/* Price Breakdown & Payment */}
           <div className="space-y-6">
+            {/* Coupon Section */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Percent className="w-5 h-5 text-orange-600" />
+                Apply Coupon
+              </h3>
+
+              {!appliedCoupon ? (
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={handleApplyCoupon}
+                    disabled={!couponCode.trim() || validatingCoupon}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {validatingCoupon ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Apply'
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-green-700 font-medium">
+                        <CheckCircle className="w-4 h-4" />
+                        {appliedCoupon.code}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{appliedCoupon.description}</p>
+                      <p className="text-sm text-green-600 mt-1">
+                        Discount: ₹{couponDiscount.toLocaleString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-red-600 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {couponError && (
+                <p className="text-red-600 text-sm mt-2">{couponError}</p>
+              )}
+            </div>
+
             {/* Price Breakdown */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -1696,9 +1818,20 @@ const BookingPage = () => {
                   </div>
                 )}
                 <hr className="my-4" />
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-semibold">₹{priceBreakdown.total.toLocaleString()}</span>
+                </div>
+                {appliedCoupon && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Coupon Discount</span>
+                    <span>-₹{couponDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+                <hr className="my-4" />
                 <div className="flex justify-between text-xl font-bold">
                   <span>Total Amount</span>
-                  <span className="text-blue-600">₹{priceBreakdown.total.toLocaleString()}</span>
+                  <span className="text-blue-600">₹{getFinalAmount().toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -1729,7 +1862,7 @@ const BookingPage = () => {
                   ) : (
                     <>
                       <CreditCard className="w-5 h-5" />
-                      Book & Pay ₹{priceBreakdown.total.toLocaleString()}
+                      Book & Pay ₹{getFinalAmount().toLocaleString()}
                     </>
                   )}
                 </button>
