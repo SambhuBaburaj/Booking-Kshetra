@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Payment, User, Coupon, CouponUsage } from '../models';
+import { Booking, Payment, User, Coupon, CouponUsage, YogaSession, Service } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { razorpayService } from '../utils/razorpay';
 
@@ -230,6 +230,36 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
         } catch (couponError) {
           console.error('Error creating coupon usage record:', couponError);
           // Don't fail the payment if coupon usage tracking fails
+        }
+      }
+
+      // Update yoga session booked seats if applicable
+      if (booking.yogaSessionId) {
+        try {
+          await YogaSession.findByIdAndUpdate(
+            booking.yogaSessionId,
+            { $inc: { bookedSeats: booking.guests.length } },
+            { session }
+          );
+        } catch (yogaError) {
+          console.error('Error updating yoga session booked seats:', yogaError);
+          // Don't fail the payment if booking count update fails
+        }
+      }
+
+      // Update service available slots if applicable
+      if (booking.selectedServices && booking.selectedServices.length > 0) {
+        try {
+          for (const selectedService of booking.selectedServices) {
+            await Service.findByIdAndUpdate(
+              selectedService.serviceId,
+              { $inc: { availableSlots: -selectedService.quantity } },
+              { session }
+            );
+          }
+        } catch (serviceError) {
+          console.error('Error updating service available slots:', serviceError);
+          // Don't fail the payment if service availability update fails
         }
       }
     } else {
@@ -631,6 +661,36 @@ export const verifyPublicPayment = async (req: Request, res: Response): Promise<
         } catch (couponError) {
           console.error('Error creating coupon usage record:', couponError);
           // Don't fail the payment if coupon usage tracking fails
+        }
+      }
+
+      // Update yoga session booked seats if applicable
+      if (booking.yogaSessionId) {
+        try {
+          await YogaSession.findByIdAndUpdate(
+            booking.yogaSessionId,
+            { $inc: { bookedSeats: booking.guests.length } },
+            { session }
+          );
+        } catch (yogaError) {
+          console.error('Error updating yoga session booked seats:', yogaError);
+          // Don't fail the payment if booking count update fails
+        }
+      }
+
+      // Update service available slots if applicable
+      if (booking.selectedServices && booking.selectedServices.length > 0) {
+        try {
+          for (const selectedService of booking.selectedServices) {
+            await Service.findByIdAndUpdate(
+              selectedService.serviceId,
+              { $inc: { availableSlots: -selectedService.quantity } },
+              { session }
+            );
+          }
+        } catch (serviceError) {
+          console.error('Error updating service available slots:', serviceError);
+          // Don't fail the payment if service availability update fails
         }
       }
     } else {

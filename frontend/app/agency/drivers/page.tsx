@@ -125,6 +125,12 @@ export default function AgencyDrivers() {
       licenseExpiryDate: driver.licenseExpiryDate,
       experience: driver.experience,
       languages: [...driver.languages],
+      address: driver.address,
+      emergencyContact: {
+        name: driver.emergencyContact.name,
+        phone: driver.emergencyContact.phone,
+        relationship: driver.emergencyContact.relationship
+      },
       isAvailable: driver.isAvailable
     });
     setShowModal(true);
@@ -183,13 +189,25 @@ export default function AgencyDrivers() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? parseInt(value) || 0 :
-               type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+
+    if (name.startsWith('emergencyContact.')) {
+      const field = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        emergencyContact: {
+          ...prev.emergencyContact,
+          [field]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'number' ? parseInt(value) || 0 :
+                 type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }));
+    }
   };
 
   const handleAddLanguage = () => {
@@ -507,6 +525,78 @@ export default function AgencyDrivers() {
                   <label className="ml-2 text-sm font-medium text-gray-700">
                     Available for assignments
                   </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address *
+                </label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Enter full address..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact *</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="emergencyContact.name"
+                      value={formData.emergencyContact.name}
+                      onChange={handleInputChange}
+                      placeholder="e.g., John Smith"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContact.phone"
+                      value={formData.emergencyContact.phone}
+                      onChange={handleInputChange}
+                      placeholder="e.g., +91 9876543210"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Relationship *
+                    </label>
+                    <select
+                      name="emergencyContact.relationship"
+                      value={formData.emergencyContact.relationship}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select relationship</option>
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Brother">Brother</option>
+                      <option value="Sister">Sister</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

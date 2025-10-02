@@ -584,14 +584,7 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
 
     // Coupon usage will be tracked only after successful payment
 
-    // Update yoga session booked seats if applicable
-    if (yogaSessionId) {
-      await YogaSession.findByIdAndUpdate(
-        yogaSessionId,
-        { $inc: { bookedSeats: guests.length } },
-        { session }
-      );
-    }
+    // Yoga session booked seats will be updated only after successful payment
 
     await session.commitTransaction();
 
