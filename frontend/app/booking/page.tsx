@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -110,7 +110,7 @@ interface BookingData {
   specialRequests: string;
 }
 
-const BookingPage = () => {
+const BookingPageContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -344,9 +344,9 @@ const BookingPage = () => {
         phoneNumber: bookingData.primaryGuest.phone
       });
 
-      if (response.data.success && response.data.data) {
-        setAppliedCoupon(response.data.data.coupon);
-        setCouponDiscount(response.data.data.discount);
+      if ((response.data as any)?.success && (response.data as any)?.data) {
+        setAppliedCoupon((response.data as any)?.data?.coupon);
+        setCouponDiscount((response.data as any)?.data?.discount);
         setCouponError('');
       }
     } catch (error: any) {
@@ -1985,6 +1985,14 @@ const BookingPage = () => {
         </AnimatePresence>
       </div>
     </div>
+  );
+};
+
+const BookingPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingPageContent />
+    </Suspense>
   );
 };
 

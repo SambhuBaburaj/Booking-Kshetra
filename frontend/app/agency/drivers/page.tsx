@@ -97,7 +97,7 @@ export default function AgencyDrivers() {
       const response = await apiClient.agencyGet('/agency/drivers');
 
       if (response.success && response.data) {
-        setDrivers(response.data.drivers || []);
+        setDrivers((response.data as any)?.drivers || []);
       }
       setError('');
     } catch (err) {
@@ -164,7 +164,7 @@ export default function AgencyDrivers() {
 
         if (response.success && response.data) {
           setDrivers(drivers.map(d =>
-            d._id === editingDriver._id ? response.data.driver : d
+            d._id === editingDriver._id ? (response.data as any)?.driver : d
           ));
           setShowModal(false);
         } else {
@@ -175,7 +175,7 @@ export default function AgencyDrivers() {
         const response = await apiClient.agencyPost('/agency/drivers', formData);
 
         if (response.success && response.data) {
-          setDrivers([...drivers, response.data.driver]);
+          setDrivers([...drivers, (response.data as any)?.driver]);
           setShowModal(false);
         } else {
           setError(response.error || 'Failed to create driver');

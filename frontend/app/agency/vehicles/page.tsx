@@ -86,7 +86,7 @@ export default function AgencyVehicles() {
       const response = await apiClient.agencyGet('/agency/vehicles');
 
       if (response.success && response.data) {
-        setVehicles(response.data.vehicles || []);
+        setVehicles((response.data as any)?.vehicles || []);
       }
       setError('');
     } catch (err) {
@@ -146,7 +146,7 @@ export default function AgencyVehicles() {
 
         if (response.success && response.data) {
           setVehicles(vehicles.map(v =>
-            v._id === editingVehicle._id ? response.data.vehicle : v
+            v._id === editingVehicle._id ? (response.data as any)?.vehicle : v
           ));
           setShowModal(false);
         } else {
@@ -157,7 +157,7 @@ export default function AgencyVehicles() {
         const response = await apiClient.agencyPost('/agency/vehicles', formData);
 
         if (response.success && response.data) {
-          setVehicles([...vehicles, response.data.vehicle]);
+          setVehicles([...vehicles, (response.data as any)?.vehicle]);
           setShowModal(false);
         } else {
           setError(response.error || 'Failed to create vehicle');
@@ -179,7 +179,7 @@ export default function AgencyVehicles() {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof VehicleFormData],
+          ...(prev[parent as keyof VehicleFormData] as any),
           [child]: value
         }
       }));

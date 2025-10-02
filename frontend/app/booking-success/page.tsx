@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -20,7 +20,7 @@ import Link from "next/link";
 import { bookingAPI } from "../../lib/api";
 import { generateReceipt, BookingDetails } from "../../utils/receiptGenerator";
 
-const BookingSuccessPage = () => {
+const BookingSuccessPageContent = () => {
   const searchParams = useSearchParams();
   const bookingId = searchParams?.get("bookingId");
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null);
@@ -203,7 +203,7 @@ const BookingSuccessPage = () => {
                     <div>
                       <p className="font-semibold text-gray-900">Room</p>
                       <p className="text-gray-600">
-                        {bookingDetails.roomId?.roomNumber || 'N/A'} - {bookingDetails.roomId?.roomType || 'Standard'}
+                        {bookingDetails.roomDetails?.roomNumber || 'N/A'} - {bookingDetails.roomDetails?.roomType || 'Standard'}
                       </p>
                     </div>
                   </div>
@@ -315,6 +315,14 @@ const BookingSuccessPage = () => {
         </motion.div>
       </div>
     </div>
+  );
+};
+
+const BookingSuccessPage = () => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookingSuccessPageContent />
+    </Suspense>
   );
 };
 

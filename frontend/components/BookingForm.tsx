@@ -30,7 +30,7 @@ export default function BookingForm({ formData, setFormData, pricing }: BookingF
   const updateFormData = (section: keyof BookingFormData, data: any) => {
     setFormData(prev => ({
       ...prev,
-      [section]: { ...prev[section], ...data }
+      [section]: { ...(prev[section] as any), ...data }
     }))
   }
 

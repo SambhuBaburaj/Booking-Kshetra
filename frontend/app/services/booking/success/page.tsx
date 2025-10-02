@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CheckCircle, Calendar, Phone, Mail, ArrowRight } from 'lucide-react'
 import Header from '../../../../components/Header'
 
-export default function ServicesBookingSuccessPage() {
+function ServicesBookingSuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [paymentId, setPaymentId] = useState('')
@@ -123,4 +123,12 @@ export default function ServicesBookingSuccessPage() {
       </div>
     </div>
   )
+}
+
+export default function ServicesBookingSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ServicesBookingSuccessPageContent />
+    </Suspense>
+  );
 }

@@ -191,7 +191,10 @@ export default function AdminAdventureSports() {
       includedItems: sport.includedItems || [],
       requirements: sport.requirements || [],
       images: sport.images || [],
-      ageRestriction: sport.ageRestriction || { minAge: 10, maxAge: 65 },
+      ageRestriction: {
+        minAge: sport.ageRestriction?.minAge || 10,
+        maxAge: sport.ageRestriction?.maxAge || 65
+      },
       instructor: sport.instructor || { name: '', experience: '', certifications: [] },
       safety: sport.safety || [],
       whatToBring: sport.whatToBring || [],

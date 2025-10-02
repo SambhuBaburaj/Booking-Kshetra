@@ -43,8 +43,8 @@ export default function AgencyLoginPage() {
 
       if (response.success && response.data) {
         // Store agency token and data
-        localStorage.setItem('agencyToken', response.data.token);
-        localStorage.setItem('agency', JSON.stringify(response.data.agency));
+        localStorage.setItem('agencyToken', (response.data as any)?.token);
+        localStorage.setItem('agency', JSON.stringify((response.data as any)?.agency));
 
         // Redirect to agency dashboard
         router.push('/agency/dashboard');

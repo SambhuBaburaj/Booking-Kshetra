@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 import Header from '../../../../components/Header'
 
-export default function YogaBookingSuccessPage() {
+function YogaBookingSuccessPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const paymentId = searchParams.get('payment_id')
@@ -378,4 +378,12 @@ export default function YogaBookingSuccessPage() {
       </div>
     </div>
   )
+}
+
+export default function YogaBookingSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <YogaBookingSuccessPageContent />
+    </Suspense>
+  );
 }

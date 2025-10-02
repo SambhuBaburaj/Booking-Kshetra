@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -44,7 +44,7 @@ type FormData = {
   experience: 'beginner' | 'intermediate' | 'advanced'
 }
 
-export default function YogaBookingDetailsPage() {
+function YogaBookingDetailsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session') || ''
@@ -606,4 +606,12 @@ export default function YogaBookingDetailsPage() {
       </div>
     </div>
   )
+}
+
+export default function YogaBookingDetailsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <YogaBookingDetailsPageContent />
+    </Suspense>
+  );
 }

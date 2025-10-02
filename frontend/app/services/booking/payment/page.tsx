@@ -148,9 +148,9 @@ export default function ServicesBookingPaymentPage() {
         phoneNumber: bookingData.user.phone
       })
 
-      if (response.data.success && response.data.data) {
-        setAppliedCoupon(response.data.data.coupon)
-        setCouponDiscount(response.data.data.discount)
+      if ((response.data as any)?.success && (response.data as any)?.data) {
+        setAppliedCoupon((response.data as any)?.data?.coupon)
+        setCouponDiscount((response.data as any)?.data?.discount)
         setCouponError('')
       }
     } catch (error: any) {

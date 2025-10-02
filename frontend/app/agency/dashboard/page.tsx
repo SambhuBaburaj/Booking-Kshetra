@@ -78,7 +78,7 @@ export default function AgencyDashboard() {
       const bookingsResponse = await apiClient.agencyGet('/agency/bookings');
 
       if (bookingsResponse.success && bookingsResponse.data) {
-        const bookings = bookingsResponse.data.bookings || [];
+        const bookings = (bookingsResponse.data as any)?.bookings || [];
         setRecentBookings(bookings.slice(0, 5)); // Show last 5 bookings
 
         // Calculate stats (this would ideally come from a dedicated stats endpoint)

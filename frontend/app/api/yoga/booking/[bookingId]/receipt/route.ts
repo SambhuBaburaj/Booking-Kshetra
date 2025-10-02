@@ -223,7 +223,7 @@ export async function GET(
     await browser.close()
 
     // Return PDF
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
