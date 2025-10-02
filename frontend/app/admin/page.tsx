@@ -20,7 +20,6 @@ interface DashboardStats {
     totalUsers: number;
     totalRooms: number;
     totalServices: number;
-    occupancyRate: number;
   };
   revenue: {
     total: number;
@@ -35,20 +34,43 @@ interface DashboardStats {
   occupiedRooms: number;
 }
 
+interface YogaAnalytics {
+  overview: {
+    totalSessions: number;
+    totalTeachers: number;
+    upcomingSessions: number;
+  };
+  sessionsByType: {
+    '200hr': number;
+    '300hr': number;
+  };
+  capacity: {
+    total: number;
+    booked: number;
+    available: number;
+  };
+  popularSpecializations: Array<{
+    _id: string;
+    count: number;
+  }>;
+}
+
 const AdminDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [yogaStats, setYogaStats] = useState<YogaAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardStats();
+    fetchYogaAnalytics();
   }, []);
 
   const fetchDashboardStats = async () => {
     try {
       const response = await adminAPI.getDashboard();
       const data = response.data;
-      
+
       if (data.success) {
         setStats(data.data);
       } else {
@@ -56,6 +78,19 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       setError('Failed to fetch dashboard data');
+    }
+  };
+
+  const fetchYogaAnalytics = async () => {
+    try {
+      const response = await adminAPI.getYogaAnalytics();
+      const data = response.data;
+
+      if (data.success) {
+        setYogaStats(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch yoga analytics:', err);
     } finally {
       setLoading(false);
     }
@@ -148,18 +183,6 @@ const AdminDashboard = () => {
             icon={DollarSign}
             color="green"
           />
-          <StatCard
-            title="Occupancy Rate"
-            value={`${stats?.overview.occupancyRate || 0}%`}
-            icon={Home}
-            color="purple"
-          />
-          <StatCard
-            title="Active Users"
-            value={stats?.overview.totalUsers || 0}
-            icon={Users}
-            color="orange"
-          />
         </div>
 
         {/* Charts and Tables Row */}
@@ -225,30 +248,103 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Room Stats */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Room Overview</h3>
-              <Home className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Rooms</span>
-                <span className="font-semibold text-gray-900">{stats?.overview.totalRooms || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Occupied</span>
-                <span className="font-semibold text-gray-900">{stats?.occupiedRooms || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Available</span>
-                <span className="font-semibold text-gray-900">
-                  {(stats?.overview.totalRooms || 0) - (stats?.occupiedRooms || 0)}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
+
+        {/* Yoga Analytics Section */}
+        {yogaStats && (
+          <>
+            <div className="mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Yoga Analytics</h2>
+
+              {/* Yoga Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <StatCard
+                  title="Total Yoga Sessions"
+                  value={yogaStats.overview.totalSessions}
+                  icon={Activity}
+                  color="orange"
+                />
+                <StatCard
+                  title="Yoga Teachers"
+                  value={yogaStats.overview.totalTeachers}
+                  icon={Users}
+                  color="purple"
+                />
+                <StatCard
+                  title="Upcoming Sessions"
+                  value={yogaStats.overview.upcomingSessions}
+                  icon={Calendar}
+                  color="green"
+                />
+              </div>
+
+              {/* Yoga Details Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Session Types */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Session Types</h3>
+                    <Activity className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">200hr Training</span>
+                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                        {yogaStats.sessionsByType['200hr']}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">300hr Training</span>
+                      <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                        {yogaStats.sessionsByType['300hr']}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Capacity Overview */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Capacity Overview</h3>
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Total Capacity</span>
+                      <span className="font-semibold text-gray-900">{yogaStats.capacity.total}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Booked</span>
+                      <span className="font-semibold text-gray-900">{yogaStats.capacity.booked}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Available</span>
+                      <span className="font-semibold text-gray-900">{yogaStats.capacity.available}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Popular Specializations */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Top Specializations</h3>
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="space-y-3">
+                    {yogaStats.popularSpecializations.slice(0, 3).map((spec, index) => (
+                      <div key={spec._id} className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">{spec._id}</span>
+                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">
+                          {spec.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Recent Bookings */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">

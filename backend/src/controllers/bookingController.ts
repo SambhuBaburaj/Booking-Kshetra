@@ -1,10 +1,34 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
-import { Booking, Room, Service, YogaSession, User } from '../models';
+import { Booking, Room, Service, YogaSession, User, Agency } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { pricingCalculator } from '../utils/pricing';
 import { bookingValidator } from '../utils/bookingValidation';
 import { emailService } from '../utils/email';
+
+// Helper function to notify active agency about transport bookings
+const notifyActiveAgencyAboutTransport = async (booking: any) => {
+  try {
+    // Check if booking has transport requirements
+    if (!booking.transport || (!booking.transport.pickup && !booking.transport.drop)) {
+      return;
+    }
+
+    // Find the active agency
+    const activeAgency = await Agency.findOne({ isActive: true });
+    if (!activeAgency) {
+      console.log('No active agency found for transport notification');
+      return;
+    }
+
+    // Send notification to agency
+    await emailService.sendAgencyBookingNotification(booking, activeAgency);
+    console.log(`Transport booking notification sent to agency: ${activeAgency.name}`);
+  } catch (error) {
+    console.error('Failed to notify agency about transport booking:', error);
+    // Don't fail the booking if agency notification fails
+  }
+};
 
 // Helper function to convert userId to ObjectId
 const getUserObjectId = (userId: string | undefined): mongoose.Types.ObjectId => {
@@ -31,79 +55,128 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       transport,
       selectedServices = [],
       yogaSessionId,
-      specialRequests
+      specialRequests,
+      bookingType
     } = req.body;
 
     // For public bookings, we don't have a userId, so we'll use the primary guest email as identifier
     const guestEmail = primaryGuestInfo.email;
 
-    // Validate dates
-    const dateValidation = bookingValidator.validateBookingDates(new Date(checkIn), new Date(checkOut));
-    if (!dateValidation.valid) {
-      res.status(400).json({
-        success: false,
-        message: dateValidation.message
-      });
-      await session.abortTransaction();
-      return;
-    }
+    // Check if this is a yoga booking (special case)
+    const isYogaBooking = bookingType === 'yoga' || yogaSessionId || roomId === '000000000000000000000000';
 
-    // Validate room exists and is available
-    const room = await Room.findById(roomId).session(session);
-    if (!room || !room.isAvailable) {
-      res.status(400).json({
-        success: false,
-        message: 'Room not found or not available'
-      });
-      await session.abortTransaction();
-      return;
-    }
+    let room = null;
 
-    // Validate guests
-    const guestValidation = bookingValidator.validateGuests(guests, room.capacity);
-    if (!guestValidation.valid) {
-      res.status(400).json({
-        success: false,
-        message: guestValidation.message
-      });
-      await session.abortTransaction();
-      return;
-    }
+    if (isYogaBooking) {
+      console.log('🧘‍♀️ Processing yoga booking...');
 
-    // Check for date overlap
-    const overlapCheck = await bookingValidator.checkDateOverlap(
-      roomId,
-      new Date(checkIn),
-      new Date(checkOut)
-    );
+      // For yoga bookings, validate yoga session instead of room
+      if (yogaSessionId && mongoose.isValidObjectId(yogaSessionId)) {
+        // Only validate if it's a real ObjectId (scheduled sessions)
+        const yogaValidation = await bookingValidator.validateYogaSessionAvailability(yogaSessionId, 1);
+        if (!yogaValidation.valid) {
+          res.status(400).json({
+            success: false,
+            message: yogaValidation.message
+          });
+          await session.abortTransaction();
+          return;
+        }
+      }
+      // For daily sessions with string IDs, skip validation as they don't have capacity limits
 
-    if (overlapCheck.hasOverlap) {
-      res.status(400).json({
-        success: false,
-        message: 'Room is already booked for the selected dates',
-        conflictingBookings: overlapCheck.conflictingBookings
-      });
-      await session.abortTransaction();
-      return;
+      // Skip room validation for yoga bookings
+      console.log('✅ Yoga session validation passed');
+    } else {
+      // Regular room booking validation
+      console.log('🏨 Processing room booking...');
+
+      // Validate dates
+      const dateValidation = bookingValidator.validateBookingDates(new Date(checkIn), new Date(checkOut));
+      if (!dateValidation.valid) {
+        res.status(400).json({
+          success: false,
+          message: dateValidation.message
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Validate room exists and is available
+      room = await Room.findById(roomId).session(session);
+      if (!room || !room.isAvailable) {
+        res.status(400).json({
+          success: false,
+          message: 'Room not found or not available'
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Validate guests
+      const guestValidation = bookingValidator.validateGuests(guests, room.capacity);
+      if (!guestValidation.valid) {
+        res.status(400).json({
+          success: false,
+          message: guestValidation.message
+        });
+        await session.abortTransaction();
+        return;
+      }
+
+      // Check for date overlap
+      const overlapCheck = await bookingValidator.checkDateOverlap(
+        roomId,
+        new Date(checkIn),
+        new Date(checkOut)
+      );
+
+      if (overlapCheck.hasOverlap) {
+        res.status(400).json({
+          success: false,
+          message: 'Room is already booked for the selected dates',
+          conflictingBookings: overlapCheck.conflictingBookings
+        });
+        await session.abortTransaction();
+        return;
+      }
     }
 
     // Calculate pricing
-    const pricing = pricingCalculator.calculateBookingPrice(
-      room.pricePerNight,
-      new Date(checkIn),
-      new Date(checkOut),
-      guests,
-      includeFood,
-      includeBreakfast,
-      0,
-      [],
-      0,
-      0
-    );
+    let pricing;
+    if (isYogaBooking) {
+      // For yoga bookings, use simple pricing from totalAmount in request
+      pricing = {
+        totalAmount: req.body.totalAmount || 0,
+        roomPrice: 0,
+        foodPrice: 0,
+        breakfastPrice: 0,
+        servicesPrice: 0,
+        transportPrice: 0,
+        yogaPrice: req.body.totalAmount || 0
+      };
+    } else {
+      // Regular room booking pricing
+      if (!room) {
+        throw new Error('Room is required for room bookings');
+      }
+      pricing = pricingCalculator.calculateBookingPrice(
+        room.pricePerNight,
+        new Date(checkIn),
+        new Date(checkOut),
+        guests,
+        includeFood,
+        includeBreakfast,
+        0,
+        [],
+        0,
+        0
+      );
+    }
 
     // Create booking for public user (no userId)
     const booking = new Booking({
-      roomId,
+      roomId: isYogaBooking ? null : roomId, // No room for yoga bookings
       userId: null, // No user account for public bookings
       guestEmail, // Store guest email for identification
       checkIn: new Date(checkIn),
@@ -113,8 +186,11 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
         age: parseInt(guest.age),
         isChild: parseInt(guest.age) < 5,
         gender: guest.gender,
-        idType: guest.idType,
-        idNumber: guest.idNumber
+        // Only include ID fields for room bookings, not yoga bookings
+        ...(isYogaBooking ? {} : {
+          idType: guest.idType,
+          idNumber: guest.idNumber
+        })
       })),
       primaryGuestInfo,
       totalGuests: guests.length,
@@ -132,7 +208,10 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       transport,
       specialRequests: specialRequests || '',
       status: 'pending',
-      paymentStatus: 'pending'
+      paymentStatus: 'pending',
+      // Add yoga-specific fields
+      yogaSessionId: yogaSessionId || null,
+      bookingType: isYogaBooking ? 'yoga' : 'room'
     });
 
     await booking.save({ session });
@@ -145,6 +224,9 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
       console.error('Failed to send booking confirmation email:', emailError);
       // Don't fail the booking creation if email fails
     }
+
+    // Notify agency about transport booking if applicable
+    await notifyActiveAgencyAboutTransport(booking);
 
     res.status(201).json({
       success: true,
@@ -416,6 +498,9 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
       // Don't fail the booking creation if email fails
     }
 
+    // Notify agency about transport booking if applicable
+    await notifyActiveAgencyAboutTransport(populatedBooking);
+
     res.status(201).json({
       success: true,
       message: 'Booking created successfully',
@@ -627,21 +712,22 @@ export const cancelBooking = async (req: AuthenticatedRequest, res: Response): P
   }
 };
 
-// Public booking details (no auth required for public bookings)
+// Public booking details (no auth required - can fetch any booking by ID)
 export const getPublicBookingById = async (req: any, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
-    // Find public booking (where userId is null)
-    const booking = await Booking.findOne({
-      _id: id,
-      userId: null // Only public bookings
-    }).populate('roomId', 'roomNumber roomType description pricePerNight');
+    // Find booking by ID and populate all related fields for complete details
+    const booking = await Booking.findById(id)
+      .populate('userId', 'name email phone')
+      .populate('roomId', 'roomNumber roomType description pricePerNight amenities images')
+      .populate('selectedServices.serviceId', 'name category price description')
+      .populate('yogaSessionId', 'type batchName startDate endDate instructor schedule description location specialization');
 
     if (!booking) {
       res.status(404).json({
         success: false,
-        message: 'Public booking not found'
+        message: 'Booking not found'
       });
       return;
     }

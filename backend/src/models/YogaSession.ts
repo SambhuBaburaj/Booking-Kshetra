@@ -8,7 +8,7 @@ export interface IYogaSession extends Document {
   capacity: number;
   bookedSeats: number;
   price: number;
-  instructor: string;
+  instructor: mongoose.Types.ObjectId;
   schedule: {
     days: string[];
     time: string;
@@ -62,9 +62,9 @@ const yogaSessionSchema = new Schema<IYogaSession>(
       min: [0, 'Price cannot be negative']
     },
     instructor: {
-      type: String,
-      required: [true, 'Instructor name is required'],
-      trim: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Teacher',
+      required: [true, 'Instructor is required']
     },
     schedule: {
       days: {

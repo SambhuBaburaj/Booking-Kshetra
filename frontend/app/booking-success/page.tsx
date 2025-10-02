@@ -13,6 +13,7 @@ import {
   CreditCard,
   Download,
   Home,
+  Search,
 } from "lucide-react";
 import Header from "../../components/Header";
 import Link from "next/link";
@@ -157,6 +158,9 @@ const BookingSuccessPage = () => {
                   {bookingDetails._id}
                 </span>
               </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Save this ID to track your booking anytime
+              </p>
             </div>
 
             <div className="space-y-6">
@@ -284,6 +288,14 @@ const BookingSuccessPage = () => {
               <Download className="w-5 h-5" />
               Download Receipt
             </button>
+
+            <Link
+              href="/track-booking"
+              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <Search className="w-5 h-5" />
+              Track Your Booking
+            </Link>
 
             <Link
               href="/"

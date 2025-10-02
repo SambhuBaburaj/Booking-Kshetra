@@ -22,7 +22,6 @@ const createAdminUser = async () => {
       const hashedPassword = await bcrypt.hash('password', 12);
       existingAdmin.password = hashedPassword;
       existingAdmin.role = 'admin';
-      existingAdmin.isActive = true;
       await existingAdmin.save();
       
       console.log('🔄 Admin password updated to: password');
@@ -35,8 +34,7 @@ const createAdminUser = async () => {
         email: 'admin@gmail.com',
         phone: '+91-9999999999',
         password: hashedPassword,
-        role: 'admin',
-        isActive: true
+        role: 'admin'
       });
 
       await adminUser.save();

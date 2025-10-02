@@ -1,15 +1,23 @@
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import Razorpay from "razorpay";
+import crypto from "crypto";
+require("dotenv").config();
 
 export class RazorpayService {
   private razorpay: Razorpay;
 
   constructor() {
-    // Direct Razorpay credentials
-    const RAZORPAY_KEY_ID = 'rzp_test_RHyWk20J1eq916';
-    const RAZORPAY_KEY_SECRET = '07kT8SRki1euR7WfpcG4CJ7U';
+    // Use environment variables for Razorpay credentials
+    const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
-    console.log('✅ Razorpay credentials configured successfully');
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      throw new Error(
+        "Razorpay credentials not found in environment variables"
+      );
+    }
+
+    console.log("✅ Razorpay credentials configured successfully");
+    console.log("🔑 Using Key ID:", RAZORPAY_KEY_ID);
 
     this.razorpay = new Razorpay({
       key_id: RAZORPAY_KEY_ID,
@@ -21,14 +29,14 @@ export class RazorpayService {
     try {
       const options = {
         amount: Math.round(amount * 100), // Razorpay expects amount in paise
-        currency: 'INR',
+        currency: "INR",
         receipt: `receipt_${bookingId}`,
         notes: {
           bookingId,
           customerName: customerInfo.name,
           customerEmail: customerInfo.email,
-          customerPhone: customerInfo.phone
-        }
+          customerPhone: customerInfo.phone,
+        },
       };
 
       const order = await this.razorpay.orders.create(options);
@@ -39,14 +47,14 @@ export class RazorpayService {
           amount: order.amount,
           currency: order.currency,
           receipt: order.receipt,
-          status: order.status
-        }
+          status: order.status,
+        },
       };
     } catch (error: any) {
-      console.error('Razorpay order creation error:', error);
+      console.error("Razorpay order creation error:", error);
       return {
         success: false,
-        message: error.message || 'Failed to create payment order'
+        message: error.message || "Failed to create payment order",
       };
     }
   }
@@ -57,16 +65,20 @@ export class RazorpayService {
     signature: string
   ): boolean {
     try {
-      const RAZORPAY_KEY_SECRET = '07kT8SRki1euR7WfpcG4CJ7U';
-      const body = orderId + '|' + paymentId;
+      const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+      if (!RAZORPAY_KEY_SECRET) {
+        throw new Error("Razorpay key secret not found");
+      }
+
+      const body = orderId + "|" + paymentId;
       const expectedSignature = crypto
-        .createHmac('sha256', RAZORPAY_KEY_SECRET)
+        .createHmac("sha256", RAZORPAY_KEY_SECRET)
         .update(body.toString())
-        .digest('hex');
+        .digest("hex");
 
       return expectedSignature === signature;
     } catch (error) {
-      console.error('Signature verification error:', error);
+      console.error("Signature verification error:", error);
       return false;
     }
   }
@@ -76,13 +88,13 @@ export class RazorpayService {
       const payment = await this.razorpay.payments.fetch(paymentId);
       return {
         success: true,
-        data: payment
+        data: payment,
       };
     } catch (error: any) {
-      console.error('Failed to fetch payment details:', error);
+      console.error("Failed to fetch payment details:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch payment details'
+        message: error.message || "Failed to fetch payment details",
       };
     }
   }
@@ -92,13 +104,13 @@ export class RazorpayService {
       const order = await this.razorpay.orders.fetch(orderId);
       return {
         success: true,
-        data: order
+        data: order,
       };
     } catch (error: any) {
-      console.error('Failed to fetch order details:', error);
+      console.error("Failed to fetch order details:", error);
       return {
         success: false,
-        message: error.message || 'Failed to fetch order details'
+        message: error.message || "Failed to fetch order details",
       };
     }
   }
@@ -108,9 +120,9 @@ export class RazorpayService {
       const refundData: any = {
         payment_id: paymentId,
         notes: {
-          reason: reason || 'Booking cancellation',
-          timestamp: new Date().toISOString()
-        }
+          reason: reason || "Booking cancellation",
+          timestamp: new Date().toISOString(),
+        },
       };
 
       if (amount) {
@@ -120,13 +132,13 @@ export class RazorpayService {
       const refund = await this.razorpay.payments.refund(paymentId, refundData);
       return {
         success: true,
-        data: refund
+        data: refund,
       };
     } catch (error: any) {
-      console.error('Refund creation error:', error);
+      console.error("Refund creation error:", error);
       return {
         success: false,
-        message: error.message || 'Failed to create refund'
+        message: error.message || "Failed to create refund",
       };
     }
   }

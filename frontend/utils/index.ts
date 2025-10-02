@@ -54,7 +54,7 @@ export const calculateFoodCharges = (
 }
 
 export const calculateTransportCharges = (
-  hasPickup: boolean, 
+  hasPickup: boolean,
   hasDrop: boolean
 ): number => {
   let total = 0

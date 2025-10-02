@@ -13,6 +13,16 @@ const ApiInstance = axios.create({
   withCredentials: false,
 });
 
+// Create admin-specific axios instance with enhanced auth handling
+const AdminApiInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000, // Longer timeout for admin operations
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: false,
+});
+
 // Request interceptor for auth token
 ApiInstance.interceptors.request.use(
   (config) => {
@@ -40,6 +50,67 @@ ApiInstance.interceptors.response.use(
         window.location.href = "/admin/login";
       }
     }
+    return Promise.reject(error);
+  }
+);
+
+// Admin request interceptor with admin-specific auth handling
+AdminApiInstance.interceptors.request.use(
+  (config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("token");
+      const userStr = localStorage.getItem("user");
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Add admin role validation
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.role !== 'admin') {
+            throw new Error('Admin access required');
+          }
+        } catch (error) {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/admin/login";
+          }
+          return Promise.reject(new Error('Invalid admin credentials'));
+        }
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Admin response interceptor with enhanced error handling
+AdminApiInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "/admin/login";
+      }
+    }
+
+    // Log admin errors for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Admin API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message
+      });
+    }
+
     return Promise.reject(error);
   }
 );
@@ -151,15 +222,32 @@ export const serviceAPI = {
 // Yoga API calls
 export const yogaAPI = {
   getAllSessions: async (params?: any) => {
-    return await ApiInstance.get("/yoga", { params });
+    return await ApiInstance.get("/yoga/sessions", { params });
   },
 
   getSessionById: async (id: string) => {
-    return await ApiInstance.get(`/yoga/${id}`);
+    return await ApiInstance.get(`/yoga/sessions/${id}`);
+  },
+
+  getAllTeachers: async (params?: any) => {
+    return await ApiInstance.get("/yoga/teachers", { params });
+  },
+
+  getTeacherById: async (id: string) => {
+    return await ApiInstance.get(`/yoga/teachers/${id}`);
   },
 
   bookSession: async (data: { sessionId: string; participants: number }) => {
     return await ApiInstance.post("/yoga/book", data);
+  },
+
+  // Daily yoga sessions
+  getAllDailySessions: async (params?: any) => {
+    return await ApiInstance.get("/yoga/daily-sessions", { params });
+  },
+
+  getDailySessionById: async (id: string) => {
+    return await ApiInstance.get(`/yoga/daily-sessions/${id}`);
   },
 };
 
@@ -184,16 +272,16 @@ export const notificationAPI = {
 export const adminAPI = {
   // Dashboard
   getDashboard: async () => {
-    return await ApiInstance.get("/admin/dashboard");
+    return await AdminApiInstance.get("/admin/dashboard");
   },
 
   // Room Management
   getAllRooms: async (params?: any) => {
-    return await ApiInstance.get("/admin/rooms", { params });
+    return await AdminApiInstance.get("/admin/rooms", { params });
   },
 
   createRoom: async (data: FormData) => {
-    return await ApiInstance.post("/admin/rooms", data, {
+    return await AdminApiInstance.post("/admin/rooms", data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -201,7 +289,7 @@ export const adminAPI = {
   },
 
   updateRoom: async (id: string, data: FormData) => {
-    return await ApiInstance.put(`/admin/rooms/${id}`, data, {
+    return await AdminApiInstance.put(`/admin/rooms/${id}`, data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -209,71 +297,131 @@ export const adminAPI = {
   },
 
   deleteRoom: async (id: string) => {
-    return await ApiInstance.delete(`/admin/rooms/${id}`);
+    return await AdminApiInstance.delete(`/admin/rooms/${id}`);
   },
 
   getRoomAvailability: async (params?: any) => {
-    return await ApiInstance.get("/admin/rooms/availability", { params });
+    return await AdminApiInstance.get("/admin/rooms/availability", { params });
   },
 
   bulkUpdateAvailability: async (data: any) => {
-    return await ApiInstance.patch("/admin/rooms/bulk-availability", data);
+    return await AdminApiInstance.patch("/admin/rooms/bulk-availability", data);
   },
 
   // Booking Management
   getAllBookings: async (params?: any) => {
-    return await ApiInstance.get("/admin/bookings", { params });
+    return await AdminApiInstance.get("/admin/bookings", { params });
   },
 
   createBooking: async (data: any) => {
-    return await ApiInstance.post("/admin/bookings", data);
+    return await AdminApiInstance.post("/admin/bookings", data);
   },
 
   updateBookingStatus: async (id: string, data: { status: string }) => {
-    return await ApiInstance.put(`/admin/bookings/${id}/status`, data);
+    return await AdminApiInstance.put(`/admin/bookings/${id}/status`, data);
   },
 
   // User Management
   getAllUsers: async (params?: any) => {
-    return await ApiInstance.get("/admin/users", { params });
+    return await AdminApiInstance.get("/admin/users", { params });
   },
 
   updateUserStatus: async (id: string, data: { isActive: boolean }) => {
-    return await ApiInstance.patch(`/admin/users/${id}/status`, data);
+    return await AdminApiInstance.patch(`/admin/users/${id}/status`, data);
   },
 
   // Service Management
   getAllServices: async (params?: any) => {
-    return await ApiInstance.get("/admin/services", { params });
+    return await AdminApiInstance.get("/admin/services", { params });
   },
 
   createService: async (data: any) => {
-    return await ApiInstance.post("/admin/services", data);
+    return await AdminApiInstance.post("/admin/services", data);
   },
 
   updateService: async (id: string, data: any) => {
-    return await ApiInstance.put(`/admin/services/${id}`, data);
+    return await AdminApiInstance.put(`/admin/services/${id}`, data);
   },
 
   deleteService: async (id: string) => {
-    return await ApiInstance.delete(`/admin/services/${id}`);
+    return await AdminApiInstance.delete(`/admin/services/${id}`);
   },
 
   // Yoga Session Management
   getAllYogaSessions: async (params?: any) => {
-    return await ApiInstance.get("/admin/yoga", { params });
+    return await AdminApiInstance.get("/yoga/sessions", { params });
+  },
+
+  getYogaSessionById: async (id: string) => {
+    return await AdminApiInstance.get(`/yoga/sessions/${id}`);
   },
 
   createYogaSession: async (data: any) => {
-    return await ApiInstance.post("/admin/yoga", data);
+    return await AdminApiInstance.post("/yoga/sessions", data);
   },
 
   updateYogaSession: async (id: string, data: any) => {
-    return await ApiInstance.put(`/admin/yoga/${id}`, data);
+    return await AdminApiInstance.put(`/yoga/sessions/${id}`, data);
   },
 
   deleteYogaSession: async (id: string) => {
-    return await ApiInstance.delete(`/admin/yoga/${id}`);
+    return await AdminApiInstance.delete(`/yoga/sessions/${id}`);
+  },
+
+  // Yoga Teacher Management
+  getAllYogaTeachers: async (params?: any) => {
+    return await AdminApiInstance.get("/yoga/teachers", { params });
+  },
+
+  getYogaTeacherById: async (id: string) => {
+    return await AdminApiInstance.get(`/yoga/teachers/${id}`);
+  },
+
+  createYogaTeacher: async (data: any) => {
+    return await AdminApiInstance.post("/yoga/teachers", data);
+  },
+
+  updateYogaTeacher: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/yoga/teachers/${id}`, data);
+  },
+
+  deleteYogaTeacher: async (id: string) => {
+    return await AdminApiInstance.delete(`/yoga/teachers/${id}`);
+  },
+
+  // Yoga Course Management
+  getAllYogaCourses: async (params?: any) => {
+    return await AdminApiInstance.get("/yoga/courses", { params });
+  },
+
+  getYogaCourseById: async (id: string) => {
+    return await AdminApiInstance.get(`/yoga/courses/${id}`);
+  },
+
+  // Yoga Analytics
+  getYogaAnalytics: async () => {
+    return await AdminApiInstance.get("/yoga/analytics");
+  },
+
+  // Daily Yoga Session Management
+  getAllDailyYogaSessions: async (params?: any) => {
+    return await AdminApiInstance.get("/yoga/daily-sessions", { params });
+  },
+
+  getDailyYogaSessionById: async (id: string) => {
+    return await AdminApiInstance.get(`/yoga/daily-sessions/${id}`);
+  },
+
+  createDailyYogaSession: async (data: any) => {
+    return await AdminApiInstance.post("/yoga/daily-sessions", data);
+  },
+
+  updateDailyYogaSession: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/yoga/daily-sessions/${id}`, data);
+  },
+
+  deleteDailyYogaSession: async (id: string) => {
+    return await AdminApiInstance.delete(`/yoga/daily-sessions/${id}`);
   },
 };
 
@@ -309,3 +457,6 @@ export const SERVICE_PRICES = {
 
 // Export the main instance for custom calls
 export default ApiInstance;
+
+// Export the admin instance for custom admin calls
+export { AdminApiInstance };

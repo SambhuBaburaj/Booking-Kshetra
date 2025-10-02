@@ -216,13 +216,124 @@ export class EmailService {
 
   async sendBookingCancellation(booking: any, user: any): Promise<{ success: boolean; error?: string }> {
     const html = this.generateBookingCancellationEmail(booking, user);
-    
+
     return this.sendEmail({
       to: user.email,
       subject: 'Booking Cancellation - Kshetra Retreat Resort',
       html,
       text: `Your booking ${booking._id} at Kshetra Retreat Resort has been cancelled.`
     });
+  }
+
+  async sendAgencyBookingNotification(booking: any, agency: any): Promise<{ success: boolean; error?: string }> {
+    const html = this.generateAgencyBookingNotificationEmail(booking, agency);
+
+    return this.sendEmail({
+      to: agency.email,
+      subject: 'New Transport Booking Assignment - Kshetra Retreat Resort',
+      html,
+      text: `New transport booking ${booking._id} requires vehicle and driver assignment.`
+    });
+  }
+
+  private generateAgencyBookingNotificationEmail(booking: any, agency: any): string {
+    // Get customer information
+    const customerName = booking.primaryGuestInfo?.name || booking.guests[0]?.name || 'Guest';
+    const customerEmail = booking.guestEmail || booking.userId?.email || booking.primaryGuestInfo?.email;
+    const customerPhone = booking.primaryGuestInfo?.phone || booking.guests[0]?.phone;
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #2c5530; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f9f9f9; }
+          .booking-details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .footer { background-color: #eee; padding: 15px; text-align: center; font-size: 12px; }
+          .urgent { background-color: #ffebcc; border-left: 4px solid #ff9800; padding: 10px; margin: 15px 0; }
+          .transport-info { background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Transport Booking Assignment</h1>
+            <p>Kshetra Retreat Resort</p>
+          </div>
+
+          <div class="content">
+            <p>Dear ${agency.name},</p>
+
+            <div class="urgent">
+              <h3>🚨 Urgent: New Transport Booking Requires Assignment</h3>
+              <p>A new booking with transport services has been created and requires immediate vehicle and driver assignment.</p>
+            </div>
+
+            <div class="booking-details">
+              <h3>Booking Information</h3>
+              <p><strong>Booking ID:</strong> ${booking._id}</p>
+              <p><strong>Check-in:</strong> ${new Date(booking.checkIn).toLocaleDateString('en-IN')}</p>
+              <p><strong>Check-out:</strong> ${new Date(booking.checkOut).toLocaleDateString('en-IN')}</p>
+              <p><strong>Total Guests:</strong> ${booking.totalGuests}</p>
+              <p><strong>Status:</strong> ${booking.status}</p>
+            </div>
+
+            <div class="booking-details">
+              <h3>Customer Information</h3>
+              <p><strong>Name:</strong> ${customerName}</p>
+              ${customerEmail ? `<p><strong>Email:</strong> ${customerEmail}</p>` : ''}
+              ${customerPhone ? `<p><strong>Phone:</strong> ${customerPhone}</p>` : ''}
+              ${booking.primaryGuestInfo?.address ? `<p><strong>Address:</strong> ${booking.primaryGuestInfo.address}</p>` : ''}
+            </div>
+
+            ${booking.transport ? `
+            <div class="transport-info">
+              <h3>🚗 Transport Requirements</h3>
+              ${booking.transport.pickup ? `<p><strong>✅ Airport Pickup Required</strong></p>` : ''}
+              ${booking.transport.drop ? `<p><strong>✅ Airport Drop Required</strong></p>` : ''}
+              ${booking.transport.flightNumber ? `<p><strong>Flight Number:</strong> ${booking.transport.flightNumber}</p>` : ''}
+              ${booking.transport.pickupTerminal ? `<p><strong>Pickup Terminal:</strong> ${booking.transport.pickupTerminal}</p>` : ''}
+              ${booking.transport.dropTerminal ? `<p><strong>Drop Terminal:</strong> ${booking.transport.dropTerminal}</p>` : ''}
+              ${booking.transport.airportFrom ? `<p><strong>Airport From:</strong> ${booking.transport.airportFrom}</p>` : ''}
+              ${booking.transport.airportTo ? `<p><strong>Airport To:</strong> ${booking.transport.airportTo}</p>` : ''}
+              ${booking.transport.flightArrivalTime ? `<p><strong>Flight Arrival:</strong> ${new Date(booking.transport.flightArrivalTime).toLocaleString('en-IN')}</p>` : ''}
+              ${booking.transport.flightDepartureTime ? `<p><strong>Flight Departure:</strong> ${new Date(booking.transport.flightDepartureTime).toLocaleString('en-IN')}</p>` : ''}
+              ${booking.transport.specialInstructions ? `<p><strong>Special Instructions:</strong> ${booking.transport.specialInstructions}</p>` : ''}
+            </div>
+            ` : ''}
+
+            ${booking.specialRequests ? `
+            <div class="booking-details">
+              <h3>Special Requests</h3>
+              <p>${booking.specialRequests}</p>
+            </div>
+            ` : ''}
+
+            <div class="urgent">
+              <h3>Next Steps</h3>
+              <p>1. Login to your agency dashboard</p>
+              <p>2. Assign an available vehicle and driver</p>
+              <p>3. Confirm pickup/drop times</p>
+              <p>4. Customer will be automatically notified</p>
+            </div>
+
+            <p><strong>Login to your agency portal to assign vehicle and driver for this booking.</strong></p>
+
+            <p>Best regards,<br>Kshetra Retreat Resort Management</p>
+          </div>
+
+          <div class="footer">
+            <p>This is an automated notification. Please do not reply to this email.</p>
+            <p>&copy; 2025 Kshetra Retreat Resort. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 }
 

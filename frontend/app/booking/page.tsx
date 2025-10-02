@@ -201,6 +201,46 @@ const BookingPage = () => {
     total: 0,
   });
 
+  // Check for yoga session booking from URL params or localStorage
+  useEffect(() => {
+    const urlBookingType = searchParams.get('type');
+    const selectedYogaSession = localStorage.getItem('selectedYogaSession');
+
+    if (urlBookingType === 'yoga' && selectedYogaSession) {
+      try {
+        const yogaSession = JSON.parse(selectedYogaSession);
+
+        // Pre-fill yoga booking data
+        setBookingData(prev => ({
+          ...prev,
+          services: {
+            ...prev.services,
+            yoga: {
+              enabled: true,
+              type: yogaSession.type === '200hr' ? '200hr' : '300hr',
+              participants: 1
+            }
+          }
+        }));
+
+        // Set pre-selected dates based on yoga session
+        const checkIn = new Date(yogaSession.startDate);
+        const checkOut = new Date(yogaSession.endDate);
+
+        setBookingData(prev => ({
+          ...prev,
+          checkIn: checkIn,
+          checkOut: checkOut
+        }));
+
+        // Clear the stored session
+        localStorage.removeItem('selectedYogaSession');
+      } catch (error) {
+        console.error('Failed to parse yoga session data:', error);
+      }
+    }
+  }, [searchParams]);
+
   // Fetch rooms from API using availability endpoint
   useEffect(() => {
     const fetchRooms = async () => {
