@@ -349,7 +349,7 @@ export default function Home() {
               >
                 {mainServices.map((service, index) => (
                   <div key={service.title} className="w-full flex-shrink-0">
-                    <div className="relative h-[70vh] flex items-center justify-center overflow-hidden">
+                    <div className="relative min-h-[60vh] md:min-h-[70vh] flex items-center justify-center overflow-hidden py-12 md:py-16">
                       {/* Background Image with Parallax */}
                       <div
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105"
@@ -360,58 +360,58 @@ export default function Home() {
                       />
 
                       {/* Content */}
-                      <div className="relative z-10 text-white text-center px-8 max-w-6xl mx-auto">
+                      <div className="relative z-10 text-white text-center px-4 md:px-8 max-w-6xl mx-auto">
                         <motion.div
                           initial={{ opacity: 0, y: 50 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.8 }}
-                          className="mb-8"
+                          className="space-y-4 md:space-y-6 lg:space-y-8"
                         >
-                          <div className="flex justify-center mb-6">
-                            <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                              <service.icon className="w-10 h-10 text-white" />
+                          <div className="flex justify-center mb-4 md:mb-6">
+                            <div className="w-16 h-16 md:w-20 md:h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                              <service.icon className="w-8 h-8 md:w-10 md:h-10 text-white" />
                             </div>
                           </div>
 
-                          <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
+                          <span className="inline-block px-3 py-1 md:px-4 md:py-2 bg-white/20 backdrop-blur-sm rounded-full text-xs md:text-sm font-medium">
                             {service.category}
                           </span>
 
-                          <h3 className="text-5xl md:text-6xl font-bold mb-6">
+                          <h3 className="text-3xl md:text-5xl lg:text-6xl font-bold">
                             {service.title}
                           </h3>
 
-                          <p className="text-xl md:text-2xl opacity-90 mb-8 max-w-4xl mx-auto leading-relaxed">
+                          <p className="text-lg md:text-xl lg:text-2xl opacity-90 max-w-4xl mx-auto leading-relaxed">
                             {service.description}
                           </p>
 
-                          <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8 max-w-4xl mx-auto">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-4 max-w-4xl mx-auto">
                             {service.features.map((feature, idx) => (
                               <motion.div
                                 key={idx}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.6, delay: idx * 0.1 }}
-                                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2"
+                                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1 md:px-3 md:py-2"
                               >
-                                <div className="w-2 h-2 bg-white rounded-full flex-shrink-0" />
-                                <span className="text-sm font-medium">
+                                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full flex-shrink-0" />
+                                <span className="text-xs md:text-sm font-medium">
                                   {feature}
                                 </span>
                               </motion.div>
                             ))}
                           </div>
 
-                          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                            <div className="text-3xl font-bold">
+                          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-6">
+                            <div className="text-2xl md:text-3xl font-bold">
                               {service.price}
                             </div>
                             <button
                               onClick={service.onClick}
-                              className="group bg-white text-gray-900 px-8 py-4 rounded-xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
+                              className="group bg-white text-gray-900 px-6 py-3 md:px-8 md:py-4 rounded-xl text-base md:text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3"
                             >
                               Book Now
-                              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                              <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-2 transition-transform" />
                             </button>
                           </div>
                         </motion.div>
