@@ -605,6 +605,8 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
     prerequisites: session?.prerequisites || ['Must have accommodation booking', 'Basic yoga experience recommended']
   });
 
+  const [errors, setErrors] = useState<any>({});
+
   useEffect(() => {
     fetchTeachers();
   }, []);
@@ -620,8 +622,119 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
     }
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: any = {};
+
+    // Batch name validation
+    if (!formData.batchName.trim()) {
+      newErrors.batchName = 'Batch name is required';
+    } else if (formData.batchName.trim().length < 5) {
+      newErrors.batchName = 'Batch name must be at least 5 characters long';
+    } else if (formData.batchName.trim().length > 100) {
+      newErrors.batchName = 'Batch name must be less than 100 characters';
+    }
+
+    // Date validation
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
+    } else {
+      const startDate = new Date(formData.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (startDate < today) {
+        newErrors.startDate = 'Start date cannot be in the past';
+      }
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date is required';
+    } else if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      const endDate = new Date(formData.endDate);
+
+      if (endDate <= startDate) {
+        newErrors.endDate = 'End date must be after start date';
+      }
+
+      // Check if program duration is reasonable
+      const durationDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (formData.type === '200hr' && (durationDays < 14 || durationDays > 60)) {
+        newErrors.endDate = '200hr programs should be between 14-60 days long';
+      } else if (formData.type === '300hr' && (durationDays < 21 || durationDays > 90)) {
+        newErrors.endDate = '300hr programs should be between 21-90 days long';
+      }
+    }
+
+    // Capacity validation
+    if (!formData.capacity || formData.capacity < 1) {
+      newErrors.capacity = 'Capacity must be at least 1';
+    } else if (formData.capacity > 50) {
+      newErrors.capacity = 'Capacity cannot exceed 50 students';
+    }
+
+    // Price validation
+    if (!formData.price || formData.price < 1000) {
+      newErrors.price = 'Price must be at least ₹1,000';
+    } else if (formData.price > 500000) {
+      newErrors.price = 'Price cannot exceed ₹5,00,000';
+    }
+
+    // Instructor validation
+    if (!formData.instructor) {
+      newErrors.instructor = 'Please select an instructor';
+    }
+
+    // Schedule days validation
+    if (formData.schedule.days.length === 0) {
+      newErrors.scheduleDays = 'Please select at least one day';
+    }
+
+    // Time validation
+    if (!formData.schedule.time) {
+      newErrors.scheduleTime = 'Please select a time';
+    }
+
+    // Description validation
+    if (formData.description && formData.description.length > 1000) {
+      newErrors.description = 'Description must be less than 1000 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    let processedValue = value;
+
+    // Real-time input processing
+    if (field === 'batchName') {
+      // Allow letters, numbers, spaces, and basic punctuation
+      processedValue = value.replace(/[^a-zA-Z0-9\s\-\(\)\.]/g, '');
+    } else if (field === 'capacity') {
+      // Ensure positive integers only
+      processedValue = Math.max(1, Math.min(50, parseInt(value) || 1));
+    } else if (field === 'price') {
+      // Ensure positive numbers only
+      processedValue = Math.max(1000, Math.min(500000, parseInt(value) || 1000));
+    }
+
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev: any) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+
     onSubmit({
       ...formData,
       prerequisites: formData.prerequisites.filter(p => p.trim() !== '')
@@ -647,71 +760,94 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name *</label>
           <input
             type="text"
             required
             value={formData.batchName}
-            onChange={(e) => setFormData(prev => ({ ...prev, batchName: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('batchName', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.batchName ? 'border-red-400' : 'border-gray-300'
+            }`}
             placeholder="e.g., Foundation Teacher Training - January 2025"
+            maxLength={100}
           />
+          {errors.batchName && <p className="text-red-500 text-sm mt-1">{errors.batchName}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
           <input
             type="date"
             required
             value={formData.startDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('startDate', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.startDate ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
           <input
             type="date"
             required
             value={formData.endDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('endDate', e.target.value)}
+            min={formData.startDate || new Date().toISOString().split('T')[0]}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.endDate ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Capacity *</label>
           <input
             type="number"
             required
             min="1"
             max="50"
             value={formData.capacity}
-            onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('capacity', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.capacity ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.capacity && <p className="text-red-500 text-sm mt-1">{errors.capacity}</p>}
+          {!errors.capacity && <p className="text-gray-500 text-xs mt-1">Maximum 50 students per session</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
           <input
             type="number"
             required
-            min="0"
+            min="1000"
+            max="500000"
             value={formData.price}
-            onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('price', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.price ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+          {!errors.price && <p className="text-gray-500 text-xs mt-1">Price range: ₹1,000 - ₹5,00,000</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Instructor</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Instructor *</label>
           <select
             required
             value={formData.instructor}
-            onChange={(e) => setFormData(prev => ({ ...prev, instructor: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('instructor', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.instructor ? 'border-red-400' : 'border-gray-300'
+            }`}
           >
             <option value="">Select Instructor</option>
             {teachers.map((teacher) => (
@@ -720,10 +856,11 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
               </option>
             ))}
           </select>
+          {errors.instructor && <p className="text-red-500 text-sm mt-1">{errors.instructor}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
           <input
             type="time"
             required
@@ -732,13 +869,16 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
               ...prev,
               schedule: { ...prev.schedule, time: e.target.value }
             }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.scheduleTime ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.scheduleTime && <p className="text-red-500 text-sm mt-1">{errors.scheduleTime}</p>}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Days</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Days *</label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {weekDays.map((day) => (
             <label key={day} className="flex items-center space-x-2">
@@ -757,6 +897,10 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
                       schedule: { ...prev.schedule, days: prev.schedule.days.filter(d => d !== day) }
                     }));
                   }
+                  // Clear error when user makes changes
+                  if (errors.scheduleDays) {
+                    setErrors((prev: any) => ({ ...prev, scheduleDays: undefined }));
+                  }
                 }}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
@@ -764,6 +908,8 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
             </label>
           ))}
         </div>
+        {errors.scheduleDays && <p className="text-red-500 text-sm mt-1">{errors.scheduleDays}</p>}
+        {!errors.scheduleDays && <p className="text-gray-500 text-xs mt-1">Select the days when sessions will occur</p>}
       </div>
 
       <div>
@@ -771,10 +917,19 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
         <textarea
           rows={4}
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            errors.description ? 'border-red-400' : 'border-gray-300'
+          }`}
           placeholder="Describe the yoga session program..."
+          maxLength={1000}
         />
+        {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+        {!errors.description && (
+          <p className="text-gray-500 text-xs mt-1">
+            {formData.description.length}/1000 characters
+          </p>
+        )}
       </div>
 
       <div>
@@ -851,8 +1006,90 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
     isActive: session?.isActive !== undefined ? session.isActive : true
   });
 
+  const [errors, setErrors] = useState<any>({});
+
+  const validateDailyForm = (): boolean => {
+    const newErrors: any = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Session name is required';
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = 'Session name must be at least 3 characters long';
+    } else if (formData.name.trim().length > 50) {
+      newErrors.name = 'Session name must be less than 50 characters';
+    }
+
+    // Price validation
+    if (!formData.price || formData.price < 100) {
+      newErrors.price = 'Price must be at least ₹100';
+    } else if (formData.price > 10000) {
+      newErrors.price = 'Price cannot exceed ₹10,000';
+    }
+
+    // Duration validation
+    if (!formData.duration || formData.duration < 30) {
+      newErrors.duration = 'Duration must be at least 30 minutes';
+    } else if (formData.duration > 180) {
+      newErrors.duration = 'Duration cannot exceed 180 minutes';
+    }
+
+    // Description validation
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters long';
+    } else if (formData.description.length > 500) {
+      newErrors.description = 'Description must be less than 500 characters';
+    }
+
+    // Time slots validation
+    const validTimeSlots = formData.timeSlots.filter(slot => slot.time.trim() !== '');
+    if (validTimeSlots.length === 0) {
+      newErrors.timeSlots = 'At least one time slot is required';
+    }
+
+    // Features validation
+    const validFeatures = formData.features.filter(f => f.trim() !== '');
+    if (validFeatures.length === 0) {
+      newErrors.features = 'At least one feature is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    let processedValue = value;
+
+    // Real-time input processing
+    if (field === 'name') {
+      // Allow letters, numbers, spaces, and basic punctuation
+      processedValue = value.replace(/[^a-zA-Z0-9\s\-\(\)\.]/g, '');
+    } else if (field === 'price') {
+      // Ensure positive numbers only
+      processedValue = Math.max(100, Math.min(10000, parseInt(value) || 100));
+    } else if (field === 'duration') {
+      // Ensure duration is within valid range
+      processedValue = Math.max(30, Math.min(180, parseInt(value) || 30));
+    }
+
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors((prev: any) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateDailyForm()) {
+      toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+
     onSubmit({
       ...formData,
       features: formData.features.filter(f => f.trim() !== ''),
@@ -908,15 +1145,19 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Session Name</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Session Name *</label>
           <input
             type="text"
             required
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.name ? 'border-red-400' : 'border-gray-300'
+            }`}
             placeholder="e.g., Regular Yoga Sessions"
+            maxLength={50}
           />
+          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
         </div>
 
         <div>
@@ -933,45 +1174,63 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹) *</label>
           <input
             type="number"
             required
-            min="0"
+            min="100"
+            max="10000"
             value={formData.price}
-            onChange={(e) => setFormData(prev => ({ ...prev, price: parseInt(e.target.value) }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('price', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.price ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
+          {!errors.price && <p className="text-gray-500 text-xs mt-1">Price range: ₹100 - ₹10,000</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes) *</label>
           <input
             type="number"
             required
             min="30"
             max="180"
             value={formData.duration}
-            onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            onChange={(e) => handleInputChange('duration', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              errors.duration ? 'border-red-400' : 'border-gray-300'
+            }`}
           />
+          {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration}</p>}
+          {!errors.duration && <p className="text-gray-500 text-xs mt-1">Duration: 30-180 minutes</p>}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
         <textarea
           rows={3}
           required
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          onChange={(e) => handleInputChange('description', e.target.value)}
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            errors.description ? 'border-red-400' : 'border-gray-300'
+          }`}
           placeholder="Describe the yoga session..."
+          maxLength={500}
         />
+        {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+        {!errors.description && (
+          <p className="text-gray-500 text-xs mt-1">
+            {formData.description.length}/500 characters
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Time Slots</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Time Slots *</label>
         {formData.timeSlots.map((slot, index) => (
           <div key={index} className="flex gap-2 mb-2 items-center">
             <input
@@ -1008,10 +1267,11 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
         >
           + Add Time Slot
         </button>
+        {errors.timeSlots && <p className="text-red-500 text-sm mt-1">{errors.timeSlots}</p>}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Features</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Features *</label>
         {formData.features.map((feature, index) => (
           <div key={index} className="flex gap-2 mb-2">
             <input
@@ -1039,6 +1299,7 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
         >
           + Add Feature
         </button>
+        {errors.features && <p className="text-red-500 text-sm mt-1">{errors.features}</p>}
       </div>
 
       <div className="flex items-center">

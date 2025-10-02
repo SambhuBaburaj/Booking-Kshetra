@@ -50,6 +50,11 @@ export default function AirportTransportPage() {
 
   const [totalAmount, setTotalAmount] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<{
+    pickup?: string;
+    drop?: string;
+    general?: string;
+  }>({});
 
   const calculateTotal = () => {
     let total = 0
@@ -69,6 +74,10 @@ export default function AirportTransportPage() {
       pickup: enabled,
       pickupDetails: enabled ? (prev.pickupDetails || {}) : undefined
     }))
+    // Clear errors when service is toggled
+    if (errors.pickup || errors.general) {
+      setErrors(prev => ({ ...prev, pickup: undefined, general: undefined }));
+    }
   }
 
   const handleDropChange = (enabled: boolean) => {
@@ -77,11 +86,89 @@ export default function AirportTransportPage() {
       drop: enabled,
       dropDetails: enabled ? (prev.dropDetails || {}) : undefined
     }))
+    // Clear errors when service is toggled
+    if (errors.drop || errors.general) {
+      setErrors(prev => ({ ...prev, drop: undefined, general: undefined }));
+    }
   }
+
+  const clearFieldError = (field: 'pickup' | 'drop') => {
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
+    }
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: { pickup?: string; drop?: string; general?: string } = {};
+
+    // Check if at least one service is selected
+    if (!bookingData.pickup && !bookingData.drop) {
+      newErrors.general = 'Please select at least one service (pickup or drop)';
+      setErrors(newErrors);
+      return false;
+    }
+
+    // Validate pickup details if pickup is selected
+    if (bookingData.pickup) {
+      if (!bookingData.pickupDetails?.flightNumber?.trim()) {
+        newErrors.pickup = 'Flight number is required for pickup service';
+      } else if (!bookingData.pickupDetails?.arrivalTime) {
+        newErrors.pickup = 'Arrival date and time is required for pickup service';
+      } else if (!bookingData.pickupDetails?.terminal) {
+        newErrors.pickup = 'Terminal selection is required for pickup service';
+      } else {
+        // Validate arrival time is not in the past
+        const arrivalTime = new Date(bookingData.pickupDetails.arrivalTime);
+        const now = new Date();
+        if (arrivalTime < now) {
+          newErrors.pickup = 'Arrival time cannot be in the past';
+        }
+      }
+    }
+
+    // Validate drop details if drop is selected
+    if (bookingData.drop) {
+      if (!bookingData.dropDetails?.flightNumber?.trim()) {
+        newErrors.drop = 'Flight number is required for drop service';
+      } else if (!bookingData.dropDetails?.departureTime) {
+        newErrors.drop = 'Departure date and time is required for drop service';
+      } else if (!bookingData.dropDetails?.terminal) {
+        newErrors.drop = 'Terminal selection is required for drop service';
+      } else {
+        // Validate departure time is not in the past
+        const departureTime = new Date(bookingData.dropDetails.departureTime);
+        const now = new Date();
+        if (departureTime < now) {
+          newErrors.drop = 'Departure time cannot be in the past';
+        }
+      }
+    }
+
+    // Additional validation: if both pickup and drop are selected, departure should be after arrival
+    if (bookingData.pickup && bookingData.drop &&
+        bookingData.pickupDetails?.arrivalTime &&
+        bookingData.dropDetails?.departureTime) {
+      const arrivalTime = new Date(bookingData.pickupDetails.arrivalTime);
+      const departureTime = new Date(bookingData.dropDetails.departureTime);
+
+      if (departureTime <= arrivalTime) {
+        newErrors.drop = 'Departure time must be after arrival time';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+
+    // Validate form before proceeding
+    if (!validateForm()) {
+      setIsSubmitting(false);
+      return;
+    }
 
     // Prepare booking data
     const completeBookingData = {
@@ -295,54 +382,74 @@ export default function AirportTransportPage() {
                       <div className="grid md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Flight Number
+                            Flight Number *
                           </label>
                           <input
                             type="text"
+                            required
                             value={bookingData.pickupDetails?.flightNumber || ''}
-                            onChange={(e) => setBookingData(prev => ({
-                              ...prev,
-                              pickupDetails: {
-                                ...prev.pickupDetails,
-                                flightNumber: e.target.value
-                              }
-                            }))}
-                            placeholder="AI123"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Arrival Time
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={bookingData.pickupDetails?.arrivalTime || ''}
-                            onChange={(e) => setBookingData(prev => ({
-                              ...prev,
-                              pickupDetails: {
-                                ...prev.pickupDetails,
-                                arrivalTime: e.target.value
-                              }
-                            }))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Terminal
-                          </label>
-                          <div className="relative">
-                            <select
-                              value={bookingData.pickupDetails?.terminal || ''}
-                              onChange={(e) => setBookingData(prev => ({
+                            onChange={(e) => {
+                              setBookingData(prev => ({
                                 ...prev,
                                 pickupDetails: {
                                   ...prev.pickupDetails,
-                                  terminal: e.target.value as 'T1' | 'T2' | 'T3'
+                                  flightNumber: e.target.value.toUpperCase()
                                 }
-                              }))}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 appearance-none"
+                              }))
+                              clearFieldError('pickup')
+                            }}
+                            placeholder="AI123"
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 ${
+                              errors.pickup && !bookingData.pickupDetails?.flightNumber ? 'border-red-400' : 'border-gray-300'
+                            }`}
+                            maxLength={10}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Arrival Date & Time *
+                          </label>
+                          <input
+                            type="datetime-local"
+                            required
+                            value={bookingData.pickupDetails?.arrivalTime || ''}
+                            onChange={(e) => {
+                              setBookingData(prev => ({
+                                ...prev,
+                                pickupDetails: {
+                                  ...prev.pickupDetails,
+                                  arrivalTime: e.target.value
+                                }
+                              }))
+                              clearFieldError('pickup')
+                            }}
+                            min={new Date().toISOString().slice(0, 16)}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 ${
+                              errors.pickup && !bookingData.pickupDetails?.arrivalTime ? 'border-red-400' : 'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Terminal *
+                          </label>
+                          <div className="relative">
+                            <select
+                              required
+                              value={bookingData.pickupDetails?.terminal || ''}
+                              onChange={(e) => {
+                                setBookingData(prev => ({
+                                  ...prev,
+                                  pickupDetails: {
+                                    ...prev.pickupDetails,
+                                    terminal: e.target.value as 'T1' | 'T2' | 'T3'
+                                  }
+                                }))
+                                clearFieldError('pickup')
+                              }}
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 appearance-none ${
+                                errors.pickup && !bookingData.pickupDetails?.terminal ? 'border-red-400' : 'border-gray-300'
+                              }`}
                             >
                               <option value="">Select Terminal</option>
                               <option value="T1">Terminal 1</option>
@@ -353,6 +460,11 @@ export default function AirportTransportPage() {
                           </div>
                         </div>
                       </div>
+                      {errors.pickup && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-red-600 text-sm font-medium">{errors.pickup}</p>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </div>
@@ -387,54 +499,74 @@ export default function AirportTransportPage() {
                       <div className="grid md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Flight Number
+                            Flight Number *
                           </label>
                           <input
                             type="text"
+                            required
                             value={bookingData.dropDetails?.flightNumber || ''}
-                            onChange={(e) => setBookingData(prev => ({
-                              ...prev,
-                              dropDetails: {
-                                ...prev.dropDetails,
-                                flightNumber: e.target.value
-                              }
-                            }))}
-                            placeholder="AI456"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Departure Time
-                          </label>
-                          <input
-                            type="datetime-local"
-                            value={bookingData.dropDetails?.departureTime || ''}
-                            onChange={(e) => setBookingData(prev => ({
-                              ...prev,
-                              dropDetails: {
-                                ...prev.dropDetails,
-                                departureTime: e.target.value
-                              }
-                            }))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Terminal
-                          </label>
-                          <div className="relative">
-                            <select
-                              value={bookingData.dropDetails?.terminal || ''}
-                              onChange={(e) => setBookingData(prev => ({
+                            onChange={(e) => {
+                              setBookingData(prev => ({
                                 ...prev,
                                 dropDetails: {
                                   ...prev.dropDetails,
-                                  terminal: e.target.value as 'T1' | 'T2' | 'T3'
+                                  flightNumber: e.target.value.toUpperCase()
                                 }
-                              }))}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 appearance-none"
+                              }))
+                              clearFieldError('drop')
+                            }}
+                            placeholder="AI456"
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 ${
+                              errors.drop && !bookingData.dropDetails?.flightNumber ? 'border-red-400' : 'border-gray-300'
+                            }`}
+                            maxLength={10}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Departure Date & Time *
+                          </label>
+                          <input
+                            type="datetime-local"
+                            required
+                            value={bookingData.dropDetails?.departureTime || ''}
+                            onChange={(e) => {
+                              setBookingData(prev => ({
+                                ...prev,
+                                dropDetails: {
+                                  ...prev.dropDetails,
+                                  departureTime: e.target.value
+                                }
+                              }))
+                              clearFieldError('drop')
+                            }}
+                            min={new Date().toISOString().slice(0, 16)}
+                            className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 ${
+                              errors.drop && !bookingData.dropDetails?.departureTime ? 'border-red-400' : 'border-gray-300'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Terminal *
+                          </label>
+                          <div className="relative">
+                            <select
+                              required
+                              value={bookingData.dropDetails?.terminal || ''}
+                              onChange={(e) => {
+                                setBookingData(prev => ({
+                                  ...prev,
+                                  dropDetails: {
+                                    ...prev.dropDetails,
+                                    terminal: e.target.value as 'T1' | 'T2' | 'T3'
+                                  }
+                                }))
+                                clearFieldError('drop')
+                              }}
+                              className={`w-full px-4 py-3 border rounded-lg focus:ring-purple-500 focus:border-purple-500 appearance-none ${
+                                errors.drop && !bookingData.dropDetails?.terminal ? 'border-red-400' : 'border-gray-300'
+                              }`}
                             >
                               <option value="">Select Terminal</option>
                               <option value="T1">Terminal 1</option>
@@ -445,6 +577,11 @@ export default function AirportTransportPage() {
                           </div>
                         </div>
                       </div>
+                      {errors.drop && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-red-600 text-sm font-medium">{errors.drop}</p>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </div>
@@ -484,6 +621,11 @@ export default function AirportTransportPage() {
                           Total Amount: ₹{totalAmount.toLocaleString()}
                         </p>
                       </div>
+                      {errors.general && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-red-600 text-sm font-medium">{errors.general}</p>
+                        </div>
+                      )}
                     </div>
 
                     <button

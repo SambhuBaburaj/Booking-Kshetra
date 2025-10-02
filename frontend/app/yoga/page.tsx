@@ -139,6 +139,24 @@ export default function YogaPage() {
       return;
     }
 
+    // Validate selected date is not in the past
+    const selectedDateObj = new Date(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDateObj < today) {
+      alert("Please select a future date. Past dates are not allowed.");
+      return;
+    }
+
+    // Check if date is too far in the future (optional - limit to 3 months)
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 3);
+    if (selectedDateObj > maxDate) {
+      alert("Bookings are only available up to 3 months in advance. Please select an earlier date.");
+      return;
+    }
+
     // Redirect to booking with daily session details
     router.push(
       `/yoga/booking/details?session=${selectedDailySession}&type=daily&date=${selectedDate}`
@@ -794,6 +812,7 @@ export default function YogaPage() {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
+                  max={new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split("T")[0]}
                   className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/20"
                 />
               </div>

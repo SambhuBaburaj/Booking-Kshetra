@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Clock,
   Calendar,
-  Users,
   Activity,
   Heart,
   BookOpen,
@@ -133,7 +132,27 @@ export default function YogaBookingDetailsPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    let processedValue = value
+
+    // Real-time input processing
+    if (name === 'name') {
+      // Allow only letters and spaces
+      processedValue = value.replace(/[^a-zA-Z\s]/g, '')
+    } else if (name === 'phone') {
+      // Allow only numbers, spaces, hyphens, plus signs, and parentheses
+      processedValue = value.replace(/[^0-9\s\-\(\)\+]/g, '')
+    } else if (name === 'pincode') {
+      // Allow only numbers and limit to 6 digits
+      processedValue = value.replace(/[^0-9]/g, '').slice(0, 6)
+    } else if (name === 'city' || name === 'state') {
+      // Allow only letters and spaces
+      processedValue = value.replace(/[^a-zA-Z\s]/g, '')
+    } else if (name === 'email') {
+      // Convert to lowercase for email
+      processedValue = value.toLowerCase()
+    }
+
+    setFormData(prev => ({ ...prev, [name]: processedValue }))
 
     // Clear error when user starts typing
     if (errors[name as keyof FormData]) {
@@ -144,16 +163,77 @@ export default function YogaBookingDetailsPage() {
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {}
 
-    if (!formData.name.trim()) newErrors.name = 'Name is required'
-    if (!formData.email.trim()) newErrors.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid'
-    if (!formData.phone.trim()) newErrors.phone = 'Phone is required'
-    else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) newErrors.phone = 'Phone number is invalid'
-    if (!formData.address.trim()) newErrors.address = 'Address is required'
-    if (!formData.city.trim()) newErrors.city = 'City is required'
-    if (!formData.state.trim()) newErrors.state = 'State is required'
-    if (!formData.pincode.trim()) newErrors.pincode = 'PIN code is required'
-    else if (!/^\d{6}$/.test(formData.pincode)) newErrors.pincode = 'PIN code must be 6 digits'
+    // Name validation
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required'
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters long'
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Name should only contain letters and spaces'
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email address is required'
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email.trim())) {
+      newErrors.email = 'Please enter a valid email address'
+    }
+
+    // Phone validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required'
+    } else {
+      const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '')
+      if (!/^\+?91?[6-9]\d{9}$/.test(cleanPhone)) {
+        newErrors.phone = 'Please enter a valid Indian mobile number (10 digits starting with 6-9)'
+      }
+    }
+
+    // Address validation
+    if (!formData.address.trim()) {
+      newErrors.address = 'Complete address is required'
+    } else if (formData.address.trim().length < 10) {
+      newErrors.address = 'Please provide a complete address (minimum 10 characters)'
+    }
+
+    // City validation
+    if (!formData.city.trim()) {
+      newErrors.city = 'City is required'
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.city.trim())) {
+      newErrors.city = 'City name should only contain letters and spaces'
+    }
+
+    // State validation
+    if (!formData.state.trim()) {
+      newErrors.state = 'State is required'
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.state.trim())) {
+      newErrors.state = 'State name should only contain letters and spaces'
+    }
+
+    // PIN code validation
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = 'PIN code is required'
+    } else if (!/^\d{6}$/.test(formData.pincode.trim())) {
+      newErrors.pincode = 'PIN code must be exactly 6 digits'
+    } else {
+      const pin = parseInt(formData.pincode.trim())
+      if (pin < 100000 || pin > 999999) {
+        newErrors.pincode = 'Please enter a valid PIN code'
+      }
+    }
+
+    // Additional validation for program sessions
+    if (sessionData?.type === 'program' && sessionData?.startDate) {
+      const startDate = new Date(sessionData.startDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      if (startDate < today) {
+        // This shouldn't happen if backend data is correct, but good to check
+        alert('This program has already started. Please select a different program.')
+        return false
+      }
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -356,7 +436,8 @@ export default function YogaBookingDetailsPage() {
                     className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
                       errors.name ? 'border-red-400' : ''
                     }`}
-                    placeholder="Enter your full name"
+                    placeholder="e.g. John Doe"
+                    maxLength={50}
                   />
                   {errors.name && <p className="text-red-400 text-sm mt-2">{errors.name}</p>}
                 </div>
@@ -376,6 +457,7 @@ export default function YogaBookingDetailsPage() {
                       errors.email ? 'border-red-400' : ''
                     }`}
                     placeholder="your.email@example.com"
+                    maxLength={100}
                   />
                   {errors.email && <p className="text-red-400 text-sm mt-2">{errors.email}</p>}
                 </div>
@@ -395,8 +477,10 @@ export default function YogaBookingDetailsPage() {
                       errors.phone ? 'border-red-400' : ''
                     }`}
                     placeholder="+91 9999999999"
+                    maxLength={15}
                   />
                   {errors.phone && <p className="text-red-400 text-sm mt-2">{errors.phone}</p>}
+                  {!errors.phone && <p className="text-gray-400 text-xs mt-1">Enter 10-digit mobile number starting with 6, 7, 8, or 9</p>}
                 </div>
 
                 {/* Address */}
@@ -413,7 +497,8 @@ export default function YogaBookingDetailsPage() {
                     className={`w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 ${
                       errors.address ? 'border-red-400' : ''
                     }`}
-                    placeholder="Enter your complete address"
+                    placeholder="House/Flat No, Street, Area, Landmark"
+                    maxLength={200}
                   />
                   {errors.address && <p className="text-red-400 text-sm mt-2">{errors.address}</p>}
                 </div>
@@ -475,6 +560,7 @@ export default function YogaBookingDetailsPage() {
                     maxLength={6}
                   />
                   {errors.pincode && <p className="text-red-400 text-sm mt-2">{errors.pincode}</p>}
+                  {!errors.pincode && <p className="text-gray-400 text-xs mt-1">Enter your area's 6-digit postal PIN code</p>}
                 </div>
 
                 {/* Experience */}
