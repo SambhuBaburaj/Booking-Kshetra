@@ -1,8 +1,14 @@
 import { Request, Response } from 'express';
+import { validationResult } from 'express-validator';
 import YogaSession from '../models/YogaSession';
 import Teacher from '../models/Teacher';
 import YogaCourse from '../models/YogaCourse';
 import DailyYogaSession from '../models/DailyYogaSession';
+import {
+  uploadImageToImageKit,
+  IMAGE_FOLDERS,
+  IMAGE_TRANSFORMATIONS
+} from '../utils/imagekitUpload';
 
 // Get all active yoga sessions
 export const getAllYogaSessions = async (req: Request, res: Response): Promise<void> => {
@@ -516,6 +522,64 @@ export const deleteDailyYogaSession = async (req: Request, res: Response): Promi
       success: false,
       message: 'Failed to delete daily yoga session',
       error: error.message
+    });
+  }
+};
+
+// Upload teacher profile image
+export const uploadTeacherProfileImage = async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    const { id: teacherId } = req.params;
+
+    // Verify teacher exists
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: 'Teacher not found'
+      });
+    }
+
+    // Upload profile image to ImageKit
+    const imageUrl = await uploadImageToImageKit(req.file.buffer, {
+      folder: IMAGE_FOLDERS.YOGA.TEACHERS,
+      fileName: `teacher_${teacherId}`,
+      transformation: IMAGE_TRANSFORMATIONS.PROFILE_PHOTO
+    });
+
+    // Update teacher with profile image URL
+    teacher.profileImage = imageUrl;
+    await teacher.save();
+
+    res.json({
+      success: true,
+      message: 'Teacher profile image uploaded successfully',
+      data: {
+        teacher,
+        profileImageUrl: imageUrl
+      }
+    });
+  } catch (error) {
+    console.error('Upload teacher profile image error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload teacher profile image'
     });
   }
 };

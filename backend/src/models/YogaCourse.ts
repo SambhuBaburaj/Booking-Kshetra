@@ -12,6 +12,7 @@ export interface IYogaCourse extends Document {
   examinationFeeINR: number;
   minimumAttendanceDays?: string;
   description?: string;
+  courseImage?: string; // URL to course thumbnail image
   sessionTimes?: string[];
   isActive: boolean;
   category: 'YCB' | 'Regular' | 'Therapy' | 'Cleansing';
@@ -79,6 +80,11 @@ const yogaCourseSchema = new Schema<IYogaCourse>(
       type: String,
       trim: true,
       maxlength: [1000, 'Description cannot be more than 1000 characters']
+    },
+    courseImage: {
+      type: String,
+      trim: true,
+      default: null
     },
     sessionTimes: {
       type: [String],

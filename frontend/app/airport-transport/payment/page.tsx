@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -59,7 +59,7 @@ interface PersonalInfo {
   }
 }
 
-export default function PaymentPage() {
+function PaymentPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [bookingDetails, setBookingDetails] = useState<BookingDetails | null>(null)
@@ -134,13 +134,13 @@ export default function PaymentPage() {
         phoneNumber: personalInfo.phone
       })
 
-      if (response.data.success && response.data.data) {
-        setAppliedCoupon(response.data.data.coupon)
-        setCouponDiscount(response.data.data.discount)
+      if ((response.data as any)?.success && (response.data as any)?.data) {
+        setAppliedCoupon((response.data as any)?.data?.coupon)
+        setCouponDiscount((response.data as any)?.data?.discount)
         setCouponError('')
       }
     } catch (error: any) {
-      setCouponError(error.message || 'Invalid coupon code')
+      setCouponError(error.response?.data?.message || error.message || 'Invalid coupon code')
       setAppliedCoupon(null)
       setCouponDiscount(0)
     } finally {
@@ -816,4 +816,12 @@ export default function PaymentPage() {
       </div>
     </div>
   )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentPageContent />
+    </Suspense>
+  );
 }

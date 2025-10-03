@@ -18,6 +18,7 @@ import { apiClient } from '../../../lib/api-client';
 import AgencyNav from '../../../components/AgencyNav';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import ErrorMessage from '../../../components/ErrorMessage';
+import ImageUpload from '../../../components/ImageUpload';
 
 interface Driver {
   _id: string;
@@ -27,6 +28,8 @@ interface Driver {
   licenseNumber: string;
   licenseType: string;
   licenseExpiryDate: string;
+  licenseImage?: string;
+  profilePhoto?: string;
   experience: number;
   languages: string[];
   address: string;
@@ -97,7 +100,7 @@ export default function AgencyDrivers() {
       const response = await apiClient.agencyGet('/agency/drivers');
 
       if (response.success && response.data) {
-        setDrivers(response.data.drivers || []);
+        setDrivers((response.data as any)?.drivers || []);
       }
       setError('');
     } catch (err) {
@@ -126,7 +129,13 @@ export default function AgencyDrivers() {
       licenseExpiryDate:date,
       experience: driver.experience,
       languages: [...driver.languages],
-      isAvailable: driver.isAvailable,
+      address: driver.address,
+      emergencyContact: {
+        name: driver.emergencyContact.name,
+        phone: driver.emergencyContact.phone,
+        relationship: driver.emergencyContact.relationship
+      },
+      isAvailable: driver.isAvailable
     });
     setShowModal(true);
   };
@@ -159,7 +168,7 @@ export default function AgencyDrivers() {
 
         if (response.success && response.data) {
           setDrivers(drivers.map(d =>
-            d._id === editingDriver._id ? response.data.driver : d
+            d._id === editingDriver._id ? (response.data as any)?.driver : d
           ));
           setShowModal(false);
         } else {
@@ -170,7 +179,7 @@ export default function AgencyDrivers() {
         const response = await apiClient.agencyPost('/agency/drivers', formData);
 
         if (response.success && response.data) {
-          setDrivers([...drivers, response.data.driver]);
+          setDrivers([...drivers, (response.data as any)?.driver]);
           setShowModal(false);
         } else {
           setError(response.error || 'Failed to create driver');
@@ -184,13 +193,25 @@ export default function AgencyDrivers() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? parseInt(value) || 0 :
-               type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
-    }));
+
+    if (name.startsWith('emergencyContact.')) {
+      const field = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        emergencyContact: {
+          ...prev.emergencyContact,
+          [field]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'number' ? parseInt(value) || 0 :
+                 type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      }));
+    }
   };
 
   const handleAddLanguage = () => {
@@ -208,6 +229,70 @@ export default function AgencyDrivers() {
       ...prev,
       languages: prev.languages.filter(lang => lang !== language)
     }));
+  };
+
+  const uploadDriverLicense = async (driverId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiClient.agencyPost(
+        `/agency/drivers/${driverId}/upload-license`,
+        formData
+      );
+
+      if (response.success && response.data) {
+        const data = response.data as any;
+        // Update the driver in the local state
+        setDrivers(prev => prev.map(d =>
+          d._id === driverId
+            ? { ...d, licenseImage: data.licenseImageUrl }
+            : d
+        ));
+
+        // Update editing driver if it's the same one
+        if (editingDriver && editingDriver._id === driverId) {
+          setEditingDriver(prev => prev ? { ...prev, licenseImage: data.licenseImageUrl } : null);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to upload license image');
+      }
+    } catch (error) {
+      console.error('License upload error:', error);
+      throw error;
+    }
+  };
+
+  const uploadDriverPhoto = async (driverId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiClient.agencyPost(
+        `/agency/drivers/${driverId}/upload-photo`,
+        formData
+      );
+
+      if (response.success && response.data) {
+        const data = response.data as any;
+        // Update the driver in the local state
+        setDrivers(prev => prev.map(d =>
+          d._id === driverId
+            ? { ...d, profilePhoto: data.profilePhotoUrl }
+            : d
+        ));
+
+        // Update editing driver if it's the same one
+        if (editingDriver && editingDriver._id === driverId) {
+          setEditingDriver(prev => prev ? { ...prev, profilePhoto: data.profilePhotoUrl } : null);
+        }
+      } else {
+        throw new Error(response.error || 'Failed to upload profile photo');
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error);
+      throw error;
+    }
   };
 
   const filteredDrivers = drivers.filter(driver =>
@@ -297,13 +382,28 @@ export default function AgencyDrivers() {
                 return <div key={driver._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {driver.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {driver.licenseType.replace('_', ' ').toUpperCase()} License
-                        </p>
+                      <div className="flex items-center space-x-3">
+                        {driver.profilePhoto ? (
+                          <img
+                            src={driver.profilePhoto}
+                            alt={`${driver.name}'s profile`}
+                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-500 font-medium text-lg">
+                              {driver.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {driver.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {driver.licenseType.replace('_', ' ').toUpperCase()} License
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         {driver.isAvailable ? (
@@ -514,6 +614,78 @@ export default function AgencyDrivers() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address *
+                </label>
+                <textarea
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  placeholder="Enter full address..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact *</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="emergencyContact.name"
+                      value={formData.emergencyContact.name}
+                      onChange={handleInputChange}
+                      placeholder="e.g., John Smith"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contact Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContact.phone"
+                      value={formData.emergencyContact.phone}
+                      onChange={handleInputChange}
+                      placeholder="e.g., +91 9876543210"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Relationship *
+                    </label>
+                    <select
+                      name="emergencyContact.relationship"
+                      value={formData.emergencyContact.relationship}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select relationship</option>
+                      <option value="Father">Father</option>
+                      <option value="Mother">Mother</option>
+                      <option value="Spouse">Spouse</option>
+                      <option value="Brother">Brother</option>
+                      <option value="Sister">Sister</option>
+                      <option value="Friend">Friend</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Languages Spoken
                 </label>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -551,6 +723,37 @@ export default function AgencyDrivers() {
                   </button>
                 </div>
               </div>
+
+              {/* Image Upload Section - Only show for existing drivers */}
+              {editingDriver && (
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Driver Images</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <ImageUpload
+                        label="License Image"
+                        placeholder="Upload driver's license document"
+                        currentImageUrl={editingDriver.licenseImage}
+                        onUpload={async (file) => {
+                          await uploadDriverLicense(editingDriver._id, file);
+                        }}
+                        maxSizeMB={10}
+                      />
+                    </div>
+                    <div>
+                      <ImageUpload
+                        label="Profile Photo"
+                        placeholder="Upload driver's profile photo"
+                        currentImageUrl={editingDriver.profilePhoto}
+                        onUpload={async (file) => {
+                          await uploadDriverPhoto(editingDriver._id, file);
+                        }}
+                        maxSizeMB={5}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button

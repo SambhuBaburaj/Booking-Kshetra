@@ -11,6 +11,12 @@ import {
 } from '../models';
 import { AgencyAuthRequest } from '../middleware/agencyAuth';
 import { emailService } from '../utils/email';
+import {
+  uploadImageToImageKit,
+  uploadMultipleImages,
+  IMAGE_FOLDERS,
+  IMAGE_TRANSFORMATIONS
+} from '../utils/imagekitUpload';
 
 // Agency Authentication
 export const agencyLogin = async (req: Request, res: Response) => {
@@ -750,6 +756,223 @@ export const updateAssignmentStatus = async (req: AgencyAuthRequest, res: Respon
     res.status(500).json({
       success: false,
       message: 'Internal server error'
+    });
+  }
+};
+
+// Image Upload Functions
+
+export const uploadDriverLicense = async (req: AgencyAuthRequest, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.agency) {
+      return res.status(401).json({
+        success: false,
+        message: 'Agency not authenticated'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    const { id: driverId } = req.params;
+
+    // Verify driver exists and belongs to agency
+    const driver = await Driver.findOne({
+      _id: driverId,
+      agencyId: req.agency._id
+    });
+
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found or does not belong to your agency'
+      });
+    }
+
+    // Upload license image to ImageKit
+    const imageUrl = await uploadImageToImageKit(req.file.buffer, {
+      folder: IMAGE_FOLDERS.DRIVERS.LICENSES,
+      fileName: `license_${driverId}`,
+      transformation: IMAGE_TRANSFORMATIONS.LICENSE_DOCUMENT
+    });
+
+    // Update driver with license image URL
+    driver.licenseImage = imageUrl;
+    await driver.save();
+
+    res.json({
+      success: true,
+      message: 'License image uploaded successfully',
+      data: {
+        driver,
+        licenseImageUrl: imageUrl
+      }
+    });
+  } catch (error) {
+    console.error('Upload driver license error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload license image'
+    });
+  }
+};
+
+export const uploadDriverPhoto = async (req: AgencyAuthRequest, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.agency) {
+      return res.status(401).json({
+        success: false,
+        message: 'Agency not authenticated'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
+      });
+    }
+
+    const { id: driverId } = req.params;
+
+    // Verify driver exists and belongs to agency
+    const driver = await Driver.findOne({
+      _id: driverId,
+      agencyId: req.agency._id
+    });
+
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found or does not belong to your agency'
+      });
+    }
+
+    // Upload profile photo to ImageKit
+    const imageUrl = await uploadImageToImageKit(req.file.buffer, {
+      folder: IMAGE_FOLDERS.DRIVERS.PROFILES,
+      fileName: `profile_${driverId}`,
+      transformation: IMAGE_TRANSFORMATIONS.PROFILE_PHOTO
+    });
+
+    // Update driver with profile photo URL
+    driver.profilePhoto = imageUrl;
+    await driver.save();
+
+    res.json({
+      success: true,
+      message: 'Profile photo uploaded successfully',
+      data: {
+        driver,
+        profilePhotoUrl: imageUrl
+      }
+    });
+  } catch (error) {
+    console.error('Upload driver photo error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload profile photo'
+    });
+  }
+};
+
+export const uploadVehicleImages = async (req: AgencyAuthRequest, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.agency) {
+      return res.status(401).json({
+        success: false,
+        message: 'Agency not authenticated'
+      });
+    }
+
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image files provided'
+      });
+    }
+
+    const { id: vehicleId } = req.params;
+
+    // Verify vehicle exists and belongs to agency
+    const vehicle = await Vehicle.findOne({
+      _id: vehicleId,
+      agencyId: req.agency._id
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle not found or does not belong to your agency'
+      });
+    }
+
+    // Check if adding new images would exceed the limit
+    const currentImageCount = vehicle.vehicleImages.length;
+    const newImageCount = req.files.length;
+    if (currentImageCount + newImageCount > 10) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot upload ${newImageCount} images. Vehicle already has ${currentImageCount} images. Maximum allowed is 10.`
+      });
+    }
+
+    // Upload vehicle images to ImageKit
+    const imageUrls = await uploadMultipleImages(req.files, {
+      folder: IMAGE_FOLDERS.VEHICLES,
+      fileName: `vehicle_${vehicleId}`,
+      transformation: IMAGE_TRANSFORMATIONS.VEHICLE_PHOTO
+    });
+
+    // Add new image URLs to vehicle's image array
+    vehicle.vehicleImages.push(...imageUrls);
+    await vehicle.save();
+
+    res.json({
+      success: true,
+      message: `${imageUrls.length} vehicle images uploaded successfully`,
+      data: {
+        vehicle,
+        newImageUrls: imageUrls,
+        totalImages: vehicle.vehicleImages.length
+      }
+    });
+  } catch (error) {
+    console.error('Upload vehicle images error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload vehicle images'
     });
   }
 };

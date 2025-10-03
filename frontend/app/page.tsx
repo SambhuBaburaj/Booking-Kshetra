@@ -45,8 +45,37 @@ export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [hoveredRoomType, setHoveredRoomType] = useState<"king" | "queen" | "dormitory" | null>(null);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+
+  // Room type images
+  const roomImages = {
+    king: [
+      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520637836862-4d197d17c881?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    ],
+    queen: [
+      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540518614846-7eded47d24e5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    ],
+    dormitory: [
+      "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1595814432314-90095f342694?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    ],
+    default: [
+      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+    ]
+  };
 
   const mainServices = [
     {
@@ -619,43 +648,77 @@ export default function Home() {
                 </h3>
 
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 text-white">
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    onMouseEnter={() => setHoveredRoomType('king')}
+                    onMouseLeave={() => setHoveredRoomType(null)}
+                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
+                      hoveredRoomType === 'king' ? 'bg-blue-500/20 shadow-lg shadow-blue-500/25' : 'hover:bg-white/10'
+                    }`}
+                  >
                     <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
                       <Bed className="w-6 h-6 text-blue-400" />
                     </div>
-                    <div>
-                      <h4 className="text-xl font-semibold">Deluxe AC Rooms</h4>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-semibold">King Sized Room</h4>
                       <p className="text-white/80">
+                        Spacious room with king-size bed and premium amenities
+                      </p>
+                      <p className="text-blue-400 font-semibold mt-1">
                         Starting from ₹3,500/night
                       </p>
                     </div>
-                  </div>
+                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                  </motion.div>
 
-                  <div className="flex items-center gap-4 text-white">
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    onMouseEnter={() => setHoveredRoomType('queen')}
+                    onMouseLeave={() => setHoveredRoomType(null)}
+                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
+                      hoveredRoomType === 'queen' ? 'bg-green-500/20 shadow-lg shadow-green-500/25' : 'hover:bg-white/10'
+                    }`}
+                  >
                     <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <TreePine className="w-6 h-6 text-green-400" />
+                      <Bed className="w-6 h-6 text-green-400" />
                     </div>
-                    <div>
-                      <h4 className="text-xl font-semibold">
-                        Garden View Non-AC
-                      </h4>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-semibold">Queen Sized Room</h4>
                       <p className="text-white/80">
-                        Starting from ₹2,500/night
+                        Comfortable room with queen-size bed and modern facilities
+                      </p>
+                      <p className="text-green-400 font-semibold mt-1">
+                        Starting from ₹2,800/night
                       </p>
                     </div>
-                  </div>
+                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                  </motion.div>
 
-                  <div className="flex items-center gap-4 text-white">
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    onMouseEnter={() => setHoveredRoomType('dormitory')}
+                    onMouseLeave={() => setHoveredRoomType(null)}
+                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
+                      hoveredRoomType === 'dormitory' ? 'bg-purple-500/20 shadow-lg shadow-purple-500/25' : 'hover:bg-white/10'
+                    }`}
+                  >
                     <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                      <Mountain className="w-6 h-6 text-purple-400" />
+                      <Users className="w-6 h-6 text-purple-400" />
                     </div>
-                    <div>
-                      <h4 className="text-xl font-semibold">Premium Suites</h4>
+                    <div className="flex-1">
+                      <h4 className="text-xl font-semibold">Dormitory</h4>
                       <p className="text-white/80">
-                        Starting from ₹5,500/night
+                        Shared accommodation perfect for budget travelers and groups
+                      </p>
+                      <p className="text-purple-400 font-semibold mt-1">
+                        Starting from ₹1,200/night per bed
                       </p>
                     </div>
-                  </div>
+                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                  </motion.div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4 mt-8">
@@ -699,7 +762,7 @@ export default function Home() {
               </motion.button>
             </motion.div>
 
-            {/* Room Images Carousel */}
+            {/* Room Images Gallery */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -707,31 +770,74 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="relative"
             >
+              {/* Room Type Indicator */}
+              <div className="mb-4 text-center">
+                <p className="text-white/60 text-sm">
+                  {hoveredRoomType ?
+                    `Viewing ${hoveredRoomType === 'king' ? 'King Sized Room' : hoveredRoomType === 'queen' ? 'Queen Sized Room' : 'Dormitory'} Images` :
+                    'Hover over room types to see images'
+                  }
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
-                {[
-                  "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                  "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                ].map((image, idx) => (
+                {(hoveredRoomType ? roomImages[hoveredRoomType] : roomImages.default).map((image, idx) => (
                   <motion.div
-                    key={idx}
+                    key={`${hoveredRoomType || 'default'}-${idx}`}
                     initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: idx * 0.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.4, delay: idx * 0.1 }}
                     whileHover={{ scale: 1.05, y: -10 }}
-                    className="relative overflow-hidden rounded-2xl"
+                    className="relative overflow-hidden rounded-2xl group"
                   >
                     <img
                       src={image}
-                      alt={`Room ${idx + 1}`}
-                      className="w-full h-48 object-cover"
+                      alt={`${hoveredRoomType || 'Room'} ${idx + 1}`}
+                      className="w-full h-48 object-cover transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
+                    {/* Image overlay with room type label */}
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                        hoveredRoomType === 'king' ? 'bg-blue-500/80 text-white' :
+                        hoveredRoomType === 'queen' ? 'bg-green-500/80 text-white' :
+                        hoveredRoomType === 'dormitory' ? 'bg-purple-500/80 text-white' :
+                        'bg-white/20 text-white/80'
+                      }`}>
+                        {hoveredRoomType === 'king' && <Bed className="w-3 h-3" />}
+                        {hoveredRoomType === 'queen' && <Bed className="w-3 h-3" />}
+                        {hoveredRoomType === 'dormitory' && <Users className="w-3 h-3" />}
+                        <span>
+                          {hoveredRoomType === 'king' ? 'King Room' :
+                           hoveredRoomType === 'queen' ? 'Queen Room' :
+                           hoveredRoomType === 'dormitory' ? 'Dormitory' :
+                           'Our Rooms'}
+                        </span>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </div>
+
+              {/* Hover instruction */}
+              {!hoveredRoomType && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-6 py-4 text-center">
+                    <p className="text-white text-lg font-semibold mb-2">
+                      Interactive Room Gallery
+                    </p>
+                    <p className="text-white/80 text-sm">
+                      Hover over room types on the left to see specific room images
+                    </p>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           </div>
         </div>

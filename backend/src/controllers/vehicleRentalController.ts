@@ -2,6 +2,11 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { VehicleRental } from '../models';
+import {
+  uploadMultipleImages,
+  IMAGE_FOLDERS,
+  IMAGE_TRANSFORMATIONS
+} from '../utils/imagekitUpload';
 
 // Get all vehicles (public)
 export const getVehicles = async (req: Request, res: Response) => {
@@ -285,6 +290,75 @@ export const getVehiclesForAdmin = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Internal server error'
+    });
+  }
+};
+
+// Upload vehicle rental images
+export const uploadVehicleRentalImages = async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image files provided'
+      });
+    }
+
+    const { id: vehicleId } = req.params;
+
+    // Verify vehicle exists
+    const vehicle = await VehicleRental.findById(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({
+        success: false,
+        message: 'Vehicle not found'
+      });
+    }
+
+    // Check if adding new images would exceed the limit
+    const currentImageCount = vehicle.images.length;
+    const newImageCount = req.files.length;
+    if (currentImageCount + newImageCount > 10) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot upload ${newImageCount} images. Vehicle already has ${currentImageCount} images. Maximum allowed is 10.`
+      });
+    }
+
+    // Upload vehicle images to ImageKit
+    const imageUrls = await uploadMultipleImages(req.files, {
+      folder: IMAGE_FOLDERS.VEHICLES,
+      fileName: `vehicle_rental_${vehicleId}`,
+      transformation: IMAGE_TRANSFORMATIONS.VEHICLE_PHOTO
+    });
+
+    // Add new image URLs to vehicle's image array
+    vehicle.images.push(...imageUrls);
+    await vehicle.save();
+
+    res.json({
+      success: true,
+      message: `${imageUrls.length} vehicle images uploaded successfully`,
+      data: {
+        vehicle,
+        newImageUrls: imageUrls,
+        totalImages: vehicle.images.length
+      }
+    });
+  } catch (error) {
+    console.error('Upload vehicle rental images error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload vehicle images'
     });
   }
 };

@@ -65,7 +65,7 @@ export default function AgenciesPage() {
 
       if (response.success && response.data) {
         // Ensure data is an array
-        const agenciesData = Array.isArray(response.data) ? response.data : response.data.agencies || [];
+        const agenciesData = Array.isArray(response.data) ? response.data : (response.data as any)?.agencies || [];
         setAgencies(agenciesData);
       } else {
         setError(response.error || 'Failed to fetch agencies');

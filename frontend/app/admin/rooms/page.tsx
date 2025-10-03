@@ -146,7 +146,7 @@ const AdminRoomsPage = () => {
             form.append('amenities[]', amenity);
           });
         } else {
-          form.append(key, formData[key].toString());
+          form.append(key, (formData as any)[key].toString());
         }
       });
 

@@ -934,7 +934,7 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Prerequisites</label>
-        {formData.prerequisites.map((prereq, index) => (
+        {formData.prerequisites.map((prereq: any, index: number) => (
           <div key={index} className="flex gap-2 mb-2">
             <input
               type="text"
@@ -951,7 +951,7 @@ const YogaSessionForm = ({ session, onSubmit, onCancel }: {
               <button
                 type="button"
                 onClick={() => {
-                  const newPrereqs = formData.prerequisites.filter((_, i) => i !== index);
+                  const newPrereqs = formData.prerequisites.filter((_: any, i: number) => i !== index);
                   setFormData(prev => ({ ...prev, prerequisites: newPrereqs }));
                 }}
                 className="px-3 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50"
@@ -1044,13 +1044,13 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
     }
 
     // Time slots validation
-    const validTimeSlots = formData.timeSlots.filter(slot => slot.time.trim() !== '');
+    const validTimeSlots = formData.timeSlots.filter((slot: any) => slot.time.trim() !== '');
     if (validTimeSlots.length === 0) {
       newErrors.timeSlots = 'At least one time slot is required';
     }
 
     // Features validation
-    const validFeatures = formData.features.filter(f => f.trim() !== '');
+    const validFeatures = formData.features.filter((f: any) => f.trim() !== '');
     if (validFeatures.length === 0) {
       newErrors.features = 'At least one feature is required';
     }
@@ -1092,8 +1092,8 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
 
     onSubmit({
       ...formData,
-      features: formData.features.filter(f => f.trim() !== ''),
-      timeSlots: formData.timeSlots.filter(slot => slot.time.trim() !== '')
+      features: formData.features.filter((f: any) => f.trim() !== ''),
+      timeSlots: formData.timeSlots.filter((slot: any) => slot.time.trim() !== '')
     });
   };
 
@@ -1107,7 +1107,7 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
   const updateTimeSlot = (index: number, field: 'time' | 'isActive', value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
-      timeSlots: prev.timeSlots.map((slot, i) =>
+      timeSlots: prev.timeSlots.map((slot: any, i: number) =>
         i === index ? { ...slot, [field]: value } : slot
       )
     }));
@@ -1116,7 +1116,7 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
   const removeTimeSlot = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      timeSlots: prev.timeSlots.filter((_, i) => i !== index)
+      timeSlots: prev.timeSlots.filter((_: any, i: number) => i !== index)
     }));
   };
 
@@ -1130,14 +1130,14 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
   const updateFeature = (index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      features: prev.features.map((feature, i) => i === index ? value : feature)
+      features: prev.features.map((feature: any, i: number) => i === index ? value : feature)
     }));
   };
 
   const removeFeature = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      features: prev.features.filter((_, i) => i !== index)
+      features: prev.features.filter((_: any, i: number) => i !== index)
     }));
   };
 
@@ -1231,7 +1231,7 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Time Slots *</label>
-        {formData.timeSlots.map((slot, index) => (
+        {formData.timeSlots.map((slot: any, index: number) => (
           <div key={index} className="flex gap-2 mb-2 items-center">
             <input
               type="time"
@@ -1272,7 +1272,7 @@ const DailySessionForm = ({ session, onSubmit, onCancel }: {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Features *</label>
-        {formData.features.map((feature, index) => (
+        {formData.features.map((feature: any, index: number) => (
           <div key={index} className="flex gap-2 mb-2">
             <input
               type="text"

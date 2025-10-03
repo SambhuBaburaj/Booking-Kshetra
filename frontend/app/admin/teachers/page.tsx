@@ -13,6 +13,7 @@ import {
   Award,
   Eye
 } from 'lucide-react';
+import ImageUpload from '../../../components/ImageUpload';
 
 interface Teacher {
   _id: string;
@@ -66,6 +67,46 @@ const TeachersAdmin = () => {
     } catch (error) {
       console.error('Error deleting teacher:', error);
       toast.error('Failed to delete teacher. Please try again.');
+    }
+  };
+
+  const uploadTeacherProfileImage = async (teacherId: string, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5001/api/yoga/teachers/${teacherId}/upload-profile-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Update the teacher in local state
+        setTeachers(prev => prev.map(t =>
+          t._id === teacherId
+            ? { ...t, profileImage: result.data.profileImageUrl }
+            : t
+        ));
+
+        // Update editing teacher if it's the same one
+        if (editingTeacher && editingTeacher._id === teacherId) {
+          setEditingTeacher(prev => prev ? { ...prev, profileImage: result.data.profileImageUrl } : null);
+        }
+
+        toast.success('Profile image uploaded successfully!');
+      } else {
+        throw new Error(result.message || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Failed to upload image. Please try again.');
+      throw error;
     }
   };
 
@@ -311,12 +352,27 @@ const TeachersAdmin = () => {
                   teacher={editingTeacher}
                   onSubmit={async (teacherData) => {
                     try {
+                      let teacherId: string;
+
                       if (editingTeacher) {
                         await adminAPI.updateYogaTeacher(editingTeacher._id, teacherData);
+                        teacherId = editingTeacher._id;
                         toast.success('Teacher updated successfully!');
                       } else {
-                        await adminAPI.createYogaTeacher(teacherData);
+                        const response = await adminAPI.createYogaTeacher(teacherData);
+                        teacherId = response.data.data._id; // Get the new teacher ID
                         toast.success('Teacher created successfully!');
+
+                        // Upload pending image if exists
+                        if (teacherData.pendingImage) {
+                          try {
+                            await uploadTeacherProfileImage(teacherId, teacherData.pendingImage);
+                            toast.success('Profile image uploaded successfully!');
+                          } catch (imageError) {
+                            console.error('Error uploading teacher image:', imageError);
+                            toast.error('Teacher created but failed to upload image. You can try uploading it again by editing the teacher.');
+                          }
+                        }
                       }
 
                       await fetchTeachers();
@@ -331,6 +387,7 @@ const TeachersAdmin = () => {
                     setShowModal(false);
                     setEditingTeacher(null);
                   }}
+                  onUploadImage={uploadTeacherProfileImage}
                 />
               </div>
             </div>
@@ -342,10 +399,11 @@ const TeachersAdmin = () => {
 };
 
 // Teacher Form Component
-const TeacherForm = ({ teacher, onSubmit, onCancel }: {
+const TeacherForm = ({ teacher, onSubmit, onCancel, onUploadImage }: {
   teacher: Teacher | null;
   onSubmit: (data: any) => void;
   onCancel: () => void;
+  onUploadImage: (teacherId: string, file: File) => Promise<void>;
 }) => {
   const [formData, setFormData] = useState({
     name: teacher?.name || '',
@@ -362,12 +420,25 @@ const TeacherForm = ({ teacher, onSubmit, onCancel }: {
     }
   });
 
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+
+  // Cleanup preview URL when component unmounts or image changes
+  useEffect(() => {
+    return () => {
+      if (pendingImagePreview) {
+        URL.revokeObjectURL(pendingImagePreview);
+      }
+    };
+  }, [pendingImagePreview]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...formData,
       specializations: formData.specializations.filter(s => s.trim() !== ''),
-      certifications: formData.certifications.filter(c => c.trim() !== '')
+      certifications: formData.certifications.filter(c => c.trim() !== ''),
+      pendingImage: pendingImage
     });
   };
 
@@ -443,6 +514,41 @@ const TeacherForm = ({ teacher, onSubmit, onCancel }: {
           onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
+      </div>
+
+      {/* Profile Image Upload */}
+      <div>
+        {teacher ? (
+          // Existing teacher - upload directly
+          <ImageUpload
+            label="Profile Image"
+            placeholder="Upload teacher's profile photo"
+            currentImageUrl={teacher.profileImage}
+            onUpload={async (file: File) => {
+              await onUploadImage(teacher._id, file);
+            }}
+            maxSizeMB={5}
+          />
+        ) : (
+          // New teacher - store image for upload after creation
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Profile Image</label>
+            <ImageUpload
+              placeholder="Upload teacher's profile photo (will be saved when teacher is created)"
+              currentImageUrl={pendingImagePreview || undefined}
+              onUpload={async (file: File) => {
+                setPendingImage(file);
+                // Create preview URL
+                const previewUrl = URL.createObjectURL(file);
+                setPendingImagePreview(previewUrl);
+              }}
+              maxSizeMB={5}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              The profile image will be uploaded after the teacher is created.
+            </p>
+          </div>
+        )}
       </div>
 
       <div>

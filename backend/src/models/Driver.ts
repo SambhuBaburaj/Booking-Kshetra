@@ -7,6 +7,8 @@ export interface IDriver extends Document {
   licenseNumber: string;
   licenseType: 'light_vehicle' | 'heavy_vehicle' | 'commercial' | 'international';
   licenseExpiryDate: Date;
+  licenseImage?: string; // URL to license image
+  profilePhoto?: string; // URL to profile photo
   agencyId: mongoose.Types.ObjectId;
   isAvailable: boolean;
   experience: number; // years of experience
@@ -68,6 +70,16 @@ const driverSchema = new Schema<IDriver>(
         },
         message: 'License expiry date must be in the future'
       }
+    },
+    licenseImage: {
+      type: String,
+      trim: true,
+      default: null
+    },
+    profilePhoto: {
+      type: String,
+      trim: true,
+      default: null
     },
     agencyId: {
       type: Schema.Types.ObjectId,

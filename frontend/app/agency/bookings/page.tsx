@@ -116,15 +116,15 @@ export default function AgencyBookings() {
       ]);
 
       if (bookingsResponse.success && bookingsResponse.data) {
-        setBookings(bookingsResponse.data.bookings || []);
+        setBookings((bookingsResponse.data as any)?.bookings || []);
       }
 
       if (vehiclesResponse.success && vehiclesResponse.data) {
-        setVehicles(vehiclesResponse.data.vehicles || []);
+        setVehicles((vehiclesResponse.data as any)?.vehicles || []);
       }
 
       if (driversResponse.success && driversResponse.data) {
-        setDrivers(driversResponse.data.drivers || []);
+        setDrivers((driversResponse.data as any)?.drivers || []);
       }
 
       setError('');
