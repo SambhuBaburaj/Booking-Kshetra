@@ -18,7 +18,8 @@ import {
   Lock,
   Smartphone,
   Loader,
-  Clock
+  Clock,
+  Percent
 } from 'lucide-react'
 import Header from '../../../components/Header'
 import { bookingAPI } from '../../../lib/api'
