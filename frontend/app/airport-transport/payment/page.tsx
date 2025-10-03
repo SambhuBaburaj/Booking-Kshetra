@@ -676,12 +676,12 @@ function PaymentPageContent() {
                         }))}
                         className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:border-purple-400 focus:outline-none"
                       >
-                        <option value="" disabled>Relationship</option>
-                        <option value="spouse">Spouse</option>
-                        <option value="parent">Parent</option>
-                        <option value="sibling">Sibling</option>
-                        <option value="friend">Friend</option>
-                        <option value="relative">Relative</option>
+                        <option className='text-black bg-gray-400 ' value="" disabled>Relationship</option>
+                        <option className='text-black bg-gray-400 ' value="spouse">Spouse</option>
+                        <option className='text-black bg-gray-400 ' value="parent">Parent</option>
+                        <option className='text-black bg-gray-400 ' value="sibling">Sibling</option>
+                        <option className='text-black bg-gray-400 ' value="friend">Friend</option>
+                        <option className='text-black bg-gray-400 ' value="relative">Relative</option>
                       </select>
                     </div>
                   </div>

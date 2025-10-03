@@ -45,7 +45,7 @@ export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [hoveredRoomType, setHoveredRoomType] = useState(null);
+  const [hoveredRoomType, setHoveredRoomType] = useState<"king" | "queen" | "dormitory" | null>(null);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
