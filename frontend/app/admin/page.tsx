@@ -14,6 +14,40 @@ import {
   Bell
 } from 'lucide-react';
 
+interface RecentBooking {
+  _id: string;
+  userId?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  roomId?: {
+    roomNumber: string;
+    roomType: string;
+    pricePerNight: number;
+  };
+  primaryGuestInfo?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  guestEmail?: string;
+  checkIn: string;
+  checkOut: string;
+  totalAmount: number;
+  status: string;
+  selectedServices?: any[];
+  yogaSessionId?: any;
+  bookingType?: string;
+  transportPrice?: number;
+  yogaPrice?: number;
+  servicesPrice?: number;
+  transport?: {
+    pickup: boolean;
+    drop: boolean;
+  };
+}
+
 interface DashboardStats {
   overview: {
     totalBookings: number;
@@ -30,7 +64,7 @@ interface DashboardStats {
     confirmed: number;
     cancelled: number;
   };
-  recentBookings: any[];
+  recentBookings: RecentBooking[];
   occupiedRooms: number;
 }
 
@@ -54,6 +88,38 @@ interface YogaAnalytics {
     count: number;
   }>;
 }
+
+// Helper functions for booking type identification
+const getBookingTypeLabel = (booking: RecentBooking): string => {
+  if (booking.yogaPrice > 0 || booking.yogaSessionId) {
+    return 'Yoga Session';
+  }
+  if (booking.transportPrice > 0 && (!booking.roomId && booking.servicesPrice === 0)) {
+    return 'Transport';
+  }
+  if (booking.selectedServices && booking.selectedServices.length > 0) {
+    return 'Services';
+  }
+  return 'Service Booking';
+};
+
+const getBookingTypeDescription = (booking: RecentBooking): string => {
+  if (booking.yogaPrice > 0 || booking.yogaSessionId) {
+    return typeof booking.yogaSessionId === 'object' && booking.yogaSessionId?.type
+      ? `${booking.yogaSessionId.type}`
+      : 'Daily Session';
+  }
+  if (booking.transportPrice > 0 && (!booking.roomId && booking.servicesPrice === 0)) {
+    const parts = [];
+    if (booking.transport?.pickup) parts.push('Pickup');
+    if (booking.transport?.drop) parts.push('Drop');
+    return parts.length > 0 ? `Airport ${parts.join(' & ')}` : 'Transport Service';
+  }
+  if (booking.selectedServices && booking.selectedServices.length > 0) {
+    return `${booking.selectedServices.length} service(s)`;
+  }
+  return 'Service Only';
+};
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -377,18 +443,21 @@ const AdminDashboard = () => {
                   <tr key={booking._id || index}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {booking.userId?.name || 'N/A'}
+                        {booking.userId?.name || booking.primaryGuestInfo?.name || 'Guest'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.userId?.email || 'N/A'}
+                        {booking.userId?.email || booking.primaryGuestInfo?.email || booking.guestEmail || 'N/A'}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.userId?.phone || booking.primaryGuestInfo?.phone || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {booking.roomId?.roomNumber || 'N/A'}
+                        {booking.roomId?.roomNumber || getBookingTypeLabel(booking)}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.roomId?.roomType || 'N/A'}
+                        {booking.roomId?.roomType || getBookingTypeDescription(booking)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

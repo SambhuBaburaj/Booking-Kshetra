@@ -179,6 +179,10 @@ export default function AdminVehicleRentals() {
   const [newTerm, setNewTerm] = useState('');
   const [newImage, setNewImage] = useState('');
 
+  // Image upload state for new vehicles
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
+
   useEffect(() => {
     fetchVehicles();
   }, [typeFilter]);
@@ -221,6 +225,8 @@ export default function AdminVehicleRentals() {
   const handleCreateVehicle = () => {
     setEditingVehicle(null);
     setFormData(initialFormData);
+    setPendingImages([]);
+    setPendingImagePreviews([]);
     setShowModal(true);
   };
 
@@ -319,8 +325,23 @@ export default function AdminVehicleRentals() {
         const data = await response.json();
 
         if (data.success) {
-          setVehicles([...vehicles, data.data]);
+          const newVehicle = data.data;
+
+          // Upload pending images if any
+          if (pendingImages.length > 0) {
+            try {
+              await uploadVehicleImages(newVehicle._id, pendingImages);
+              // The uploadVehicleImages function already updates the local state
+            } catch (imageError) {
+              console.error('Failed to upload images for new vehicle:', imageError);
+              setError('Vehicle created but failed to upload images. You can upload them later by editing the vehicle.');
+            }
+          }
+
+          setVehicles([...vehicles, newVehicle]);
           setShowModal(false);
+          setPendingImages([]);
+          setPendingImagePreviews([]);
         } else {
           setError(data.message || 'Failed to create vehicle');
         }
@@ -397,7 +418,7 @@ export default function AdminVehicleRentals() {
       });
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/vehicle-rentals/admin/${vehicleId}/upload-images`, {
+      const response = await fetch(`http://localhost:5001/api/vehicles/admin/${vehicleId}/upload-images`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1001,8 +1022,9 @@ export default function AdminVehicleRentals() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
 
-                {/* ImageKit Upload Component - Only show for existing vehicles */}
-                {editingVehicle && (
+                {/* ImageKit Upload Component */}
+                {editingVehicle ? (
+                  // Existing vehicle - upload directly
                   <div className="mb-6">
                     <ImageUpload
                       variant="multiple"
@@ -1012,6 +1034,27 @@ export default function AdminVehicleRentals() {
                       maxFiles={10 - formData.images.length}
                       onUpload={async (files: File[]) => {
                         await uploadVehicleImages(editingVehicle._id, files);
+                      }}
+                      maxSizeMB={5}
+                    />
+                  </div>
+                ) : (
+                  // New vehicle - store images temporarily
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-600 mb-3">Note: Images will be uploaded when the vehicle is created.</p>
+                    <ImageUpload
+                      variant="multiple"
+                      label="Select Vehicle Images"
+                      placeholder="Select multiple vehicle images (max 10 total)"
+                      currentImageUrls={pendingImagePreviews}
+                      maxFiles={10}
+                      onUpload={async (files: File[]) => {
+                        // Store files for upload after creation
+                        setPendingImages(prev => [...prev, ...files]);
+
+                        // Create preview URLs
+                        const newPreviews = files.map(file => URL.createObjectURL(file));
+                        setPendingImagePreviews(prev => [...prev, ...newPreviews]);
                       }}
                       maxSizeMB={5}
                     />
@@ -1101,7 +1144,13 @@ export default function AdminVehicleRentals() {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    // Clean up object URLs to prevent memory leaks
+                    pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                    setPendingImages([]);
+                    setPendingImagePreviews([]);
+                    setShowModal(false);
+                  }}
                   className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={submitLoading}
                 >

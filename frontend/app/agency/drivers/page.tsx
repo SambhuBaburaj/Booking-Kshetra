@@ -90,6 +90,12 @@ export default function AgencyDrivers() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [newLanguage, setNewLanguage] = useState('');
 
+  // Image upload state for new drivers
+  const [pendingLicenseImage, setPendingLicenseImage] = useState<File | null>(null);
+  const [pendingProfilePhoto, setPendingProfilePhoto] = useState<File | null>(null);
+  const [pendingLicensePreview, setPendingLicensePreview] = useState<string>('');
+  const [pendingProfilePreview, setPendingProfilePreview] = useState<string>('');
+
   useEffect(() => {
     fetchDrivers();
   }, []);
@@ -114,6 +120,10 @@ export default function AgencyDrivers() {
   const handleCreateDriver = () => {
     setEditingDriver(null);
     setFormData(initialFormData);
+    setPendingLicenseImage(null);
+    setPendingProfilePhoto(null);
+    setPendingLicensePreview('');
+    setPendingProfilePreview('');
     setShowModal(true);
   };
 
@@ -179,8 +189,27 @@ export default function AgencyDrivers() {
         const response = await apiClient.agencyPost('/agency/drivers', formData);
 
         if (response.success && response.data) {
-          setDrivers([...drivers, (response.data as any)?.driver]);
+          const newDriver = (response.data as any)?.driver;
+
+          // Upload pending images if any
+          try {
+            if (pendingLicenseImage) {
+              await uploadDriverLicense(newDriver._id, pendingLicenseImage);
+            }
+            if (pendingProfilePhoto) {
+              await uploadDriverPhoto(newDriver._id, pendingProfilePhoto);
+            }
+          } catch (imageError) {
+            console.error('Failed to upload images for new driver:', imageError);
+            setError('Driver created but failed to upload images. You can upload them later by editing the driver.');
+          }
+
+          setDrivers([...drivers, newDriver]);
           setShowModal(false);
+          setPendingLicenseImage(null);
+          setPendingProfilePhoto(null);
+          setPendingLicensePreview('');
+          setPendingProfilePreview('');
         } else {
           setError(response.error || 'Failed to create driver');
         }
@@ -725,9 +754,10 @@ export default function AgencyDrivers() {
               </div>
 
               {/* Image Upload Section - Only show for existing drivers */}
-              {editingDriver && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Driver Images</h3>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Driver Images</h3>
+                {editingDriver ? (
+                  // Existing driver - upload directly
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <ImageUpload
@@ -752,13 +782,53 @@ export default function AgencyDrivers() {
                       />
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  // New driver - store images temporarily
+                  <div>
+                    <p className="text-sm text-gray-600 mb-4">Note: Images will be uploaded when the driver is created.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <ImageUpload
+                          label="License Image"
+                          placeholder="Select driver's license document"
+                          currentImageUrl={pendingLicensePreview}
+                          onUpload={async (file) => {
+                            setPendingLicenseImage(file);
+                            setPendingLicensePreview(URL.createObjectURL(file));
+                          }}
+                          maxSizeMB={10}
+                        />
+                      </div>
+                      <div>
+                        <ImageUpload
+                          label="Profile Photo"
+                          placeholder="Select driver's profile photo"
+                          currentImageUrl={pendingProfilePreview}
+                          onUpload={async (file) => {
+                            setPendingProfilePhoto(file);
+                            setPendingProfilePreview(URL.createObjectURL(file));
+                          }}
+                          maxSizeMB={5}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    // Clean up object URLs to prevent memory leaks
+                    if (pendingLicensePreview) URL.revokeObjectURL(pendingLicensePreview);
+                    if (pendingProfilePreview) URL.revokeObjectURL(pendingProfilePreview);
+                    setPendingLicenseImage(null);
+                    setPendingProfilePhoto(null);
+                    setPendingLicensePreview('');
+                    setPendingProfilePreview('');
+                    setShowModal(false);
+                  }}
                   className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={submitLoading}
                 >
