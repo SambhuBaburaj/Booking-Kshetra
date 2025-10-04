@@ -23,7 +23,7 @@ export class EmailService {
     });
   }
 
-  async sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendEmail(options: EmailOptions & { cc?: string; bcc?: string }): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
       // Check if email configuration is available
       if (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your-email@gmail.com') {
@@ -40,6 +40,8 @@ export class EmailService {
       const mailOptions = {
         from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
         to: options.to,
+        cc: options.cc,
+        bcc: options.bcc,
         subject: options.subject,
         html: options.html,
         text: options.text,
@@ -47,6 +49,7 @@ export class EmailService {
 
       const result = await this.transporter.sendMail(mailOptions);
 
+      console.log(`✅ Email sent successfully to ${options.to} - Subject: ${options.subject}`);
       return {
         success: true,
         messageId: result.messageId
@@ -206,8 +209,10 @@ export class EmailService {
 
     const html = this.generateBookingConfirmationEmail(booking, guestInfo);
 
+    // Send to customer with CC to admin
     return this.sendEmail({
       to: guestInfo.email,
+      cc: process.env.ADMIN_EMAIL,
       subject: 'Booking Confirmation - Kshetra Retreat Resort',
       html,
       text: `Your booking ${booking._id} at Kshetra Retreat Resort has been confirmed.`
@@ -219,6 +224,7 @@ export class EmailService {
 
     return this.sendEmail({
       to: user.email,
+      cc: process.env.ADMIN_EMAIL,
       subject: 'Booking Cancellation - Kshetra Retreat Resort',
       html,
       text: `Your booking ${booking._id} at Kshetra Retreat Resort has been cancelled.`
@@ -328,6 +334,366 @@ export class EmailService {
 
           <div class="footer">
             <p>This is an automated notification. Please do not reply to this email.</p>
+            <p>&copy; 2025 Kshetra Retreat Resort. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Enhanced driver assignment notification with photos and details
+  async sendDriverAssignmentNotification(booking: any, driver: any, vehicle: any, assignment: any): Promise<{ success: boolean; error?: string }> {
+    const customerEmail = booking.guestEmail || (booking.userId as any)?.email || booking.primaryGuestInfo?.email;
+
+    if (!customerEmail) {
+      return {
+        success: false,
+        error: 'No customer email available for driver assignment notification'
+      };
+    }
+
+    const html = this.generateDriverAssignmentEmail(booking, driver, vehicle, assignment);
+
+    // Send to customer with CC to admin
+    return this.sendEmail({
+      to: customerEmail,
+      cc: process.env.ADMIN_EMAIL,
+      subject: 'Driver & Vehicle Assigned - Transport Details',
+      html,
+      text: `Your transport has been assigned. Driver: ${driver.name}, Vehicle: ${vehicle.brand} ${vehicle.vehicleModel}`
+    });
+  }
+
+  // Generate enhanced driver assignment email template
+  private generateDriverAssignmentEmail(booking: any, driver: any, vehicle: any, assignment: any): string {
+    const customerName = booking.primaryGuestInfo?.name || booking.guests[0]?.name || 'Guest';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; }
+          .container { max-width: 700px; margin: 0 auto; background-color: white; }
+          .header { background: linear-gradient(135deg, #2c5530, #4a7c59); color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; }
+          .driver-card, .vehicle-card { background-color: #f8f9fa; border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 5px solid #2c5530; }
+          .profile-section { display: flex; align-items: center; margin-bottom: 20px; }
+          .profile-photo { width: 80px; height: 80px; border-radius: 50%; margin-right: 20px; object-fit: cover; border: 3px solid #2c5530; }
+          .contact-info { background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .schedule-info { background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .emergency-info { background-color: #f8d7da; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .footer { background-color: #2c5530; color: white; padding: 20px; text-align: center; }
+          .highlight { color: #2c5530; font-weight: bold; }
+          .vehicle-image { width: 200px; height: 150px; object-fit: cover; border-radius: 8px; margin: 10px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🚗 Transport Assigned!</h1>
+            <p>Your driver and vehicle details for Kshetra Retreat Resort</p>
+          </div>
+
+          <div class="content">
+            <h2>Dear ${customerName},</h2>
+            <p>Great news! We have assigned a professional driver and vehicle for your transport to/from Kshetra Retreat Resort.</p>
+
+            <div class="driver-card">
+              <h3>👨‍✈️ Your Driver</h3>
+              <div class="profile-section">
+                ${driver.profilePhoto ? `<img src="${driver.profilePhoto}" alt="Driver Photo" class="profile-photo">` : '<div style="width: 80px; height: 80px; background-color: #ccc; border-radius: 50%; margin-right: 20px; display: flex; align-items: center; justify-content: center; font-size: 24px;">👤</div>'}
+                <div>
+                  <h4 style="margin: 0; color: #2c5530;">${driver.name}</h4>
+                  <p style="margin: 5px 0; color: #666;">Professional Driver</p>
+                  <p style="margin: 5px 0;"><strong>Experience:</strong> ${driver.experience} years</p>
+                  <p style="margin: 5px 0;"><strong>Languages:</strong> ${driver.languages.join(', ')}</p>
+                </div>
+              </div>
+
+              <div class="contact-info">
+                <h4>📞 Contact Information</h4>
+                <p><strong>Phone:</strong> <a href="tel:${driver.phone}" style="color: #2c5530;">${driver.phone}</a></p>
+                ${driver.email ? `<p><strong>Email:</strong> <a href="mailto:${driver.email}" style="color: #2c5530;">${driver.email}</a></p>` : ''}
+              </div>
+
+              <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h4>🆔 License Information</h4>
+                <p><strong>License Number:</strong> ${driver.licenseNumber}</p>
+                <p><strong>License Type:</strong> ${driver.licenseType.replace('_', ' ').toUpperCase()}</p>
+                <p><strong>Valid Until:</strong> ${new Date(driver.licenseExpiryDate).toLocaleDateString('en-IN')}</p>
+                ${driver.licenseImage ? `
+                  <p><strong>License Copy:</strong></p>
+                  <img src="${driver.licenseImage}" alt="Driver License" style="max-width: 300px; border-radius: 8px; margin: 10px 0;">
+                ` : ''}
+              </div>
+            </div>
+
+            <div class="vehicle-card">
+              <h3>🚙 Your Vehicle</h3>
+              <div style="display: flex; align-items: flex-start; gap: 20px;">
+                <div style="flex: 1;">
+                  <h4 style="color: #2c5530; margin: 0;">${vehicle.brand} ${vehicle.vehicleModel}</h4>
+                  <p style="font-size: 18px; font-weight: bold; color: #2c5530; margin: 5px 0;">${vehicle.vehicleNumber}</p>
+                  <p><strong>Type:</strong> ${vehicle.vehicleType}</p>
+                  <p><strong>Capacity:</strong> ${vehicle.capacity} passengers</p>
+                  <p><strong>Year:</strong> ${vehicle.year || 'N/A'}</p>
+                  <p><strong>Color:</strong> ${vehicle.color || 'N/A'}</p>
+                </div>
+                ${vehicle.images && vehicle.images.length > 0 ? `
+                  <div>
+                    <img src="${vehicle.images[0]}" alt="Vehicle Photo" class="vehicle-image">
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
+            ${assignment.pickupTime || assignment.dropTime ? `
+            <div class="schedule-info">
+              <h3>📅 Schedule Information</h3>
+              ${assignment.pickupTime ? `<p><strong>Pickup Time:</strong> ${new Date(assignment.pickupTime).toLocaleString('en-IN')}</p>` : ''}
+              ${assignment.dropTime ? `<p><strong>Drop Time:</strong> ${new Date(assignment.dropTime).toLocaleString('en-IN')}</p>` : ''}
+              ${booking.transport?.pickupTerminal ? `<p><strong>Pickup Terminal:</strong> ${booking.transport.pickupTerminal}</p>` : ''}
+              ${booking.transport?.dropTerminal ? `<p><strong>Drop Terminal:</strong> ${booking.transport.dropTerminal}</p>` : ''}
+              ${booking.transport?.flightNumber ? `<p><strong>Flight Number:</strong> ${booking.transport.flightNumber}</p>` : ''}
+            </div>
+            ` : ''}
+
+            ${assignment.notes ? `
+            <div style="background-color: #f0f8ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+              <h4>📝 Special Instructions</h4>
+              <p>${assignment.notes}</p>
+            </div>
+            ` : ''}
+
+            <div class="emergency-info">
+              <h4>🚨 Emergency Contact</h4>
+              <p><strong>Driver's Emergency Contact:</strong></p>
+              <p>${driver.emergencyContact.name} (${driver.emergencyContact.relationship})</p>
+              <p>Phone: <a href="tel:${driver.emergencyContact.phone}" style="color: #2c5530;">${driver.emergencyContact.phone}</a></p>
+            </div>
+
+            <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c3e6cb;">
+              <h4 style="color: #155724; margin-top: 0;">📱 Important Notes:</h4>
+              <ul style="color: #155724; margin: 0;">
+                <li>Your driver will contact you 30 minutes before pickup</li>
+                <li>Please keep your phone accessible</li>
+                <li>Verify the vehicle number plate before boarding</li>
+                <li>For any issues, contact resort immediately</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer">
+            <h3>Kshetra Retreat Resort</h3>
+            <p>📞 Resort Contact: +91-XXXXXXXXXX</p>
+            <p>📧 Email: info@kshetraretreat.com</p>
+            <p style="margin-top: 20px; font-size: 12px;">This is an automated notification. Safe travels!</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Send admin notification for new bookings
+  async sendAdminBookingNotification(booking: any, user?: any): Promise<{ success: boolean; error?: string }> {
+    const html = this.generateAdminBookingNotificationEmail(booking, user);
+
+    return this.sendEmail({
+      to: process.env.ADMIN_EMAIL!,
+      subject: `🏨 New Booking Alert - ${booking._id}`,
+      html,
+      text: `New booking received: ${booking._id} - Amount: ₹${booking.totalAmount}`
+    });
+  }
+
+  // Generate admin booking notification email
+  private generateAdminBookingNotificationEmail(booking: any, user?: any): string {
+    const guestInfo = user || {
+      name: booking.primaryGuestInfo?.name || 'Guest',
+      email: booking.guestEmail || booking.primaryGuestInfo?.email,
+      phone: booking.primaryGuestInfo?.phone
+    };
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #1976d2; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background-color: #f9f9f9; padding: 20px; }
+          .booking-card { background-color: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 5px solid #1976d2; }
+          .alert { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+          .amount { font-size: 24px; font-weight: bold; color: #2e7d32; text-align: center; padding: 15px; background-color: #e8f5e9; border-radius: 8px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🏨 NEW BOOKING ALERT</h1>
+            <p>Kshetra Retreat Resort - Admin Dashboard</p>
+            <p style="font-size: 14px; margin: 0;">Booking ID: ${booking._id}</p>
+          </div>
+
+          <div class="content">
+            <div class="alert">
+              <strong>⚡ Action Required:</strong> New booking received and requires your attention for processing.
+            </div>
+
+            <div class="amount">
+              💰 Total Amount: ₹${booking.totalAmount}
+            </div>
+
+            <div class="booking-card">
+              <h3>Guest Information</h3>
+              <p><strong>Name:</strong> ${guestInfo.name}</p>
+              <p><strong>Email:</strong> ${guestInfo.email || 'Not provided'}</p>
+              <p><strong>Phone:</strong> ${guestInfo.phone || 'Not provided'}</p>
+              ${booking.primaryGuestInfo?.address ? `<p><strong>Address:</strong> ${booking.primaryGuestInfo.address}</p>` : ''}
+            </div>
+
+            <div class="booking-card">
+              <h3>Booking Details</h3>
+              <p><strong>Check-in:</strong> ${new Date(booking.checkIn).toLocaleDateString('en-IN')}</p>
+              <p><strong>Check-out:</strong> ${new Date(booking.checkOut).toLocaleDateString('en-IN')}</p>
+              <p><strong>Guests:</strong> ${booking.totalGuests} (${booking.adults} Adults, ${booking.children} Children)</p>
+              <p><strong>Room:</strong> ${booking.roomId?.roomNumber || 'TBD'} (${booking.roomId?.roomType || 'N/A'})</p>
+              <p><strong>Status:</strong> ${booking.status}</p>
+              <p><strong>Payment Status:</strong> ${booking.paymentStatus || 'Pending'}</p>
+            </div>
+
+            ${booking.transport && (booking.transport.pickup || booking.transport.drop) ? `
+            <div class="booking-card" style="border-left-color: #ff9800;">
+              <h3>🚗 Transport Required</h3>
+              ${booking.transport.pickup ? `<p>✅ <strong>Airport Pickup Required</strong></p>` : ''}
+              ${booking.transport.drop ? `<p>✅ <strong>Airport Drop Required</strong></p>` : ''}
+              ${booking.transport.flightNumber ? `<p><strong>Flight:</strong> ${booking.transport.flightNumber}</p>` : ''}
+              ${booking.transport.flightArrivalTime ? `<p><strong>Arrival:</strong> ${new Date(booking.transport.flightArrivalTime).toLocaleString('en-IN')}</p>` : ''}
+              ${booking.transport.flightDepartureTime ? `<p><strong>Departure:</strong> ${new Date(booking.transport.flightDepartureTime).toLocaleString('en-IN')}</p>` : ''}
+            </div>
+            ` : ''}
+
+            ${booking.selectedServices && booking.selectedServices.length > 0 ? `
+            <div class="booking-card">
+              <h3>Additional Services</h3>
+              ${booking.selectedServices.map((service: any) => `
+                <p>• ${service.serviceId?.name || 'Unknown Service'} (Qty: ${service.quantity}) - ₹${service.totalPrice}</p>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            ${booking.specialRequests ? `
+            <div class="booking-card">
+              <h3>Special Requests</h3>
+              <p>${booking.specialRequests}</p>
+            </div>
+            ` : ''}
+
+            <div class="booking-card" style="background-color: #e3f2fd;">
+              <h3>📊 Quick Actions</h3>
+              <p>1. Verify room availability</p>
+              <p>2. Confirm transport arrangements (if required)</p>
+              <p>3. Prepare welcome amenities</p>
+              <p>4. Update booking status in system</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  // Send payment confirmation email
+  async sendPaymentConfirmation(booking: any, paymentDetails: any, user?: any): Promise<{ success: boolean; error?: string }> {
+    const guestInfo = user || {
+      name: booking.primaryGuestInfo?.name || 'Guest',
+      email: booking.guestEmail || booking.primaryGuestInfo?.email
+    };
+
+    if (!guestInfo.email) {
+      return {
+        success: false,
+        error: 'No email address available for payment confirmation'
+      };
+    }
+
+    const html = this.generatePaymentConfirmationEmail(booking, paymentDetails, guestInfo);
+
+    // Send to customer with CC to admin
+    return this.sendEmail({
+      to: guestInfo.email,
+      cc: process.env.ADMIN_EMAIL,
+      subject: '💳 Payment Confirmed - Kshetra Retreat Resort',
+      html,
+      text: `Payment of ₹${paymentDetails.amount} confirmed for booking ${booking._id}.`
+    });
+  }
+
+  // Generate payment confirmation email
+  private generatePaymentConfirmationEmail(booking: any, paymentDetails: any, guestInfo: any): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #4caf50; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background-color: #f9f9f9; }
+          .payment-details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 5px solid #4caf50; }
+          .amount { font-size: 24px; font-weight: bold; color: #4caf50; text-align: center; padding: 20px; background-color: #e8f5e9; margin: 15px 0; border-radius: 8px; }
+          .footer { text-align: center; padding: 20px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✅ Payment Confirmed!</h1>
+            <h2>Kshetra Retreat Resort</h2>
+          </div>
+
+          <div class="content">
+            <h3>Dear ${guestInfo.name},</h3>
+            <p>Great news! Your payment has been successfully processed.</p>
+
+            <div class="amount">
+              💰 ₹${paymentDetails.amount} PAID
+            </div>
+
+            <div class="payment-details">
+              <h4>Payment Details:</h4>
+              <p><strong>Booking ID:</strong> ${booking._id}</p>
+              <p><strong>Transaction ID:</strong> ${paymentDetails.transactionId || paymentDetails.id}</p>
+              <p><strong>Payment Method:</strong> ${paymentDetails.method || 'Online'}</p>
+              <p><strong>Payment Date:</strong> ${new Date().toLocaleString('en-IN')}</p>
+              <p><strong>Status:</strong> <span style="color: #4caf50; font-weight: bold;">SUCCESSFUL</span></p>
+            </div>
+
+            <div class="payment-details">
+              <h4>Booking Summary:</h4>
+              <p><strong>Check-in:</strong> ${new Date(booking.checkIn).toLocaleDateString('en-IN')}</p>
+              <p><strong>Check-out:</strong> ${new Date(booking.checkOut).toLocaleDateString('en-IN')}</p>
+              <p><strong>Room:</strong> ${booking.roomId?.roomNumber || 'TBD'} (${booking.roomId?.roomType || 'Standard'})</p>
+              <p><strong>Guests:</strong> ${booking.totalGuests}</p>
+            </div>
+
+            <p style="background-color: #e3f2fd; padding: 15px; border-radius: 5px;">
+              <strong>What's Next?</strong><br>
+              • You will receive a detailed booking confirmation shortly<br>
+              • Our team will contact you 24 hours before your arrival<br>
+              • Keep this payment confirmation for your records
+            </p>
+
+            <p>Thank you for choosing Kshetra Retreat Resort!</p>
+          </div>
+
+          <div class="footer">
             <p>&copy; 2025 Kshetra Retreat Resort. All rights reserved.</p>
           </div>
         </div>

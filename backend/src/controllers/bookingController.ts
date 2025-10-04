@@ -383,6 +383,8 @@ export const createPublicBooking = async (req: any, res: Response): Promise<void
     // Send email notification for public booking
     try {
       await emailService.sendBookingConfirmation(booking);
+      // Send admin notification for new booking
+      await emailService.sendAdminBookingNotification(booking);
     } catch (emailError) {
       console.error('Failed to send booking confirmation email:', emailError);
       // Don't fail the booking creation if email fails
@@ -702,11 +704,15 @@ export const createBooking = async (req: AuthenticatedRequest, res: Response): P
           email: 'admin@gmail.com'
         };
         await emailService.sendBookingConfirmation(populatedBooking, adminUser);
+        // Send admin notification for new booking
+        await emailService.sendAdminBookingNotification(populatedBooking, adminUser);
       } else {
         // For regular users, find user in database
         const user = await User.findById(userId);
         if (user) {
           await emailService.sendBookingConfirmation(populatedBooking, user);
+          // Send admin notification for new booking
+          await emailService.sendAdminBookingNotification(populatedBooking, user);
         }
       }
     } catch (emailError) {

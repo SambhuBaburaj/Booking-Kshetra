@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import { Booking, Payment, User, Coupon, CouponUsage, YogaSession, Service } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { razorpayService } from '../utils/razorpay';
+import { emailService } from '../utils/email';
 
 export const createPaymentOrder = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -269,6 +270,22 @@ export const verifyPayment = async (req: AuthenticatedRequest, res: Response): P
 
     await session.commitTransaction();
 
+    // Send payment confirmation email if payment was successful
+    if (payment.status === 'paid') {
+      try {
+        const user = await User.findById(userId);
+        await emailService.sendPaymentConfirmation(booking, {
+          amount: payment.amount,
+          transactionId: razorpay_payment_id,
+          method: payment.paymentMethod || 'Online',
+          id: razorpay_payment_id
+        }, user);
+      } catch (emailError) {
+        console.error('Failed to send payment confirmation email:', emailError);
+        // Don't fail the payment if email fails
+      }
+    }
+
     res.json({
       success: true,
       message: payment.status === 'paid' ? 'Payment successful' : 'Payment failed',
@@ -420,6 +437,22 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response): P
     await booking.save({ session });
 
     await session.commitTransaction();
+
+    // Send payment confirmation email if payment was successful
+    if (payment.status === 'paid') {
+      try {
+        const user = await User.findById(userId);
+        await emailService.sendPaymentConfirmation(booking, {
+          amount: payment.amount,
+          transactionId: razorpay_payment_id,
+          method: payment.paymentMethod || 'Online',
+          id: razorpay_payment_id
+        }, user);
+      } catch (emailError) {
+        console.error('Failed to send payment confirmation email:', emailError);
+        // Don't fail the payment if email fails
+      }
+    }
 
     res.json({
       success: true,
@@ -699,6 +732,22 @@ export const verifyPublicPayment = async (req: Request, res: Response): Promise<
     }
 
     await session.commitTransaction();
+
+    // Send payment confirmation email if payment was successful (for public bookings)
+    if (payment.status === 'paid') {
+      try {
+        // For public bookings, user is null
+        await emailService.sendPaymentConfirmation(booking, {
+          amount: payment.amount,
+          transactionId: razorpay_payment_id,
+          method: payment.paymentMethod || 'Online',
+          id: razorpay_payment_id
+        }, null);
+      } catch (emailError) {
+        console.error('Failed to send payment confirmation email:', emailError);
+        // Don't fail the payment if email fails
+      }
+    }
 
     res.json({
       success: true,
