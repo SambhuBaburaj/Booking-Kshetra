@@ -129,14 +129,15 @@ export default function AgencyDrivers() {
 
   const handleEditDriver = (driver: Driver) => {
     setEditingDriver(driver);
-   const date=new Date(driver.licenseExpiryDate).toLocaleDateString()
+    // Convert date to YYYY-MM-DD format for HTML date input
+    const date = new Date(driver.licenseExpiryDate).toISOString().split('T')[0];
     setFormData({
       name: driver.name,
       phone: driver.phone,
       email: driver.email,
       licenseNumber: driver.licenseNumber,
       licenseType: driver.licenseType,
-      licenseExpiryDate:date,
+      licenseExpiryDate: date,
       experience: driver.experience,
       languages: [...driver.languages],
       address: driver.address,

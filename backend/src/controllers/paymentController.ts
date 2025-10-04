@@ -438,22 +438,6 @@ export const refundPayment = async (req: AuthenticatedRequest, res: Response): P
 
     await session.commitTransaction();
 
-    // Send payment confirmation email if payment was successful
-    if (payment.status === 'paid') {
-      try {
-        const user = await User.findById(userId);
-        await emailService.sendPaymentConfirmation(booking, {
-          amount: payment.amount,
-          transactionId: razorpay_payment_id,
-          method: payment.paymentMethod || 'Online',
-          id: razorpay_payment_id
-        }, user);
-      } catch (emailError) {
-        console.error('Failed to send payment confirmation email:', emailError);
-        // Don't fail the payment if email fails
-      }
-    }
-
     res.json({
       success: true,
       message: 'Refund processed successfully',
