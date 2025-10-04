@@ -265,8 +265,7 @@ const BookingPageContent = () => {
 
         const response = await roomAPI.checkAvailability({
           checkIn: checkIn.toISOString().split('T')[0],
-          checkOut: checkOut.toISOString().split('T')[0],
-          capacity: 2
+          checkOut: checkOut.toISOString().split('T')[0]
         });
 
         const data = response.data;

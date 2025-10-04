@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL;
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:500/api";
 
 // Create axios instance
 const ApiInstance = axios.create({
@@ -453,6 +453,64 @@ export const adminAPI = {
   deleteDailyYogaSession: async (id: string) => {
     return await AdminApiInstance.delete(`/yoga/daily-sessions/${id}`);
   },
+
+  // Adventure Sports Management
+  getAllAdventureSports: async (params?: any) => {
+    return await AdminApiInstance.get("/admin/adventure-sports", { params });
+  },
+
+  createAdventureSport: async (data: any) => {
+    return await AdminApiInstance.post("/admin/adventure-sports", data);
+  },
+
+  updateAdventureSport: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/admin/adventure-sports/${id}`, data);
+  },
+
+  deleteAdventureSport: async (id: string) => {
+    return await AdminApiInstance.delete(`/admin/adventure-sports/${id}`);
+  },
+
+  uploadAdventureSportImages: async (id: string, data: FormData) => {
+    return await AdminApiInstance.post(
+      `/admin/adventure-sports/${id}/upload-images`,
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  },
+
+  // Vehicle Rental Management
+  getAllVehicles: async (params?: any) => {
+    return await AdminApiInstance.get("/admin/vehicles", { params });
+  },
+
+  createVehicle: async (data: any) => {
+    return await AdminApiInstance.post("/admin/vehicles", data);
+  },
+
+  updateVehicle: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/admin/vehicles/${id}`, data);
+  },
+
+  deleteVehicle: async (id: string) => {
+    return await AdminApiInstance.delete(`/admin/vehicles/${id}`);
+  },
+
+  uploadVehicleImages: async (id: string, data: FormData) => {
+    return await AdminApiInstance.post(
+      `/vehicles/admin/${id}/upload-images`,
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  },
 };
 
 // Contact API calls
@@ -508,60 +566,6 @@ export const couponAPI = {
 
   getCouponStatistics: async () => {
     return await AdminApiInstance.get("/coupons/statistics");
-  },
-
-  // Adventure Sports Management
-  getAllAdventureSports: async (params?: any) => {
-    return await AdminApiInstance.get("/admin/adventure-sports", { params });
-  },
-
-  createAdventureSport: async (data: any) => {
-    return await AdminApiInstance.post("/admin/adventure-sports", data);
-  },
-
-  updateAdventureSport: async (id: string, data: any) => {
-    return await AdminApiInstance.put(`/admin/adventure-sports/${id}`, data);
-  },
-
-  deleteAdventureSport: async (id: string) => {
-    return await AdminApiInstance.delete(`/admin/adventure-sports/${id}`);
-  },
-
-  uploadAdventureSportImages: async (id: string, data: FormData) => {
-    return await AdminApiInstance.post(
-      `/admin/adventure-sports/${id}/upload-images`,
-      data,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-  },
-
-  // Vehicle Rental Management
-  getAllVehicles: async (params?: any) => {
-    return await AdminApiInstance.get("/admin/vehicles", { params });
-  },
-
-  createVehicle: async (data: any) => {
-    return await AdminApiInstance.post("/admin/vehicles", data);
-  },
-
-  updateVehicle: async (id: string, data: any) => {
-    return await AdminApiInstance.put(`/admin/vehicles/${id}`, data);
-  },
-
-  deleteVehicle: async (id: string) => {
-    return await AdminApiInstance.delete(`/admin/vehicles/${id}`);
-  },
-
-  uploadVehicleImages: async (id: string, data: FormData) => {
-    return await AdminApiInstance.post(`/vehicles/admin/${id}/upload-images`, data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
   },
 };
 

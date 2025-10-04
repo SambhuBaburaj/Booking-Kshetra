@@ -90,14 +90,10 @@ export default function AgencyVehicles() {
         formData.append('images', file);
       });
 
-      const response = await apiClient.agencyPost(`/agency/vehicles/${vehicleId}/upload-images`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await apiClient.agencyPost(`/agency/vehicles/${vehicleId}/upload-images`, formData);
 
-      if (response.success) {
-        return response.data.newImageUrls;
+      if (response.success && response.data) {
+        return (response.data as any).newImageUrls;
       } else {
         throw new Error(response.error || 'Failed to upload images');
       }

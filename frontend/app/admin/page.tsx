@@ -91,10 +91,10 @@ interface YogaAnalytics {
 
 // Helper functions for booking type identification
 const getBookingTypeLabel = (booking: RecentBooking): string => {
-  if (booking.yogaPrice > 0 || booking.yogaSessionId) {
+  if ((booking.yogaPrice && booking.yogaPrice > 0) || booking.yogaSessionId) {
     return 'Yoga Session';
   }
-  if (booking.transportPrice > 0 && (!booking.roomId && booking.servicesPrice === 0)) {
+  if ((booking.transportPrice && booking.transportPrice > 0) && (!booking.roomId && (booking.servicesPrice === 0 || !booking.servicesPrice))) {
     return 'Transport';
   }
   if (booking.selectedServices && booking.selectedServices.length > 0) {
@@ -104,12 +104,12 @@ const getBookingTypeLabel = (booking: RecentBooking): string => {
 };
 
 const getBookingTypeDescription = (booking: RecentBooking): string => {
-  if (booking.yogaPrice > 0 || booking.yogaSessionId) {
+  if ((booking.yogaPrice && booking.yogaPrice > 0) || booking.yogaSessionId) {
     return typeof booking.yogaSessionId === 'object' && booking.yogaSessionId?.type
       ? `${booking.yogaSessionId.type}`
       : 'Daily Session';
   }
-  if (booking.transportPrice > 0 && (!booking.roomId && booking.servicesPrice === 0)) {
+  if ((booking.transportPrice && booking.transportPrice > 0) && (!booking.roomId && (booking.servicesPrice === 0 || !booking.servicesPrice))) {
     const parts = [];
     if (booking.transport?.pickup) parts.push('Pickup');
     if (booking.transport?.drop) parts.push('Drop');
