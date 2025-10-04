@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import ImageUpload from '../../../components/ImageUpload';
+import { adminAPI } from '../../../lib/api';
 
 interface Vehicle {
   _id: string;
@@ -190,32 +191,17 @@ export default function AdminVehicleRentals() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No admin token found');
-        return;
-      }
 
-      const url = typeFilter === 'all'
-        ? 'http://localhost:5001/api/admin/vehicles'
-        : `http://localhost:5001/api/admin/vehicles?type=${typeFilter}`;
+      const params = typeFilter === 'all' ? {} : { type: typeFilter };
+      const response = await (adminAPI as any).getAllVehicles(params);
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setVehicles(data.data.vehicles || []);
+      if (response.data.success) {
+        setVehicles(response.data.data.vehicles || []);
       } else {
-        setError(data.message || 'Failed to fetch vehicles');
+        setError(response.data.message || 'Failed to fetch vehicles');
       }
-    } catch (err) {
-      setError('Failed to load vehicles');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load vehicles');
       console.error('Vehicles error:', err);
     } finally {
       setLoading(false);
@@ -262,23 +248,15 @@ export default function AdminVehicleRentals() {
     if (!confirm('Are you sure you want to delete this vehicle?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await (adminAPI as any).deleteVehicle(vehicleId);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setVehicles(vehicles.filter(v => v._id !== vehicleId));
       } else {
-        setError(data.message || 'Failed to delete vehicle');
+        setError(response.data.message || 'Failed to delete vehicle');
       }
-    } catch (err) {
-      setError('Failed to delete vehicle');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete vehicle');
       console.error('Delete error:', err);
     }
   };
@@ -288,44 +266,24 @@ export default function AdminVehicleRentals() {
     setSubmitLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       if (editingVehicle) {
         // Update existing vehicle
-        const response = await fetch(`http://localhost:5001/api/admin/vehicles/${editingVehicle._id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await (adminAPI as any).updateVehicle(editingVehicle._id, formData);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (response.data.success) {
           setVehicles(vehicles.map(v =>
-            v._id === editingVehicle._id ? data.data : v
+            v._id === editingVehicle._id ? response.data.data : v
           ));
           setShowModal(false);
         } else {
-          setError(data.message || 'Failed to update vehicle');
+          setError(response.data.message || 'Failed to update vehicle');
         }
       } else {
         // Create new vehicle
-        const response = await fetch('http://localhost:5001/api/admin/vehicles', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await (adminAPI as any).createVehicle(formData);
 
-        const data = await response.json();
-
-        if (data.success) {
-          const newVehicle = data.data;
+        if (response.data.success) {
+          const newVehicle = response.data.data;
 
           // Upload pending images if any
           if (pendingImages.length > 0) {
@@ -343,11 +301,11 @@ export default function AdminVehicleRentals() {
           setPendingImages([]);
           setPendingImagePreviews([]);
         } else {
-          setError(data.message || 'Failed to create vehicle');
+          setError(response.data.message || 'Failed to create vehicle');
         }
       }
-    } catch (err) {
-      setError('Failed to save vehicle');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save vehicle');
       console.error('Submit error:', err);
     } finally {
       setSubmitLoading(false);
@@ -417,32 +375,23 @@ export default function AdminVehicleRentals() {
         uploadFormData.append('images', file);
       });
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/vehicles/admin/${vehicleId}/upload-images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: uploadFormData
-      });
+      const response = await (adminAPI as any).uploadVehicleImages(vehicleId, uploadFormData);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         // Update the vehicle in local state
         setVehicles(prev => prev.map(v =>
           v._id === vehicleId
-            ? { ...v, images: result.data.vehicle.images }
+            ? { ...v, images: response.data.data.vehicle.images }
             : v
         ));
 
         // Update editing vehicle if it's the same one
         if (editingVehicle && editingVehicle._id === vehicleId) {
-          setEditingVehicle(prev => prev ? { ...prev, images: result.data.vehicle.images } : null);
-          setFormData(prev => ({ ...prev, images: result.data.vehicle.images }));
+          setEditingVehicle(prev => prev ? { ...prev, images: response.data.data.vehicle.images } : null);
+          setFormData(prev => ({ ...prev, images: response.data.data.vehicle.images }));
         }
       } else {
-        throw new Error(result.message || 'Failed to upload images');
+        throw new Error(response.data.message || 'Failed to upload images');
       }
     } catch (error) {
       console.error('Image upload error:', error);

@@ -1,3 +1,5 @@
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
+
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -14,26 +16,26 @@ interface ApiRequestOptions {
 }
 
 class ApiClient {
-  private baseUrl: string;
+  private axiosInstance: AxiosInstance;
 
   constructor(baseUrl?: string) {
-    this.baseUrl =
-      baseUrl ||
+    const baseURL = baseUrl ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
       "http://localhost:5001/api";
-  }
 
-  private getAuthHeaders(useAgencyAuth = false): Record<string, string> {
-    const tokenKey = useAgencyAuth ? "agencyToken" : "token";
-    const token = localStorage.getItem(tokenKey);
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
+    this.axiosInstance = axios.create({
+      baseURL,
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
-    try {
-      if (!response.ok) {
-        // Handle specific HTTP errors
-        if (response.status === 401) {
+    // Response interceptor for error handling
+    this.axiosInstance.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
           // Clear both tokens and redirect to appropriate login
           localStorage.removeItem("token");
           localStorage.removeItem("agencyToken");
@@ -42,28 +44,21 @@ class ApiClient {
           } else {
             window.location.href = "/admin/login";
           }
-          throw new Error("Authentication required");
         }
-
-        if (response.status === 403) {
-          throw new Error("Access denied");
-        }
-
-        if (response.status === 404) {
-          throw new Error("Resource not found");
-        }
-
-        if (response.status >= 500) {
-          throw new Error("Server error. Please try again later.");
-        }
-
-        // Try to get error message from response
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP ${response.status}`);
+        return Promise.reject(error);
       }
+    );
+  }
 
-      const data = await response.json();
-      return data;
+  private getAuthHeaders(useAgencyAuth = false): Record<string, string> {
+    const tokenKey = useAgencyAuth ? "agencyToken" : "token";
+    const token = localStorage.getItem(tokenKey);
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  private async handleResponse<T>(response: AxiosResponse): Promise<ApiResponse<T>> {
+    try {
+      return response.data;
     } catch (error) {
       console.error("API Error:", error);
 
@@ -88,12 +83,7 @@ class ApiClient {
     const { method = "GET", body, headers = {}, requireAuth = false, useAgencyAuth = false } = options;
 
     try {
-      const url = `${this.baseUrl}${
-        endpoint.startsWith("/") ? endpoint : `/${endpoint}`
-      }`;
-
       const requestHeaders: Record<string, string> = {
-        "Content-Type": "application/json",
         ...headers,
       };
 
@@ -101,29 +91,54 @@ class ApiClient {
         Object.assign(requestHeaders, this.getAuthHeaders(useAgencyAuth));
       }
 
-      const config: RequestInit = {
+      const config: any = {
         method,
         headers: requestHeaders,
+        url: endpoint.startsWith("/") ? endpoint : `/${endpoint}`,
       };
 
       if (body && method !== "GET") {
         if (body instanceof FormData) {
-          delete requestHeaders["Content-Type"]; // Let browser set multipart boundary
-          config.body = body;
+          delete requestHeaders["Content-Type"]; // Let axios set multipart boundary
+          config.data = body;
         } else {
-          config.body = JSON.stringify(body);
+          config.data = body;
         }
       }
 
-      const response = await fetch(url, config);
+      const response = await this.axiosInstance.request(config);
       return this.handleResponse<T>(response);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Request Error:", error);
 
-      if (
-        error instanceof TypeError &&
-        error.message.includes("Failed to fetch")
-      ) {
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        if (status === 403) {
+          return {
+            success: false,
+            error: "Access denied",
+          };
+        }
+        if (status === 404) {
+          return {
+            success: false,
+            error: "Resource not found",
+          };
+        }
+        if (status >= 500) {
+          return {
+            success: false,
+            error: "Server error. Please try again later.",
+          };
+        }
+        return {
+          success: false,
+          error: error.response.data?.message || `HTTP ${status}`,
+        };
+      }
+
+      if (error.code === 'NETWORK_ERROR' || error.message.includes("Network Error")) {
         return {
           success: false,
           error: "Network error. Please check your connection and try again.",
@@ -132,10 +147,7 @@ class ApiClient {
 
       return {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+        error: error.message || "An unexpected error occurred",
       };
     }
   }

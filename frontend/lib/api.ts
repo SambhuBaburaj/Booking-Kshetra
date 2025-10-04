@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:500/api";
 
 // Create axios instance
 const ApiInstance = axios.create({
@@ -69,8 +69,8 @@ AdminApiInstance.interceptors.request.use(
       if (userStr) {
         try {
           const user = JSON.parse(userStr);
-          if (user.role !== 'admin') {
-            throw new Error('Admin access required');
+          if (user.role !== "admin") {
+            throw new Error("Admin access required");
           }
         } catch (error) {
           if (typeof window !== "undefined") {
@@ -78,7 +78,7 @@ AdminApiInstance.interceptors.request.use(
             localStorage.removeItem("user");
             window.location.href = "/admin/login";
           }
-          return Promise.reject(new Error('Invalid admin credentials'));
+          return Promise.reject(new Error("Invalid admin credentials"));
         }
       }
     }
@@ -102,12 +102,12 @@ AdminApiInstance.interceptors.response.use(
     }
 
     // Log admin errors for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Admin API Error:', {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Admin API Error:", {
         url: error.config?.url,
         method: error.config?.method,
         status: error.response?.status,
-        message: error.response?.data?.message || error.message
+        message: error.response?.data?.message || error.message,
       });
     }
 
@@ -216,6 +216,36 @@ export const serviceAPI = {
 
   getServiceById: async (id: string) => {
     return await ApiInstance.get(`/services/${id}`);
+  },
+};
+
+// Vehicle API calls (public)
+export const vehicleAPI = {
+  getAllVehicles: async (params?: any) => {
+    return await ApiInstance.get("/vehicles", { params });
+  },
+
+  getVehiclesByType: async (type: string) => {
+    return await ApiInstance.get(`/vehicles/type/${type}`);
+  },
+
+  getVehicleById: async (id: string) => {
+    return await ApiInstance.get(`/vehicles/${id}`);
+  },
+};
+
+// Adventure Sports API calls (public)
+export const adventureSportsAPI = {
+  getAllAdventureSports: async (params?: any) => {
+    return await ApiInstance.get("/adventure-sports", { params });
+  },
+
+  getAdventureSportById: async (id: string) => {
+    return await ApiInstance.get(`/adventure-sports/${id}`);
+  },
+
+  getAdventureSportsByCategory: async (category: string) => {
+    return await ApiInstance.get(`/adventure-sports/category/${category}`);
   },
 };
 
@@ -443,7 +473,7 @@ export const couponAPI = {
   // Public validation (no auth required)
   validateCoupon: async (data: {
     code: string;
-    serviceType: 'airport' | 'yoga' | 'rental' | 'adventure';
+    serviceType: "airport" | "yoga" | "rental" | "adventure";
     orderValue: number;
     userId?: string;
     phoneNumber?: string;
@@ -478,6 +508,60 @@ export const couponAPI = {
 
   getCouponStatistics: async () => {
     return await AdminApiInstance.get("/coupons/statistics");
+  },
+
+  // Adventure Sports Management
+  getAllAdventureSports: async (params?: any) => {
+    return await AdminApiInstance.get("/admin/adventure-sports", { params });
+  },
+
+  createAdventureSport: async (data: any) => {
+    return await AdminApiInstance.post("/admin/adventure-sports", data);
+  },
+
+  updateAdventureSport: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/admin/adventure-sports/${id}`, data);
+  },
+
+  deleteAdventureSport: async (id: string) => {
+    return await AdminApiInstance.delete(`/admin/adventure-sports/${id}`);
+  },
+
+  uploadAdventureSportImages: async (id: string, data: FormData) => {
+    return await AdminApiInstance.post(
+      `/admin/adventure-sports/${id}/upload-images`,
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  },
+
+  // Vehicle Rental Management
+  getAllVehicles: async (params?: any) => {
+    return await AdminApiInstance.get("/admin/vehicles", { params });
+  },
+
+  createVehicle: async (data: any) => {
+    return await AdminApiInstance.post("/admin/vehicles", data);
+  },
+
+  updateVehicle: async (id: string, data: any) => {
+    return await AdminApiInstance.put(`/admin/vehicles/${id}`, data);
+  },
+
+  deleteVehicle: async (id: string) => {
+    return await AdminApiInstance.delete(`/admin/vehicles/${id}`);
+  },
+
+  uploadVehicleImages: async (id: string, data: FormData) => {
+    return await AdminApiInstance.post(`/vehicles/admin/${id}/upload-images`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
   },
 };
 

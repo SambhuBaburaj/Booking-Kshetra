@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import { vehicleAPI, adventureSportsAPI } from '../../lib/api';
 
 interface Service {
   _id: string;
@@ -157,15 +158,12 @@ const ServicesPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const url = vehicleTypeFilter === 'all'
-        ? 'http://localhost:5001/api/vehicles'
-        : `http://localhost:5001/api/vehicles/type/${vehicleTypeFilter}`;
+      const response = vehicleTypeFilter === 'all'
+        ? await vehicleAPI.getAllVehicles()
+        : await vehicleAPI.getVehiclesByType(vehicleTypeFilter);
 
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.success) {
-        setVehicles(data.data.vehicles || []);
+      if (response.data.success) {
+        setVehicles(response.data.data.vehicles || []);
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
@@ -174,11 +172,10 @@ const ServicesPage = () => {
 
   const fetchAdventureSports = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/adventure-sports');
-      const data = await response.json();
-      if (data.success) {
+      const response = await adventureSportsAPI.getAllAdventureSports();
+      if (response.data.success) {
         // Transform the adventure sports data to match Service interface
-        const transformedSports = data.data.sports.map((sport: any) => ({
+        const transformedSports = response.data.data.sports.map((sport: any) => ({
           _id: sport._id,
           name: sport.name,
           category: sport.category,

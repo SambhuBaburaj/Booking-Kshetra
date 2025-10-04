@@ -17,6 +17,7 @@ import {
   Eye
 } from 'lucide-react';
 import ImageUpload from '../../../components/ImageUpload';
+import { adminAPI } from '../../../lib/api';
 
 interface AdventureSport {
   _id: string;
@@ -117,21 +118,12 @@ const uploadAdventureSportImages = async (sportId: string, files: File[]) => {
       formData.append('images', file);
     });
 
-    const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:5001/api/admin/adventure-sports/${sportId}/upload-images`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    });
+    const response = await adminAPI.uploadAdventureSportImages(sportId, formData);
 
-    const result = await response.json();
-
-    if (result.success) {
-      return result.data.newImageUrls;
+    if (response.data.success) {
+      return response.data.data.newImageUrls;
     } else {
-      throw new Error(result.message || 'Failed to upload images');
+      throw new Error(response.data.message || 'Failed to upload images');
     }
   } catch (error) {
     console.error('Image upload error:', error);
@@ -171,32 +163,17 @@ export default function AdminAdventureSports() {
   const fetchSports = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No admin token found');
-        return;
-      }
 
-      const url = categoryFilter === 'all'
-        ? 'http://localhost:5001/api/admin/adventure-sports'
-        : `http://localhost:5001/api/admin/adventure-sports?category=${categoryFilter}`;
+      const params = categoryFilter === 'all' ? {} : { category: categoryFilter };
+      const response = await adminAPI.getAllAdventureSports(params);
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSports(data.data.sports || []);
+      if (response.data.success) {
+        setSports(response.data.data.sports || []);
       } else {
-        setError(data.message || 'Failed to fetch adventure sports');
+        setError(response.data.message || 'Failed to fetch adventure sports');
       }
-    } catch (err) {
-      setError('Failed to load adventure sports');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load adventure sports');
       console.error('Adventure sports error:', err);
     } finally {
       setLoading(false);
@@ -246,23 +223,15 @@ export default function AdminAdventureSports() {
     if (!confirm('Are you sure you want to delete this adventure sport?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/adventure-sports/${sportId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminAPI.deleteAdventureSport(sportId);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setSports(sports.filter(s => s._id !== sportId));
       } else {
-        setError(data.message || 'Failed to delete adventure sport');
+        setError(response.data.message || 'Failed to delete adventure sport');
       }
-    } catch (err) {
-      setError('Failed to delete adventure sport');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete adventure sport');
       console.error('Delete error:', err);
     }
   };
@@ -272,44 +241,24 @@ export default function AdminAdventureSports() {
     setSubmitLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       if (editingSport) {
         // Update existing sport
-        const response = await fetch(`http://localhost:5001/api/admin/adventure-sports/${editingSport._id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await adminAPI.updateAdventureSport(editingSport._id, formData);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (response.data.success) {
           setSports(sports.map(s =>
-            s._id === editingSport._id ? data.data : s
+            s._id === editingSport._id ? response.data.data : s
           ));
           setShowModal(false);
         } else {
-          setError(data.message || 'Failed to update adventure sport');
+          setError(response.data.message || 'Failed to update adventure sport');
         }
       } else {
         // Create new sport
-        const response = await fetch('http://localhost:5001/api/admin/adventure-sports', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await adminAPI.createAdventureSport(formData);
 
-        const data = await response.json();
-
-        if (data.success) {
-          const newSport = data.data;
+        if (response.data.success) {
+          const newSport = response.data.data;
 
           // Upload pending images if any
           if (pendingImages.length > 0) {
@@ -327,11 +276,11 @@ export default function AdminAdventureSports() {
           setPendingImages([]);
           setPendingImagePreviews([]);
         } else {
-          setError(data.message || 'Failed to create adventure sport');
+          setError(response.data.message || 'Failed to create adventure sport');
         }
       }
-    } catch (err) {
-      setError('Failed to save adventure sport');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save adventure sport');
       console.error('Submit error:', err);
     } finally {
       setSubmitLoading(false);
