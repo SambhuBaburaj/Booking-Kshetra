@@ -20,7 +20,7 @@ class ApiClient {
     this.baseUrl =
       baseUrl ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
-      "http://localhost:5001/api";
+      "https://booking-kshetra.onrender.com/api";
   }
 
   private getAuthHeaders(useAgencyAuth = false): Record<string, string> {
