@@ -31,7 +31,7 @@ import {
   Percent
 } from "lucide-react";
 import Header from "../../components/Header";
-import { bookingAPI } from "../../lib/api";
+import { bookingAPI, roomAPI } from "../../lib/api";
 import { initiatePayment } from "../../utils/razorpay";
 import { validateCoupon } from "../../lib/api/coupons";
 
@@ -263,11 +263,13 @@ const BookingPageContent = () => {
         const checkOut = new Date();
         checkOut.setDate(checkOut.getDate() + 2);
 
-        const response = await fetch(
-          `http://localhost:5001/api/rooms/availability?checkIn=${checkIn.toISOString().split('T')[0]}&checkOut=${checkOut.toISOString().split('T')[0]}&capacity=2`
-        );
+        const response = await roomAPI.checkAvailability({
+          checkIn: checkIn.toISOString().split('T')[0],
+          checkOut: checkOut.toISOString().split('T')[0],
+          capacity: 2
+        });
 
-        const data = await response.json();
+        const data = response.data;
 
         if (data.success && data.data?.availableRooms) {
           setRooms(data.data.availableRooms);
