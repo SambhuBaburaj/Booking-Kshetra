@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { AdventureSport } from '../models';
+import { uploadImageToImageKit, uploadMultipleImages, IMAGE_FOLDERS, IMAGE_TRANSFORMATIONS } from '../utils/imagekitUpload';
 
 // Get all adventure sports (public)
 export const getAdventureSports = async (req: Request, res: Response) => {
@@ -283,6 +284,63 @@ export const getAdventureSportsForAdmin = async (req: Request, res: Response) =>
     res.status(500).json({
       success: false,
       message: 'Internal server error'
+    });
+  }
+};
+
+// Upload adventure sport images
+export const uploadAdventureSportImages = async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const { id } = req.params;
+    const sport = await AdventureSport.findById(id);
+
+    if (!sport) {
+      return res.status(404).json({
+        success: false,
+        message: 'Adventure sport not found'
+      });
+    }
+
+    if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No images provided'
+      });
+    }
+
+    // Upload images to ImageKit
+    const imageUrls = await uploadMultipleImages(req.files as Express.Multer.File[], {
+      folder: IMAGE_FOLDERS.ADVENTURE_SPORTS,
+      fileName: `sport_${id}`,
+      transformation: IMAGE_TRANSFORMATIONS.ADVENTURE_SPORTS_PHOTO
+    });
+
+    // Add the new image URLs to the existing images array
+    sport.images = [...(sport.images || []), ...imageUrls];
+    await sport.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Adventure sport images uploaded successfully',
+      data: {
+        sport,
+        newImageUrls: imageUrls
+      }
+    });
+  } catch (error) {
+    console.error('Upload adventure sport images error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload adventure sport images'
     });
   }
 };

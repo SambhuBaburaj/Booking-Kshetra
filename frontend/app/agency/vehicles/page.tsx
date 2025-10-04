@@ -17,6 +17,7 @@ import { apiClient } from '../../../lib/api-client';
 import AgencyNav from '../../../components/AgencyNav';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import ErrorMessage from '../../../components/ErrorMessage';
+import ImageUpload from '../../../components/ImageUpload';
 
 interface Vehicle {
   _id: string;
@@ -27,6 +28,7 @@ interface Vehicle {
   capacity: number;
   fuelType: string;
   isAvailable: boolean;
+  vehicleImages?: string[];
   insurance: {
     provider: string;
     policyNumber: string;
@@ -76,6 +78,35 @@ export default function AgencyVehicles() {
   const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  // Image upload state for vehicles
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
+
+  // Upload vehicle images function
+  const uploadVehicleImages = async (vehicleId: string, files: File[]) => {
+    try {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await apiClient.agencyPost(`/agency/vehicles/${vehicleId}/upload-images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (response.success) {
+        return response.data.newImageUrls;
+      } else {
+        throw new Error(response.error || 'Failed to upload images');
+      }
+    } catch (error) {
+      console.error('Vehicle image upload error:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchVehicles();
   }, []);
@@ -100,6 +131,8 @@ export default function AgencyVehicles() {
   const handleCreateVehicle = () => {
     setEditingVehicle(null);
     setFormData(initialFormData);
+    setPendingImages([]);
+    setPendingImagePreviews([]);
     setShowModal(true);
   };
 
@@ -115,6 +148,8 @@ export default function AgencyVehicles() {
       isAvailable: vehicle.isAvailable,
       insurance: { ...vehicle.insurance }
     });
+    setPendingImages([]);
+    setPendingImagePreviews([]);
     setShowModal(true);
   };
 
@@ -135,6 +170,7 @@ export default function AgencyVehicles() {
     }
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
@@ -145,9 +181,17 @@ export default function AgencyVehicles() {
         const response = await apiClient.agencyPut(`/agency/vehicles/${editingVehicle._id}`, formData);
 
         if (response.success && response.data) {
+          const updatedVehicle = (response.data as any)?.vehicle;
+
+          // No need to handle pending images for existing vehicles as they upload directly
           setVehicles(vehicles.map(v =>
-            v._id === editingVehicle._id ? (response.data as any)?.vehicle : v
+            v._id === editingVehicle._id ? updatedVehicle : v
           ));
+
+          // Clean up pending images
+          pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+          setPendingImages([]);
+          setPendingImagePreviews([]);
           setShowModal(false);
         } else {
           setError(response.error || 'Failed to update vehicle');
@@ -157,7 +201,26 @@ export default function AgencyVehicles() {
         const response = await apiClient.agencyPost('/agency/vehicles', formData);
 
         if (response.success && response.data) {
-          setVehicles([...vehicles, (response.data as any)?.vehicle]);
+          const newVehicle = (response.data as any)?.vehicle;
+
+          // Upload images after creating the vehicle
+          if (pendingImages.length > 0) {
+            try {
+              const newImageUrls = await uploadVehicleImages(newVehicle._id, pendingImages);
+              // Update the new vehicle with image URLs
+              newVehicle.vehicleImages = newImageUrls;
+            } catch (error) {
+              console.error('Failed to upload vehicle images:', error);
+              setError('Vehicle created but failed to upload images. You can add them later.');
+            }
+          }
+
+          setVehicles([...vehicles, newVehicle]);
+
+          // Clean up pending images
+          pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+          setPendingImages([]);
+          setPendingImagePreviews([]);
           setShowModal(false);
         } else {
           setError(response.error || 'Failed to create vehicle');
@@ -463,6 +526,65 @@ export default function AgencyVehicles() {
                 </div>
               </div>
 
+              {/* Vehicle Images Section */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
+                <div className="space-y-4">
+                  {editingVehicle ? (
+                    // Existing vehicle - upload directly
+                    <ImageUpload
+                      variant="multiple"
+                      label="Vehicle Images"
+                      placeholder="Upload images for this vehicle"
+                      currentImageUrls={editingVehicle.vehicleImages || []}
+                      onUpload={async (files: File[]) => {
+                        try {
+                          const newImageUrls = await uploadVehicleImages(editingVehicle._id, files);
+
+                          // Update the local state
+                          setEditingVehicle(prev => prev ? {
+                            ...prev,
+                            vehicleImages: [...(prev.vehicleImages || []), ...newImageUrls]
+                          } : null);
+
+                          // Update the vehicles list
+                          setVehicles(prev => prev.map(v =>
+                            v._id === editingVehicle._id
+                              ? { ...v, vehicleImages: [...(v.vehicleImages || []), ...newImageUrls] }
+                              : v
+                          ));
+                        } catch (error) {
+                          setError('Failed to upload images. Please try again.');
+                        }
+                      }}
+                      maxFiles={10}
+                      maxSizeMB={5}
+                    />
+                  ) : (
+                    // New vehicle - store images temporarily and upload after creation
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-600">Note: Images will be uploaded when the vehicle is created.</p>
+                      <ImageUpload
+                        variant="multiple"
+                        label="Vehicle Images"
+                        placeholder="Select images for this vehicle"
+                        currentImageUrls={pendingImagePreviews}
+                        onUpload={async (files: File[]) => {
+                          // Store files for upload after creation
+                          setPendingImages(prev => [...prev, ...files]);
+
+                          // Create preview URLs
+                          const newPreviews = files.map(file => URL.createObjectURL(file));
+                          setPendingImagePreviews(prev => [...prev, ...newPreviews]);
+                        }}
+                        maxFiles={10}
+                        maxSizeMB={5}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Insurance Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -512,7 +634,13 @@ export default function AgencyVehicles() {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    // Clean up pending image previews
+                    pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                    setPendingImages([]);
+                    setPendingImagePreviews([]);
+                    setShowModal(false);
+                  }}
                   className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={submitLoading}
                 >

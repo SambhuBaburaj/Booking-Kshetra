@@ -34,7 +34,8 @@ import {
   getAdventureSportsForAdmin,
   createAdventureSport,
   updateAdventureSport,
-  deleteAdventureSport
+  deleteAdventureSport,
+  uploadAdventureSportImages
 } from '../controllers/adventureSportController';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -613,6 +614,11 @@ router.put('/adventure-sports/:id',
 router.delete('/adventure-sports/:id',
   param('id').isMongoId().withMessage('Valid adventure sport ID required'),
   deleteAdventureSport
+);
+router.post('/adventure-sports/:id/upload-images',
+  param('id').isMongoId().withMessage('Valid adventure sport ID required'),
+  uploadMultiple,
+  uploadAdventureSportImages
 );
 
 export default router;

@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import ImageUpload from '../../../components/ImageUpload';
+import { adminAPI } from '../../../lib/api';
 
 interface Vehicle {
   _id: string;
@@ -179,6 +180,10 @@ export default function AdminVehicleRentals() {
   const [newTerm, setNewTerm] = useState('');
   const [newImage, setNewImage] = useState('');
 
+  // Image upload state for new vehicles
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
+
   useEffect(() => {
     fetchVehicles();
   }, [typeFilter]);
@@ -186,32 +191,17 @@ export default function AdminVehicleRentals() {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No admin token found');
-        return;
-      }
 
-      const url = typeFilter === 'all'
-        ? 'http://localhost:5001/api/admin/vehicles'
-        : `http://localhost:5001/api/admin/vehicles?type=${typeFilter}`;
+      const params = typeFilter === 'all' ? {} : { type: typeFilter };
+      const response = await (adminAPI as any).getAllVehicles(params);
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setVehicles(data.data.vehicles || []);
+      if (response.data.success) {
+        setVehicles(response.data.data.vehicles || []);
       } else {
-        setError(data.message || 'Failed to fetch vehicles');
+        setError(response.data.message || 'Failed to fetch vehicles');
       }
-    } catch (err) {
-      setError('Failed to load vehicles');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load vehicles');
       console.error('Vehicles error:', err);
     } finally {
       setLoading(false);
@@ -221,6 +211,8 @@ export default function AdminVehicleRentals() {
   const handleCreateVehicle = () => {
     setEditingVehicle(null);
     setFormData(initialFormData);
+    setPendingImages([]);
+    setPendingImagePreviews([]);
     setShowModal(true);
   };
 
@@ -256,23 +248,15 @@ export default function AdminVehicleRentals() {
     if (!confirm('Are you sure you want to delete this vehicle?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await (adminAPI as any).deleteVehicle(vehicleId);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setVehicles(vehicles.filter(v => v._id !== vehicleId));
       } else {
-        setError(data.message || 'Failed to delete vehicle');
+        setError(response.data.message || 'Failed to delete vehicle');
       }
-    } catch (err) {
-      setError('Failed to delete vehicle');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete vehicle');
       console.error('Delete error:', err);
     }
   };
@@ -282,51 +266,46 @@ export default function AdminVehicleRentals() {
     setSubmitLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       if (editingVehicle) {
         // Update existing vehicle
-        const response = await fetch(`http://localhost:5001/api/admin/vehicles/${editingVehicle._id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await (adminAPI as any).updateVehicle(editingVehicle._id, formData);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (response.data.success) {
           setVehicles(vehicles.map(v =>
-            v._id === editingVehicle._id ? data.data : v
+            v._id === editingVehicle._id ? response.data.data : v
           ));
           setShowModal(false);
         } else {
-          setError(data.message || 'Failed to update vehicle');
+          setError(response.data.message || 'Failed to update vehicle');
         }
       } else {
         // Create new vehicle
-        const response = await fetch('http://localhost:5001/api/admin/vehicles', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await (adminAPI as any).createVehicle(formData);
 
-        const data = await response.json();
+        if (response.data.success) {
+          const newVehicle = response.data.data;
 
-        if (data.success) {
-          setVehicles([...vehicles, data.data]);
+          // Upload pending images if any
+          if (pendingImages.length > 0) {
+            try {
+              await uploadVehicleImages(newVehicle._id, pendingImages);
+              // The uploadVehicleImages function already updates the local state
+            } catch (imageError) {
+              console.error('Failed to upload images for new vehicle:', imageError);
+              setError('Vehicle created but failed to upload images. You can upload them later by editing the vehicle.');
+            }
+          }
+
+          setVehicles([...vehicles, newVehicle]);
           setShowModal(false);
+          setPendingImages([]);
+          setPendingImagePreviews([]);
         } else {
-          setError(data.message || 'Failed to create vehicle');
+          setError(response.data.message || 'Failed to create vehicle');
         }
       }
-    } catch (err) {
-      setError('Failed to save vehicle');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save vehicle');
       console.error('Submit error:', err);
     } finally {
       setSubmitLoading(false);
@@ -396,32 +375,23 @@ export default function AdminVehicleRentals() {
         uploadFormData.append('images', file);
       });
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/vehicle-rentals/admin/${vehicleId}/upload-images`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: uploadFormData
-      });
+      const response = await (adminAPI as any).uploadVehicleImages(vehicleId, uploadFormData);
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         // Update the vehicle in local state
         setVehicles(prev => prev.map(v =>
           v._id === vehicleId
-            ? { ...v, images: result.data.vehicle.images }
+            ? { ...v, images: response.data.data.vehicle.images }
             : v
         ));
 
         // Update editing vehicle if it's the same one
         if (editingVehicle && editingVehicle._id === vehicleId) {
-          setEditingVehicle(prev => prev ? { ...prev, images: result.data.vehicle.images } : null);
-          setFormData(prev => ({ ...prev, images: result.data.vehicle.images }));
+          setEditingVehicle(prev => prev ? { ...prev, images: response.data.data.vehicle.images } : null);
+          setFormData(prev => ({ ...prev, images: response.data.data.vehicle.images }));
         }
       } else {
-        throw new Error(result.message || 'Failed to upload images');
+        throw new Error(response.data.message || 'Failed to upload images');
       }
     } catch (error) {
       console.error('Image upload error:', error);
@@ -1001,8 +971,9 @@ export default function AdminVehicleRentals() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Vehicle Images</h3>
 
-                {/* ImageKit Upload Component - Only show for existing vehicles */}
-                {editingVehicle && (
+                {/* ImageKit Upload Component */}
+                {editingVehicle ? (
+                  // Existing vehicle - upload directly
                   <div className="mb-6">
                     <ImageUpload
                       variant="multiple"
@@ -1012,6 +983,27 @@ export default function AdminVehicleRentals() {
                       maxFiles={10 - formData.images.length}
                       onUpload={async (files: File[]) => {
                         await uploadVehicleImages(editingVehicle._id, files);
+                      }}
+                      maxSizeMB={5}
+                    />
+                  </div>
+                ) : (
+                  // New vehicle - store images temporarily
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-600 mb-3">Note: Images will be uploaded when the vehicle is created.</p>
+                    <ImageUpload
+                      variant="multiple"
+                      label="Select Vehicle Images"
+                      placeholder="Select multiple vehicle images (max 10 total)"
+                      currentImageUrls={pendingImagePreviews}
+                      maxFiles={10}
+                      onUpload={async (files: File[]) => {
+                        // Store files for upload after creation
+                        setPendingImages(prev => [...prev, ...files]);
+
+                        // Create preview URLs
+                        const newPreviews = files.map(file => URL.createObjectURL(file));
+                        setPendingImagePreviews(prev => [...prev, ...newPreviews]);
                       }}
                       maxSizeMB={5}
                     />
@@ -1101,7 +1093,13 @@ export default function AdminVehicleRentals() {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    // Clean up object URLs to prevent memory leaks
+                    pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                    setPendingImages([]);
+                    setPendingImagePreviews([]);
+                    setShowModal(false);
+                  }}
                   className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={submitLoading}
                 >

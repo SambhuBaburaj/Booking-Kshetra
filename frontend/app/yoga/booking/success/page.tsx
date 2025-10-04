@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from 'lucide-react'
 import Header from '../../../../components/Header'
+import ApiInstance from '../../../../lib/api'
 
 function YogaBookingSuccessPageContent() {
   const router = useRouter()
@@ -69,12 +70,12 @@ function YogaBookingSuccessPageContent() {
 
   const handleDownloadReceipt = async () => {
     try {
-      const response = await fetch(`/api/yoga/booking/${bookingDetails.bookingId}/receipt`, {
-        method: 'GET',
+      const response = await ApiInstance.get(`/yoga/booking/${bookingDetails.bookingId}/receipt`, {
+        responseType: 'blob'
       })
 
-      if (response.ok) {
-        const blob = await response.blob()
+      if (response.status === 200) {
+        const blob = response.data
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url

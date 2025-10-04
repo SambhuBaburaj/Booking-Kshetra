@@ -654,48 +654,13 @@ export const assignTransport = async (req: AgencyAuthRequest, res: Response) => 
     // Populate assignment data
     await assignment.populate('vehicleId driverId');
 
-    // Send email notification to customer
-    const customerEmail = booking.guestEmail || (booking.userId as any)?.email || booking.primaryGuestInfo?.email;
-    if (customerEmail) {
-      try {
-        await emailService.sendEmail({
-          to: customerEmail,
-          subject: 'Transport Assigned - Booking Confirmation',
-          html: `
-            <h2>Transport Assignment Confirmation</h2>
-            <p>Dear ${booking.primaryGuestInfo?.name || booking.guests[0]?.name || 'Guest'},</p>
-            <p>Your transport has been assigned for your booking. Here are the details:</p>
-
-            <h3>Driver Details:</h3>
-            <p><strong>Name:</strong> ${driver.name}</p>
-            <p><strong>Phone:</strong> ${driver.phone}</p>
-            <p><strong>Languages:</strong> ${driver.languages.join(', ')}</p>
-
-            <h3>Vehicle Details:</h3>
-            <p><strong>Vehicle:</strong> ${vehicle.brand} ${vehicle.vehicleModel}</p>
-            <p><strong>Number:</strong> ${vehicle.vehicleNumber}</p>
-            <p><strong>Type:</strong> ${vehicle.vehicleType}</p>
-            <p><strong>Capacity:</strong> ${vehicle.capacity} passengers</p>
-
-            <h3>Schedule:</h3>
-            ${pickupTime ? `<p><strong>Pickup Time:</strong> ${new Date(pickupTime).toLocaleString()}</p>` : ''}
-            ${dropTime ? `<p><strong>Drop Time:</strong> ${new Date(dropTime).toLocaleString()}</p>` : ''}
-            ${booking.transport.pickupTerminal ? `<p><strong>Pickup Terminal:</strong> ${booking.transport.pickupTerminal}</p>` : ''}
-            ${booking.transport.dropTerminal ? `<p><strong>Drop Terminal:</strong> ${booking.transport.dropTerminal}</p>` : ''}
-
-            ${notes ? `<h3>Special Instructions:</h3><p>${notes}</p>` : ''}
-
-            <p>The driver will contact you before pickup. Please keep your phone accessible.</p>
-
-            <p>Best regards,<br>Kshetra Resort</p>
-          `
-        });
-
-        assignment.customerNotified = true;
-        await assignment.save();
-      } catch (emailError) {
-        console.error('Failed to send customer notification:', emailError);
-      }
+    // Send enhanced email notification to customer with driver photos and details
+    try {
+      await emailService.sendDriverAssignmentNotification(booking, driver, vehicle, assignment);
+      assignment.customerNotified = true;
+      await assignment.save();
+    } catch (emailError) {
+      console.error('Failed to send customer notification:', emailError);
     }
 
     res.status(201).json({

@@ -16,6 +16,8 @@ import {
   Shield,
   Eye
 } from 'lucide-react';
+import ImageUpload from '../../../components/ImageUpload';
+import { adminAPI } from '../../../lib/api';
 
 interface AdventureSport {
   _id: string;
@@ -108,6 +110,27 @@ const initialFormData: AdventureSportFormData = {
   maxQuantity: 10
 };
 
+// Upload adventure sport images
+const uploadAdventureSportImages = async (sportId: string, files: File[]) => {
+  try {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    const response = await adminAPI.uploadAdventureSportImages(sportId, formData);
+
+    if (response.data.success) {
+      return response.data.data.newImageUrls;
+    } else {
+      throw new Error(response.data.message || 'Failed to upload images');
+    }
+  } catch (error) {
+    console.error('Image upload error:', error);
+    throw error;
+  }
+};
+
 export default function AdminAdventureSports() {
   const [sports, setSports] = useState<AdventureSport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +152,10 @@ export default function AdminAdventureSports() {
   const [newImage, setNewImage] = useState('');
   const [newCertification, setNewCertification] = useState('');
 
+  // Image upload state for new activities
+  const [pendingImages, setPendingImages] = useState<File[]>([]);
+  const [pendingImagePreviews, setPendingImagePreviews] = useState<string[]>([]);
+
   useEffect(() => {
     fetchSports();
   }, [categoryFilter]);
@@ -136,32 +163,17 @@ export default function AdminAdventureSports() {
   const fetchSports = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No admin token found');
-        return;
-      }
 
-      const url = categoryFilter === 'all'
-        ? 'http://localhost:5001/api/admin/adventure-sports'
-        : `http://localhost:5001/api/admin/adventure-sports?category=${categoryFilter}`;
+      const params = categoryFilter === 'all' ? {} : { category: categoryFilter };
+      const response = await adminAPI.getAllAdventureSports(params);
 
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSports(data.data.sports || []);
+      if (response.data.success) {
+        setSports(response.data.data.sports || []);
       } else {
-        setError(data.message || 'Failed to fetch adventure sports');
+        setError(response.data.message || 'Failed to fetch adventure sports');
       }
-    } catch (err) {
-      setError('Failed to load adventure sports');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to load adventure sports');
       console.error('Adventure sports error:', err);
     } finally {
       setLoading(false);
@@ -172,6 +184,8 @@ export default function AdminAdventureSports() {
     setEditingSport(null);
     setFormData(initialFormData);
     setActiveTab('basic');
+    setPendingImages([]);
+    setPendingImagePreviews([]);
     setShowModal(true);
   };
 
@@ -209,23 +223,15 @@ export default function AdminAdventureSports() {
     if (!confirm('Are you sure you want to delete this adventure sport?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5001/api/admin/adventure-sports/${sportId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await adminAPI.deleteAdventureSport(sportId);
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (response.data.success) {
         setSports(sports.filter(s => s._id !== sportId));
       } else {
-        setError(data.message || 'Failed to delete adventure sport');
+        setError(response.data.message || 'Failed to delete adventure sport');
       }
-    } catch (err) {
-      setError('Failed to delete adventure sport');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete adventure sport');
       console.error('Delete error:', err);
     }
   };
@@ -235,51 +241,46 @@ export default function AdminAdventureSports() {
     setSubmitLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-
       if (editingSport) {
         // Update existing sport
-        const response = await fetch(`http://localhost:5001/api/admin/adventure-sports/${editingSport._id}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await adminAPI.updateAdventureSport(editingSport._id, formData);
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (response.data.success) {
           setSports(sports.map(s =>
-            s._id === editingSport._id ? data.data : s
+            s._id === editingSport._id ? response.data.data : s
           ));
           setShowModal(false);
         } else {
-          setError(data.message || 'Failed to update adventure sport');
+          setError(response.data.message || 'Failed to update adventure sport');
         }
       } else {
         // Create new sport
-        const response = await fetch('http://localhost:5001/api/admin/adventure-sports', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-        });
+        const response = await adminAPI.createAdventureSport(formData);
 
-        const data = await response.json();
+        if (response.data.success) {
+          const newSport = response.data.data;
 
-        if (data.success) {
-          setSports([...sports, data.data]);
+          // Upload pending images if any
+          if (pendingImages.length > 0) {
+            try {
+              const newImageUrls = await uploadAdventureSportImages(newSport._id, pendingImages);
+              newSport.images = [...(newSport.images || []), ...newImageUrls];
+            } catch (imageError) {
+              console.error('Failed to upload images for new sport:', imageError);
+              setError('Sport created but failed to upload images. You can upload them later.');
+            }
+          }
+
+          setSports([...sports, newSport]);
           setShowModal(false);
+          setPendingImages([]);
+          setPendingImagePreviews([]);
         } else {
-          setError(data.message || 'Failed to create adventure sport');
+          setError(response.data.message || 'Failed to create adventure sport');
         }
       }
-    } catch (err) {
-      setError('Failed to save adventure sport');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save adventure sport');
       console.error('Submit error:', err);
     } finally {
       setSubmitLoading(false);
@@ -1046,42 +1047,99 @@ export default function AdminAdventureSports() {
                 {activeTab === 'media' && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Images</h3>
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="url"
-                          value={newImage}
-                          onChange={(e) => setNewImage(e.target.value)}
-                          placeholder="Add image URL..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    {editingSport ? (
+                      // Existing sport - upload directly
+                      <ImageUpload
+                        variant="multiple"
+                        label="Adventure Sport Images"
+                        placeholder="Upload images for this adventure sport"
+                        currentImageUrls={editingSport.images || []}
+                        onUpload={async (files: File[]) => {
+                          try {
+                            const newImageUrls = await uploadAdventureSportImages(editingSport._id, files);
+
+                            // Update the local state
+                            setEditingSport(prev => prev ? {
+                              ...prev,
+                              images: [...(prev.images || []), ...newImageUrls]
+                            } : null);
+
+                            // Update the sports list
+                            setSports(prev => prev.map(s =>
+                              s._id === editingSport._id
+                                ? { ...s, images: [...(s.images || []), ...newImageUrls] }
+                                : s
+                            ));
+                          } catch (error) {
+                            setError('Failed to upload images. Please try again.');
+                          }
+                        }}
+                        maxFiles={10}
+                        maxSizeMB={5}
+                      />
+                    ) : (
+                      // New sport - store images temporarily and upload after creation
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-600">Note: Images will be uploaded when the adventure sport is created.</p>
+                        <ImageUpload
+                          variant="multiple"
+                          label="Adventure Sport Images"
+                          placeholder="Select images for this adventure sport"
+                          currentImageUrls={pendingImagePreviews}
+                          onUpload={async (files: File[]) => {
+                            // Store files for upload after creation
+                            setPendingImages(prev => [...prev, ...files]);
+
+                            // Create preview URLs
+                            const newPreviews = files.map(file => URL.createObjectURL(file));
+                            setPendingImagePreviews(prev => [...prev, ...newPreviews]);
+                          }}
+                          maxFiles={10}
+                          maxSizeMB={5}
                         />
-                        <button
-                          type="button"
-                          onClick={() => addToArray('images', newImage, setNewImage)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Add
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {formData.images.map((image, index) => (
-                          <div key={index} className="relative">
-                            <img
-                              src={image}
-                              alt={`Activity image ${index + 1}`}
-                              className="w-full h-24 object-cover rounded-lg"
+
+                        {/* Also show URL input option */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-medium text-gray-700">Or add image URLs:</h4>
+                          <div className="flex gap-2">
+                            <input
+                              type="url"
+                              value={newImage}
+                              onChange={(e) => setNewImage(e.target.value)}
+                              placeholder="Add image URL for preview..."
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             />
                             <button
                               type="button"
-                              onClick={() => removeFromArray('images', index)}
-                              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600"
+                              onClick={() => addToArray('images', newImage, setNewImage)}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                              ×
+                              Add
                             </button>
                           </div>
-                        ))}
+                          {formData.images.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {formData.images.map((image, index) => (
+                                <div key={index} className="relative">
+                                  <img
+                                    src={image}
+                                    alt={`Activity image ${index + 1}`}
+                                    className="w-full h-24 object-cover rounded-lg"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFromArray('images', index)}
+                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1089,7 +1147,13 @@ export default function AdminAdventureSports() {
               <div className="flex justify-end space-x-4 p-6 border-t border-gray-200 bg-gray-50">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => {
+                    // Clean up object URLs to prevent memory leaks
+                    pendingImagePreviews.forEach(url => URL.revokeObjectURL(url));
+                    setPendingImages([]);
+                    setPendingImagePreviews([]);
+                    setShowModal(false);
+                  }}
                   className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                   disabled={submitLoading}
                 >

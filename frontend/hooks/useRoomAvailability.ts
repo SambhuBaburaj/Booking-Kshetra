@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { roomAPI } from '../lib/api'
 
 interface UseRoomAvailabilityParams {
   checkIn?: string
@@ -37,37 +38,31 @@ export function useRoomAvailability({ checkIn, checkOut, capacity }: UseRoomAvai
       setData(prev => ({ ...prev, isLoading: true, error: null }))
 
       try {
-        const params = new URLSearchParams({
+        const params: any = {
           checkIn: queryCheckIn,
           checkOut: queryCheckOut,
-        })
+        }
 
         if (capacity) {
-          params.append('capacity', capacity.toString())
+          params.capacity = capacity
         }
 
-        const response = await fetch(`http://localhost:3001/api/rooms/availability?${params}`)
+        const response = await roomAPI.checkAvailability(params)
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch room availability')
-        }
-
-        const result = await response.json()
-
-        if (result.success) {
+        if (response.data.success) {
           setData(prev => ({
             ...prev,
-            availableRooms: result.data.availableRooms || [],
-            totalAvailable: result.data.availableRooms?.length || 0,
+            availableRooms: response.data.data.availableRooms || [],
+            totalAvailable: response.data.data.availableRooms?.length || 0,
             isLoading: false
           }))
         } else {
-          throw new Error(result.message || 'Failed to fetch availability')
+          throw new Error(response.data.message || 'Failed to fetch availability')
         }
-      } catch (error) {
+      } catch (error: any) {
         setData(prev => ({
           ...prev,
-          error: error instanceof Error ? error.message : 'Unknown error occurred',
+          error: error.response?.data?.message || error.message || 'Unknown error occurred',
           isLoading: false,
           totalAvailable: 0,
           availableRooms: []

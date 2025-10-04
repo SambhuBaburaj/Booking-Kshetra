@@ -39,10 +39,12 @@ export const getDashboardStats = async (req: AuthenticatedRequest, res: Response
     const confirmedBookings = await Booking.countDocuments({ status: 'confirmed' });
     const cancelledBookings = await Booking.countDocuments({ status: 'cancelled' });
 
-    // Recent bookings
+    // Recent bookings with proper population
     const recentBookings = await Booking.find()
-      .populate('userId', 'name email')
-      .populate('roomId', 'roomNumber roomType')
+      .populate('userId', 'name email phone')
+      .populate('roomId', 'roomNumber roomType pricePerNight')
+      .populate('selectedServices.serviceId', 'name category')
+      .populate('yogaSessionId', 'type batchName')
       .sort({ createdAt: -1 })
       .limit(10);
 

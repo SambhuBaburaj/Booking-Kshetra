@@ -110,7 +110,8 @@ export const IMAGE_FOLDERS = {
   },
   RESORTS: {
     ROOMS: '/resorts/rooms'
-  }
+  },
+  ADVENTURE_SPORTS: '/adventure-sports'
 } as const;
 
 // Predefined transformation presets
@@ -134,5 +135,10 @@ export const IMAGE_TRANSFORMATIONS = {
     width: 1200,
     height: 800,
     quality: 95
+  },
+  ADVENTURE_SPORTS_PHOTO: {
+    width: 800,
+    height: 600,
+    quality: 85
   }
 } as const;
