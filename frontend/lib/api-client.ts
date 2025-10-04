@@ -20,8 +20,9 @@ class ApiClient {
 
   constructor(baseUrl?: string) {
     const baseURL = baseUrl ||
-      process.env.NEXT_PUBLIC_API_BASE_URL ||
-      "https://booking-kshetra.vercel.app/api";
+      process.env.NEXT_PUBLIC_API_BASE_URL 
+      // ||
+      // "http://localhost:5001/api";
 
     this.axiosInstance = axios.create({
       baseURL,
