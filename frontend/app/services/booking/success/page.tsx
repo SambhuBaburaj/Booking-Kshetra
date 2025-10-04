@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CheckCircle, Calendar, Phone, Mail, ArrowRight } from 'lucide-react'
+import { CheckCircle, Calendar, Phone, Mail, ArrowRight, Copy, Check } from 'lucide-react'
 import Header from '../../../../components/Header'
 
 function ServicesBookingSuccessPageContent() {
@@ -11,14 +11,28 @@ function ServicesBookingSuccessPageContent() {
   const searchParams = useSearchParams()
   const [paymentId, setPaymentId] = useState('')
   const [orderId, setOrderId] = useState('')
+  const [bookingId, setBookingId] = useState('')
+  const [copiedField, setCopiedField] = useState('')
 
   useEffect(() => {
     const payment_id = searchParams.get('payment_id')
     const order_id = searchParams.get('order_id')
+    const booking_id = searchParams.get('booking_id')
 
     if (payment_id) setPaymentId(payment_id)
     if (order_id) setOrderId(order_id)
+    if (booking_id) setBookingId(booking_id)
   }, [searchParams])
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField(field)
+      setTimeout(() => setCopiedField(''), 2000)
+    } catch (err) {
+      console.error('Failed to copy: ', err)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-blue-900">
@@ -47,17 +61,67 @@ function ServicesBookingSuccessPageContent() {
             <h2 className="text-2xl font-semibold text-white mb-6">Booking Details</h2>
 
             <div className="space-y-4 text-left">
+              {bookingId && (
+                <div className="flex items-center justify-between p-4 bg-blue-500/20 rounded-xl border border-blue-400/30">
+                  <div className="flex flex-col">
+                    <span className="text-gray-300 text-sm">Booking ID:</span>
+                    <span className="text-blue-400 font-mono text-lg font-semibold">{bookingId}</span>
+                    <span className="text-gray-400 text-xs mt-1">Use this ID to track your booking</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(bookingId, 'booking')}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                  >
+                    {copiedField === 'booking' ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span className="text-sm">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span className="text-sm">Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {orderId && (
                 <div className="flex items-center justify-between p-4 bg-white/10 rounded-xl">
                   <span className="text-gray-300">Order ID:</span>
-                  <span className="text-orange-400 font-mono text-sm">{orderId}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-orange-400 font-mono text-sm">{orderId}</span>
+                    <button
+                      onClick={() => copyToClipboard(orderId, 'order')}
+                      className="p-1 hover:bg-white/10 rounded"
+                    >
+                      {copiedField === 'order' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400 hover:text-white" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 
               {paymentId && (
                 <div className="flex items-center justify-between p-4 bg-white/10 rounded-xl">
                   <span className="text-gray-300">Payment ID:</span>
-                  <span className="text-green-400 font-mono text-sm">{paymentId}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 font-mono text-sm">{paymentId}</span>
+                    <button
+                      onClick={() => copyToClipboard(paymentId, 'payment')}
+                      className="p-1 hover:bg-white/10 rounded"
+                    >
+                      {copiedField === 'payment' ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Copy className="w-4 h-4 text-gray-400 hover:text-white" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 

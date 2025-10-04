@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react';
-import { adminAPI, roomAPI, serviceAPI } from '../../../lib/api';
+import { useState, useEffect } from "react";
+import { adminAPI, roomAPI, serviceAPI } from "../../../lib/api";
 import {
   Calendar,
   Users,
@@ -16,8 +16,8 @@ import {
   Clock,
   Mail,
   Phone,
-  User
-} from 'lucide-react';
+  User,
+} from "lucide-react";
 
 interface Booking {
   _id: string;
@@ -49,12 +49,12 @@ interface Booking {
   servicesPrice: number;
   transportPrice: number;
   yogaPrice: number;
-  status: 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  status: "pending" | "confirmed" | "checked_in" | "checked_out" | "cancelled";
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
   specialRequests?: string;
   notes?: string;
   createdAt: string;
-  bookingType?: 'room' | 'yoga';
+  bookingType?: "room" | "yoga";
   transport?: {
     pickup: boolean;
     drop: boolean;
@@ -70,10 +70,12 @@ interface Booking {
     quantity: number;
     totalPrice: number;
   }[];
-  yogaSessionId?: {
-    type: string;
-    batchName: string;
-  } | string;
+  yogaSessionId?:
+    | {
+        type: string;
+        batchName: string;
+      }
+    | string;
   includeFood: boolean;
   includeBreakfast: boolean;
 }
@@ -96,20 +98,20 @@ const AdminBookingsPage = () => {
   const [pagination, setPagination] = useState({
     current: 1,
     pages: 1,
-    total: 0
+    total: 0,
   });
 
   // Filters
   const [filters, setFilters] = useState({
-    status: '',
-    paymentStatus: '',
-    bookingType: '',
-    hasTransport: '',
-    hasYoga: '',
-    hasServices: '',
-    search: '',
+    status: "",
+    paymentStatus: "",
+    bookingType: "",
+    hasTransport: "",
+    hasYoga: "",
+    hasServices: "",
+    search: "",
     page: 1,
-    limit: 10
+    limit: 10,
   });
 
   // Modal states
@@ -119,44 +121,55 @@ const AdminBookingsPage = () => {
 
   // Create booking form data
   const [createForm, setCreateForm] = useState({
-    roomId: '',
-    checkIn: '',
-    checkOut: '',
-    guests: [{
-      name: '',
-      age: 25,
-      gender: 'Male' as 'Male' | 'Female' | 'Other',
-      idType: 'Aadhar' as 'Aadhar' | 'Passport' | 'Driving License' | 'PAN Card',
-      idNumber: ''
-    }],
+    roomId: "",
+    checkIn: "",
+    checkOut: "",
+    guests: [
+      {
+        name: "",
+        age: 25,
+        gender: "Male" as "Male" | "Female" | "Other",
+        idType: "Aadhar" as
+          | "Aadhar"
+          | "Passport"
+          | "Driving License"
+          | "PAN Card",
+        idNumber: "",
+      },
+    ],
     primaryGuestInfo: {
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
       emergencyContact: {
-        name: '',
-        phone: '',
-        relationship: ''
-      }
+        name: "",
+        phone: "",
+        relationship: "",
+      },
     },
     includeFood: true,
     includeBreakfast: false,
     transport: {
       pickup: false,
       drop: false,
-      flightNumber: '',
-      airportFrom: 'Kochi',
-      airportTo: 'Kochi'
+      flightNumber: "",
+      airportFrom: "Kochi",
+      airportTo: "Kochi",
     },
     selectedServices: [],
-    specialRequests: '',
-    status: 'confirmed' as 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'cancelled',
-    paymentStatus: 'pending' as 'pending' | 'paid' | 'failed' | 'refunded',
-    notes: ''
+    specialRequests: "",
+    status: "confirmed" as
+      | "pending"
+      | "confirmed"
+      | "checked_in"
+      | "checked_out"
+      | "cancelled",
+    paymentStatus: "pending" as "pending" | "paid" | "failed" | "refunded",
+    notes: "",
   });
 
   useEffect(() => {
@@ -175,11 +188,11 @@ const AdminBookingsPage = () => {
         setBookings(data.data.bookings);
         setPagination(data.data.pagination);
       } else {
-        setError(data.message || 'Failed to fetch bookings');
+        setError(data.message || "Failed to fetch bookings");
       }
     } catch (err: any) {
-      setError('Failed to fetch bookings');
-      console.error('Fetch bookings error:', err);
+      setError("Failed to fetch bookings");
+      console.error("Fetch bookings error:", err);
     } finally {
       setLoading(false);
     }
@@ -193,7 +206,7 @@ const AdminBookingsPage = () => {
         setRooms(data.data.rooms);
       }
     } catch (err) {
-      console.error('Failed to fetch rooms:', err);
+      console.error("Failed to fetch rooms:", err);
     }
   };
 
@@ -205,15 +218,15 @@ const AdminBookingsPage = () => {
         setServices(data.data.services);
       }
     } catch (err) {
-      console.error('Failed to fetch services:', err);
+      console.error("Failed to fetch services:", err);
     }
   };
 
   const handleFilterChange = (key: string, value: any) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value,
-      page: 1 // Reset to first page when filters change
+      page: 1, // Reset to first page when filters change
     }));
   };
 
@@ -228,11 +241,11 @@ const AdminBookingsPage = () => {
         fetchBookings();
         resetCreateForm();
       } else {
-        setError(data.message || 'Failed to create booking');
+        setError(data.message || "Failed to create booking");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create booking');
-      console.error('Create booking error:', err);
+      setError(err.response?.data?.message || "Failed to create booking");
+      console.error("Create booking error:", err);
     } finally {
       setLoading(false);
     }
@@ -240,108 +253,251 @@ const AdminBookingsPage = () => {
 
   const resetCreateForm = () => {
     setCreateForm({
-      roomId: '',
-      checkIn: '',
-      checkOut: '',
-      guests: [{
-        name: '',
-        age: 25,
-        gender: 'Male',
-        idType: 'Aadhar',
-        idNumber: ''
-      }],
+      roomId: "",
+      checkIn: "",
+      checkOut: "",
+      guests: [
+        {
+          name: "",
+          age: 25,
+          gender: "Male",
+          idType: "Aadhar",
+          idNumber: "",
+        },
+      ],
       primaryGuestInfo: {
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        pincode: '',
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        pincode: "",
         emergencyContact: {
-          name: '',
-          phone: '',
-          relationship: ''
-        }
+          name: "",
+          phone: "",
+          relationship: "",
+        },
       },
       includeFood: true,
       includeBreakfast: false,
       transport: {
         pickup: false,
         drop: false,
-        flightNumber: '',
-        airportFrom: 'Kochi',
-        airportTo: 'Kochi'
+        flightNumber: "",
+        airportFrom: "Kochi",
+        airportTo: "Kochi",
       },
       selectedServices: [],
-      specialRequests: '',
-      status: 'confirmed',
-      paymentStatus: 'pending',
-      notes: ''
+      specialRequests: "",
+      status: "confirmed",
+      paymentStatus: "pending",
+      notes: "",
     });
   };
 
   const addGuest = () => {
-    setCreateForm(prev => ({
+    setCreateForm((prev) => ({
       ...prev,
-      guests: [...prev.guests, {
-        name: '',
-        age: 25,
-        gender: 'Male' as const,
-        idType: 'Aadhar' as const,
-        idNumber: ''
-      }]
+      guests: [
+        ...prev.guests,
+        {
+          name: "",
+          age: 25,
+          gender: "Male" as const,
+          idType: "Aadhar" as const,
+          idNumber: "",
+        },
+      ],
     }));
   };
 
   const removeGuest = (index: number) => {
     if (createForm.guests.length > 1) {
-      setCreateForm(prev => ({
+      setCreateForm((prev) => ({
         ...prev,
-        guests: prev.guests.filter((_, i) => i !== index)
+        guests: prev.guests.filter((_, i) => i !== index),
       }));
     }
   };
 
   const updateGuest = (index: number, field: string, value: any) => {
-    setCreateForm(prev => ({
+    setCreateForm((prev) => ({
       ...prev,
       guests: prev.guests.map((guest, i) =>
         i === index ? { ...guest, [field]: value } : guest
-      )
+      ),
     }));
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'checked_in':
-        return 'bg-blue-100 text-blue-800';
-      case 'checked_out':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "confirmed":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "checked_in":
+        return "bg-blue-100 text-blue-800";
+      case "checked_out":
+        return "bg-gray-100 text-gray-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      case 'refunded':
-        return 'bg-purple-100 text-purple-800';
+      case "paid":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      case "refunded":
+        return "bg-purple-100 text-purple-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getBookingTypeDisplay = (booking: Booking) => {
+    // Priority-based booking type detection
+
+    // 1. Check if it's a room booking with accommodation
+    if (booking.roomId && booking.roomPrice > 0) {
+      return {
+        type: "room",
+        icon: "🏠",
+        label: "Room Booking",
+        description: `Room ${booking.roomId.roomNumber} (${booking.roomId.roomType})`,
+      };
+    }
+
+    // 2. Check if it's primarily a yoga booking
+    if (
+      booking.bookingType === "yoga" ||
+      booking.yogaPrice > 0 ||
+      booking.yogaSessionId
+    ) {
+      return {
+        type: "yoga",
+        icon: "🧘‍♀️",
+        label: "Yoga Session",
+        description:
+          typeof booking.yogaSessionId === "object" &&
+          booking.yogaSessionId?.type
+            ? `${booking.yogaSessionId.type} - ${booking.yogaSessionId.batchName}`
+            : "Daily Session",
+      };
+    }
+
+    // 3. Check for transport-only booking
+    if (
+      booking.transportPrice > 0 &&
+      !booking.roomId &&
+      !booking.yogaPrice &&
+      (booking.servicesPrice === 0 || !booking.selectedServices?.length)
+    ) {
+      const transportTypes = [];
+      if (booking.transport?.pickup) transportTypes.push("Pickup");
+      if (booking.transport?.drop) transportTypes.push("Drop");
+
+      return {
+        type: "transport",
+        icon: "✈️",
+        label: "Transport Service",
+        description:
+          transportTypes.length > 0
+            ? `Airport ${transportTypes.join(" & ")}`
+            : "Transport Service",
+      };
+    }
+
+    // 4. Check for adventure sports in selected services
+    if (booking.selectedServices && booking.selectedServices.length > 0) {
+      const adventureServices = booking.selectedServices.filter(
+        (service) =>
+          service.serviceId?.category === "adventure" ||
+          ["surfing", "diving", "trekking", "adventure"].some((keyword) =>
+            service.serviceId?.name?.toLowerCase().includes(keyword)
+          )
+      );
+
+      if (adventureServices.length > 0) {
+        return {
+          type: "adventure",
+          icon: "🏔️",
+          label: "Adventure Sports",
+          description:
+            adventureServices.length === 1
+              ? adventureServices[0].serviceId.name
+              : `${adventureServices.length} Adventure Activities`,
+        };
+      }
+
+      // Check for other specific service categories
+      const yogaServices = booking.selectedServices.filter(
+        (service) => service.serviceId?.category === "yoga"
+      );
+
+      if (yogaServices.length > 0) {
+        return {
+          type: "yoga",
+          icon: "🧘‍♀️",
+          label: "Yoga Services",
+          description:
+            yogaServices.length === 1
+              ? yogaServices[0].serviceId.name
+              : `${yogaServices.length} Yoga Services`,
+        };
+      }
+    }
+
+    // 5. Mixed booking (room + services/transport)
+    if (
+      booking.roomId &&
+      (booking.servicesPrice > 0 ||
+        booking.transportPrice > 0 ||
+        booking.yogaPrice > 0)
+    ) {
+      const components = [];
+      if (booking.roomPrice > 0) components.push("Room");
+      if (booking.yogaPrice > 0) components.push("Yoga");
+      if (booking.transportPrice > 0) components.push("Transport");
+      if (booking.servicesPrice > 0) components.push("Services");
+
+      return {
+        type: "mixed",
+        icon: "🏠",
+        label: "Package Booking",
+        description: `Room ${booking.roomId.roomNumber} + ${components
+          .slice(1)
+          .join(", ")}`,
+      };
+    }
+
+    // 6. General service booking
+    if (booking.selectedServices && booking.selectedServices.length > 0) {
+      return {
+        type: "service",
+        icon: "🛎️",
+        label: "Service Booking",
+        description:
+          booking.selectedServices.length === 1
+            ? booking.selectedServices[0].serviceId?.name || "Service"
+            : `${booking.selectedServices.length} Services`,
+      };
+    }
+
+    // 7. Default fallback
+    return {
+      type: "other",
+      icon: "📋",
+      label: "Other Booking",
+      description: "Service Booking",
+    };
   };
 
   if (loading && bookings.length === 0) {
@@ -359,7 +515,9 @@ const AdminBookingsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Bookings Management</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Bookings Management
+              </h1>
               <p className="text-gray-600">Manage all resort bookings</p>
             </div>
             {/* <button
@@ -384,37 +542,49 @@ const AdminBookingsPage = () => {
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Search
+              </label>
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search bookings..."
                   value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  onChange={(e) => handleFilterChange("search", e.target.value)}
                   className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Booking Type
+              </label>
               <select
                 value={filters.bookingType}
-                onChange={(e) => handleFilterChange('bookingType', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("bookingType", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Types</option>
                 <option value="room">Room Bookings</option>
                 <option value="yoga">Yoga Bookings</option>
+                <option value="adventure">Adventure Sports</option>
+                <option value="transport">Transport Only</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Transport</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Transport
+              </label>
               <select
                 value={filters.hasTransport}
-                onChange={(e) => handleFilterChange('hasTransport', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("hasTransport", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All</option>
@@ -425,10 +595,12 @@ const AdminBookingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
               <select
                 value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Statuses</option>
@@ -441,10 +613,14 @@ const AdminBookingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Status
+              </label>
               <select
                 value={filters.paymentStatus}
-                onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
+                onChange={(e) =>
+                  handleFilterChange("paymentStatus", e.target.value)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Payment</option>
@@ -501,40 +677,37 @@ const AdminBookingsPage = () => {
                   <tr key={booking._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {booking.userId?.name || booking.primaryGuestInfo?.name || 'Guest'}
+                        {booking.userId?.name ||
+                          booking.primaryGuestInfo?.name ||
+                          "Guest"}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.userId?.email || booking.primaryGuestInfo?.email || booking.guestEmail}
+                        {booking.userId?.email ||
+                          booking.primaryGuestInfo?.email ||
+                          booking.guestEmail}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.userId?.phone || booking.primaryGuestInfo?.phone}
+                        {booking.userId?.phone ||
+                          booking.primaryGuestInfo?.phone}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {booking.bookingType === 'yoga' || booking.yogaPrice > 0 ? (
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
-                            🧘‍♀️ Yoga Session
+                      {(() => {
+                        const bookingDisplay = getBookingTypeDisplay(booking);
+                        return (
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                              <span className="text-lg">
+                                {bookingDisplay.icon}
+                              </span>
+                              {bookingDisplay.label}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {bookingDisplay.description}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {typeof booking.yogaSessionId === 'object' && booking.yogaSessionId?.type
-                              ? `${booking.yogaSessionId.type} - ${booking.yogaSessionId.batchName}`
-                              : 'Daily Session'
-                            }
-                          </div>
-                        </div>
-                      ) : booking.roomId ? (
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            Room {booking.roomId.roomNumber}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {booking.roomId.roomType}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-sm text-gray-500">Service Booking</div>
-                      )}
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -547,26 +720,36 @@ const AdminBookingsPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
                         <div className="text-sm text-gray-900">
-                          {booking.totalGuests} guests ({booking.adults}A, {booking.children}C)
+                          {booking.totalGuests} guests ({booking.adults}A,{" "}
+                          {booking.children}C)
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {booking.includeFood && (
-                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Food</span>
-                          )}
-                          {booking.includeBreakfast && (
-                            <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Breakfast</span>
-                          )}
-                          {booking.transport?.pickup && (
-                            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">Pickup</span>
-                          )}
-                          {booking.transport?.drop && (
-                            <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">Drop</span>
-                          )}
-                          {booking.selectedServices && booking.selectedServices.length > 0 && (
-                            <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
-                              {booking.selectedServices.length} Services
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                              Food
                             </span>
                           )}
+                          {booking.includeBreakfast && (
+                            <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                              Breakfast
+                            </span>
+                          )}
+                          {booking.transport?.pickup && (
+                            <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                              Pickup
+                            </span>
+                          )}
+                          {booking.transport?.drop && (
+                            <span className="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded">
+                              Drop
+                            </span>
+                          )}
+                          {booking.selectedServices &&
+                            booking.selectedServices.length > 0 && (
+                              <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                                {booking.selectedServices.length} Services
+                              </span>
+                            )}
                         </div>
                       </div>
                     </td>
@@ -575,19 +758,37 @@ const AdminBookingsPage = () => {
                         ₹{booking.totalAmount.toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500 space-y-1">
-                        {booking.roomPrice > 0 && <div>Room: ₹{booking.roomPrice}</div>}
-                        {booking.foodPrice > 0 && <div>Food: ₹{booking.foodPrice}</div>}
-                        {booking.yogaPrice > 0 && <div>Yoga: ₹{booking.yogaPrice}</div>}
-                        {booking.transportPrice > 0 && <div>Transport: ₹{booking.transportPrice}</div>}
-                        {booking.servicesPrice > 0 && <div>Services: ₹{booking.servicesPrice}</div>}
+                        {booking.roomPrice > 0 && (
+                          <div>Room: ₹{booking.roomPrice}</div>
+                        )}
+                        {booking.foodPrice > 0 && (
+                          <div>Food: ₹{booking.foodPrice}</div>
+                        )}
+                        {booking.yogaPrice > 0 && (
+                          <div>Yoga: ₹{booking.yogaPrice}</div>
+                        )}
+                        {booking.transportPrice > 0 && (
+                          <div>Transport: ₹{booking.transportPrice}</div>
+                        )}
+                        {booking.servicesPrice > 0 && (
+                          <div>Services: ₹{booking.servicesPrice}</div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="space-y-1">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(booking.status)}`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
+                            booking.status
+                          )}`}
+                        >
                           {booking.status}
                         </span>
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(
+                            booking.paymentStatus
+                          )}`}
+                        >
                           {booking.paymentStatus}
                         </span>
                       </div>
@@ -625,14 +826,21 @@ const AdminBookingsPage = () => {
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
-                  onClick={() => handleFilterChange('page', Math.max(1, filters.page - 1))}
+                  onClick={() =>
+                    handleFilterChange("page", Math.max(1, filters.page - 1))
+                  }
                   disabled={filters.page <= 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
-                  onClick={() => handleFilterChange('page', Math.min(pagination.pages, filters.page + 1))}
+                  onClick={() =>
+                    handleFilterChange(
+                      "page",
+                      Math.min(pagination.pages, filters.page + 1)
+                    )
+                  }
                   disabled={filters.page >= pagination.pages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -642,7 +850,8 @@ const AdminBookingsPage = () => {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing page {pagination.current} of {pagination.pages} ({pagination.total} total bookings)
+                    Showing page {pagination.current} of {pagination.pages} (
+                    {pagination.total} total bookings)
                   </p>
                 </div>
                 <div>
@@ -650,11 +859,11 @@ const AdminBookingsPage = () => {
                     {[...Array(pagination.pages)].map((_, i) => (
                       <button
                         key={i + 1}
-                        onClick={() => handleFilterChange('page', i + 1)}
+                        onClick={() => handleFilterChange("page", i + 1)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                           i + 1 === pagination.current
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                         }`}
                       >
                         {i + 1}
@@ -673,22 +882,32 @@ const AdminBookingsPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Create New Booking</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Create New Booking
+              </h2>
 
               {/* Room Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Room</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Room
+                  </label>
                   <select
                     value={createForm.roomId}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, roomId: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        roomId: e.target.value,
+                      }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
                     <option value="">Select Room</option>
-                    {rooms.map(room => (
+                    {rooms.map((room) => (
                       <option key={room._id} value={room._id}>
-                        Room {room.roomNumber} - {room.roomType} (₹{room.pricePerNight}/night)
+                        Room {room.roomNumber} - {room.roomType} (₹
+                        {room.pricePerNight}/night)
                       </option>
                     ))}
                   </select>
@@ -696,21 +915,35 @@ const AdminBookingsPage = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-in</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-in
+                    </label>
                     <input
                       type="date"
                       value={createForm.checkIn}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, checkIn: e.target.value }))}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          checkIn: e.target.value,
+                        }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Check-out</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Check-out
+                    </label>
                     <input
                       type="date"
                       value={createForm.checkOut}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, checkOut: e.target.value }))}
+                      onChange={(e) =>
+                        setCreateForm((prev) => ({
+                          ...prev,
+                          checkOut: e.target.value,
+                        }))
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -720,16 +953,23 @@ const AdminBookingsPage = () => {
 
               {/* Primary Guest Info */}
               <div className="mb-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-3">Primary Guest Information</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">
+                  Primary Guest Information
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <input
                     type="text"
                     placeholder="Full Name"
                     value={createForm.primaryGuestInfo.name}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, name: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          name: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -737,10 +977,15 @@ const AdminBookingsPage = () => {
                     type="email"
                     placeholder="Email"
                     value={createForm.primaryGuestInfo.email}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, email: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          email: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -748,10 +993,15 @@ const AdminBookingsPage = () => {
                     type="tel"
                     placeholder="Phone"
                     value={createForm.primaryGuestInfo.phone}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, phone: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          phone: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -761,10 +1011,15 @@ const AdminBookingsPage = () => {
                     type="text"
                     placeholder="Address"
                     value={createForm.primaryGuestInfo.address}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, address: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          address: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -772,10 +1027,15 @@ const AdminBookingsPage = () => {
                     type="text"
                     placeholder="City"
                     value={createForm.primaryGuestInfo.city}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, city: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          city: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -783,10 +1043,15 @@ const AdminBookingsPage = () => {
                     type="text"
                     placeholder="State"
                     value={createForm.primaryGuestInfo.state}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, state: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          state: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -794,10 +1059,15 @@ const AdminBookingsPage = () => {
                     type="text"
                     placeholder="PIN Code"
                     value={createForm.primaryGuestInfo.pincode}
-                    onChange={(e) => setCreateForm(prev => ({
-                      ...prev,
-                      primaryGuestInfo: { ...prev.primaryGuestInfo, pincode: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        primaryGuestInfo: {
+                          ...prev.primaryGuestInfo,
+                          pincode: e.target.value,
+                        },
+                      }))
+                    }
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
@@ -817,12 +1087,17 @@ const AdminBookingsPage = () => {
                   </button>
                 </div>
                 {createForm.guests.map((guest, index) => (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-200 rounded-lg">
+                  <div
+                    key={index}
+                    className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4 p-4 border border-gray-200 rounded-lg"
+                  >
                     <input
                       type="text"
                       placeholder="Guest Name"
                       value={guest.name}
-                      onChange={(e) => updateGuest(index, 'name', e.target.value)}
+                      onChange={(e) =>
+                        updateGuest(index, "name", e.target.value)
+                      }
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
@@ -830,7 +1105,9 @@ const AdminBookingsPage = () => {
                       type="number"
                       placeholder="Age"
                       value={guest.age}
-                      onChange={(e) => updateGuest(index, 'age', parseInt(e.target.value))}
+                      onChange={(e) =>
+                        updateGuest(index, "age", parseInt(e.target.value))
+                      }
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       min="0"
                       max="120"
@@ -838,7 +1115,9 @@ const AdminBookingsPage = () => {
                     />
                     <select
                       value={guest.gender}
-                      onChange={(e) => updateGuest(index, 'gender', e.target.value)}
+                      onChange={(e) =>
+                        updateGuest(index, "gender", e.target.value)
+                      }
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Male">Male</option>
@@ -847,7 +1126,9 @@ const AdminBookingsPage = () => {
                     </select>
                     <select
                       value={guest.idType}
-                      onChange={(e) => updateGuest(index, 'idType', e.target.value)}
+                      onChange={(e) =>
+                        updateGuest(index, "idType", e.target.value)
+                      }
                       className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="Aadhar">Aadhar</option>
@@ -860,7 +1141,9 @@ const AdminBookingsPage = () => {
                         type="text"
                         placeholder="ID Number"
                         value={guest.idNumber}
-                        onChange={(e) => updateGuest(index, 'idNumber', e.target.value)}
+                        onChange={(e) =>
+                          updateGuest(index, "idNumber", e.target.value)
+                        }
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                       {createForm.guests.length > 1 && (
@@ -880,61 +1163,100 @@ const AdminBookingsPage = () => {
               {/* Services and Options */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Services</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Services
+                  </h3>
                   <div className="space-y-2">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={createForm.includeFood}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, includeFood: e.target.checked }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            includeFood: e.target.checked,
+                          }))
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Include Food</span>
+                      <span className="ml-2 text-sm text-gray-700">
+                        Include Food
+                      </span>
                     </label>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={createForm.includeBreakfast}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, includeBreakfast: e.target.checked }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            includeBreakfast: e.target.checked,
+                          }))
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Include Breakfast</span>
+                      <span className="ml-2 text-sm text-gray-700">
+                        Include Breakfast
+                      </span>
                     </label>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={createForm.transport.pickup}
-                        onChange={(e) => setCreateForm(prev => ({
-                          ...prev,
-                          transport: { ...prev.transport, pickup: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            transport: {
+                              ...prev.transport,
+                              pickup: e.target.checked,
+                            },
+                          }))
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Airport Pickup</span>
+                      <span className="ml-2 text-sm text-gray-700">
+                        Airport Pickup
+                      </span>
                     </label>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={createForm.transport.drop}
-                        onChange={(e) => setCreateForm(prev => ({
-                          ...prev,
-                          transport: { ...prev.transport, drop: e.target.checked }
-                        }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            transport: {
+                              ...prev.transport,
+                              drop: e.target.checked,
+                            },
+                          }))
+                        }
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Airport Drop</span>
+                      <span className="ml-2 text-sm text-gray-700">
+                        Airport Drop
+                      </span>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Booking Status</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Booking Status
+                  </h3>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
                       <select
                         value={createForm.status}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, status: e.target.value as any }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            status: e.target.value as any,
+                          }))
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
@@ -945,10 +1267,17 @@ const AdminBookingsPage = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Payment Status
+                      </label>
                       <select
                         value={createForm.paymentStatus}
-                        onChange={(e) => setCreateForm(prev => ({ ...prev, paymentStatus: e.target.value as any }))}
+                        onChange={(e) =>
+                          setCreateForm((prev) => ({
+                            ...prev,
+                            paymentStatus: e.target.value as any,
+                          }))
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       >
                         <option value="pending">Pending</option>
@@ -964,20 +1293,34 @@ const AdminBookingsPage = () => {
               {/* Special Requests and Notes */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Special Requests
+                  </label>
                   <textarea
                     value={createForm.specialRequests}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, specialRequests: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        specialRequests: e.target.value,
+                      }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={3}
                     placeholder="Any special requests from guest..."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Admin Notes</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Admin Notes
+                  </label>
                   <textarea
                     value={createForm.notes}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={3}
                     placeholder="Internal notes for this booking..."
@@ -998,7 +1341,11 @@ const AdminBookingsPage = () => {
                 </button>
                 <button
                   onClick={handleCreateBooking}
-                  disabled={!createForm.roomId || !createForm.checkIn || !createForm.checkOut}
+                  disabled={
+                    !createForm.roomId ||
+                    !createForm.checkIn ||
+                    !createForm.checkOut
+                  }
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Create Booking
@@ -1014,40 +1361,81 @@ const AdminBookingsPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Booking Details</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Booking Details
+              </h2>
 
               <div className="space-y-6">
+                {/* Main Information */}
+                {(selectedBooking.specialRequests || selectedBooking.notes) && (
+                  <div>
+                    {/* <h3 className="text-lg font-medium text-gray-900 mb-3">Main Information</h3> */}
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                      {selectedBooking.specialRequests && (
+                        <div>
+                          <span className="text-sm text-gray-600">
+                            Special Requests:
+                          </span>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedBooking.specialRequests}
+                          </p>
+                        </div>
+                      )}
+                      {selectedBooking.notes && (
+                        <div>
+                          <span className="text-sm text-gray-600">
+                            Admin Notes:
+                          </span>
+                          <p className="text-sm text-gray-900 mt-1">
+                            {selectedBooking.notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Guest Information */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Guest Information</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Guest Information
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Name:</span>
                         <span className="text-sm font-medium text-gray-900">
-                          {selectedBooking.userId?.name || selectedBooking.primaryGuestInfo?.name || 'Guest'}
+                          {selectedBooking.userId?.name ||
+                            selectedBooking.primaryGuestInfo?.name ||
+                            "Guest"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Email:</span>
                         <span className="text-sm font-medium text-gray-900">
-                          {selectedBooking.userId?.email || selectedBooking.primaryGuestInfo?.email || selectedBooking.guestEmail}
+                          {selectedBooking.userId?.email ||
+                            selectedBooking.primaryGuestInfo?.email ||
+                            selectedBooking.guestEmail}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Phone:</span>
                         <span className="text-sm font-medium text-gray-900">
-                          {selectedBooking.userId?.phone || selectedBooking.primaryGuestInfo?.phone || 'N/A'}
+                          {selectedBooking.userId?.phone ||
+                            selectedBooking.primaryGuestInfo?.phone ||
+                            "N/A"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Guests:</span>
                         <span className="text-sm font-medium text-gray-900">
-                          {selectedBooking.totalGuests} ({selectedBooking.adults} adults, {selectedBooking.children} children)
+                          {selectedBooking.totalGuests} (
+                          {selectedBooking.adults} adults,{" "}
+                          {selectedBooking.children} children)
                         </span>
                       </div>
                     </div>
@@ -1056,52 +1444,54 @@ const AdminBookingsPage = () => {
 
                 {/* Booking Details */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Booking Details</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Booking Details
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {selectedBooking.roomId ? (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">Room:</span>
-                          <span className="text-sm font-medium text-gray-900">
-                            {selectedBooking.roomId.roomNumber} ({selectedBooking.roomId.roomType})
-                          </span>
-                        </div>
-                      ) : selectedBooking.bookingType === 'yoga' || selectedBooking.yogaPrice > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🧘‍♀️</span>
-                          <span className="text-sm text-gray-600">Yoga Session:</span>
-                          <span className="text-sm font-medium text-gray-900">
-                            {typeof selectedBooking.yogaSessionId === 'object' && selectedBooking.yogaSessionId?.type
-                              ? `${selectedBooking.yogaSessionId.type} - ${selectedBooking.yogaSessionId.batchName}`
-                              : 'Daily Session'
-                            }
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Booking Type:</span>
-                          <span className="text-sm font-medium text-gray-900">Service Booking</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const bookingDisplay =
+                          getBookingTypeDisplay(selectedBooking);
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {bookingDisplay.icon}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              {bookingDisplay.label}:
+                            </span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {bookingDisplay.description}
+                            </span>
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <span className="text-sm text-gray-600">Check-in:</span>
                         <span className="text-sm font-medium text-gray-900">
-                          {new Date(selectedBooking.checkIn).toLocaleDateString()}
+                          {new Date(
+                            selectedBooking.checkIn
+                          ).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">Check-out:</span>
+                        <span className="text-sm text-gray-600">
+                          Check-out:
+                        </span>
                         <span className="text-sm font-medium text-gray-900">
-                          {new Date(selectedBooking.checkOut).toLocaleDateString()}
+                          {new Date(
+                            selectedBooking.checkOut
+                          ).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">Total Amount:</span>
+                        <span className="text-sm text-gray-600">
+                          Total Amount:
+                        </span>
                         <span className="text-sm font-medium text-gray-900">
                           ₹{selectedBooking.totalAmount.toLocaleString()}
                         </span>
@@ -1112,102 +1502,175 @@ const AdminBookingsPage = () => {
 
                 {/* Services & Transport */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Services & Add-ons</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Services & Add-ons
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-600">Food:</span>
-                        <span className={`text-sm font-medium ${selectedBooking.includeFood ? 'text-green-600' : 'text-gray-400'}`}>
-                          {selectedBooking.includeFood ? '✓ Included' : '✗ Not included'}
+                        <span
+                          className={`text-sm font-medium ${
+                            selectedBooking.includeFood
+                              ? "text-green-600"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {selectedBooking.includeFood
+                            ? "✓ Included"
+                            : "✗ Not included"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Breakfast:</span>
-                        <span className={`text-sm font-medium ${selectedBooking.includeBreakfast ? 'text-green-600' : 'text-gray-400'}`}>
-                          {selectedBooking.includeBreakfast ? '✓ Included' : '✗ Not included'}
+                        <span className="text-sm text-gray-600">
+                          Breakfast:
+                        </span>
+                        <span
+                          className={`text-sm font-medium ${
+                            selectedBooking.includeBreakfast
+                              ? "text-green-600"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {selectedBooking.includeBreakfast
+                            ? "✓ Included"
+                            : "✗ Not included"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Airport Pickup:</span>
-                        <span className={`text-sm font-medium ${selectedBooking.transport?.pickup ? 'text-green-600' : 'text-gray-400'}`}>
-                          {selectedBooking.transport?.pickup ? '✓ Yes' : '✗ No'}
+                        <span className="text-sm text-gray-600">
+                          Airport Pickup:
+                        </span>
+                        <span
+                          className={`text-sm font-medium ${
+                            selectedBooking.transport?.pickup
+                              ? "text-green-600"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {selectedBooking.transport?.pickup ? "✓ Yes" : "✗ No"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Airport Drop:</span>
-                        <span className={`text-sm font-medium ${selectedBooking.transport?.drop ? 'text-green-600' : 'text-gray-400'}`}>
-                          {selectedBooking.transport?.drop ? '✓ Yes' : '✗ No'}
+                        <span className="text-sm text-gray-600">
+                          Airport Drop:
+                        </span>
+                        <span
+                          className={`text-sm font-medium ${
+                            selectedBooking.transport?.drop
+                              ? "text-green-600"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {selectedBooking.transport?.drop ? "✓ Yes" : "✗ No"}
                         </span>
                       </div>
                     </div>
 
-                    {selectedBooking.transport && (selectedBooking.transport.pickup || selectedBooking.transport.drop) && (
-                      <div className="border-t pt-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Transport Details:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                          {selectedBooking.transport.flightNumber && (
-                            <div>Flight: {selectedBooking.transport.flightNumber}</div>
-                          )}
-                          {selectedBooking.transport.airportFrom && (
-                            <div>From: {selectedBooking.transport.airportFrom}</div>
-                          )}
-                          {selectedBooking.transport.airportTo && (
-                            <div>To: {selectedBooking.transport.airportTo}</div>
-                          )}
+                    {selectedBooking.transport &&
+                      (selectedBooking.transport.pickup ||
+                        selectedBooking.transport.drop) && (
+                        <div className="border-t pt-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">
+                            Transport Details:
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                            {selectedBooking.transport.flightNumber && (
+                              <div>
+                                Flight: {selectedBooking.transport.flightNumber}
+                              </div>
+                            )}
+                            {selectedBooking.transport.airportFrom && (
+                              <div>
+                                From: {selectedBooking.transport.airportFrom}
+                              </div>
+                            )}
+                            {selectedBooking.transport.airportTo && (
+                              <div>
+                                To: {selectedBooking.transport.airportTo}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {selectedBooking.selectedServices && selectedBooking.selectedServices.length > 0 && (
-                      <div className="border-t pt-3">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Additional Services:</h4>
-                        <div className="space-y-1">
-                          {selectedBooking.selectedServices.map((service, index) => (
-                            <div key={index} className="flex justify-between items-center text-sm">
-                              <span>{service.serviceId.name} (x{service.quantity})</span>
-                              <span className="font-medium">₹{service.totalPrice.toLocaleString()}</span>
-                            </div>
-                          ))}
+                    {selectedBooking.selectedServices &&
+                      selectedBooking.selectedServices.length > 0 && (
+                        <div className="border-t pt-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">
+                            Services:
+                          </h4>
+                          <div className="space-y-1">
+                            {selectedBooking.selectedServices.map(
+                              (service, index) => (
+                                <div
+                                  key={index}
+                                  className="flex justify-between items-center text-sm"
+                                >
+                                  <span>
+                                    {service.serviceId?.name || "Service"} (x
+                                    {service.quantity})
+                                  </span>
+                                  <span className="font-medium">
+                                    ₹{service.totalPrice.toLocaleString()}
+                                  </span>
+                                </div>
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     <div className="border-t pt-3">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Price Breakdown:</h4>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">
+                        Price Breakdown:
+                      </h4>
                       <div className="space-y-1 text-sm">
                         {selectedBooking.roomPrice > 0 && (
                           <div className="flex justify-between">
                             <span>Room charges:</span>
-                            <span>₹{selectedBooking.roomPrice.toLocaleString()}</span>
+                            <span>
+                              ₹{selectedBooking.roomPrice.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         {selectedBooking.foodPrice > 0 && (
                           <div className="flex justify-between">
                             <span>Food charges:</span>
-                            <span>₹{selectedBooking.foodPrice.toLocaleString()}</span>
+                            <span>
+                              ₹{selectedBooking.foodPrice.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         {selectedBooking.yogaPrice > 0 && (
                           <div className="flex justify-between">
                             <span>Yoga charges:</span>
-                            <span>₹{selectedBooking.yogaPrice.toLocaleString()}</span>
+                            <span>
+                              ₹{selectedBooking.yogaPrice.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         {selectedBooking.transportPrice > 0 && (
                           <div className="flex justify-between">
                             <span>Transport charges:</span>
-                            <span>₹{selectedBooking.transportPrice.toLocaleString()}</span>
+                            <span>
+                              ₹{selectedBooking.transportPrice.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         {selectedBooking.servicesPrice > 0 && (
                           <div className="flex justify-between">
                             <span>Additional services:</span>
-                            <span>₹{selectedBooking.servicesPrice.toLocaleString()}</span>
+                            <span>
+                              ₹{selectedBooking.servicesPrice.toLocaleString()}
+                            </span>
                           </div>
                         )}
                         <div className="flex justify-between font-medium border-t pt-1">
                           <span>Total:</span>
-                          <span>₹{selectedBooking.totalAmount.toLocaleString()}</span>
+                          <span>
+                            ₹{selectedBooking.totalAmount.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1216,18 +1679,32 @@ const AdminBookingsPage = () => {
 
                 {/* Status */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-3">Status</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">
+                    Status
+                  </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <div className="flex items-center gap-4">
                       <div>
-                        <span className="text-sm text-gray-600">Booking Status:</span>
-                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedBooking.status)}`}>
+                        <span className="text-sm text-gray-600">
+                          Booking Status:
+                        </span>
+                        <span
+                          className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                            selectedBooking.status
+                          )}`}
+                        >
                           {selectedBooking.status}
                         </span>
                       </div>
                       <div>
-                        <span className="text-sm text-gray-600">Payment Status:</span>
-                        <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(selectedBooking.paymentStatus)}`}>
+                        <span className="text-sm text-gray-600">
+                          Payment Status:
+                        </span>
+                        <span
+                          className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                            selectedBooking.paymentStatus
+                          )}`}
+                        >
                           {selectedBooking.paymentStatus}
                         </span>
                       </div>
@@ -1235,29 +1712,9 @@ const AdminBookingsPage = () => {
                   </div>
                 </div>
 
-                {/* Special Requests & Notes */}
-                {(selectedBooking.specialRequests || selectedBooking.notes) && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Additional Information</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                      {selectedBooking.specialRequests && (
-                        <div>
-                          <span className="text-sm text-gray-600">Special Requests:</span>
-                          <p className="text-sm text-gray-900 mt-1">{selectedBooking.specialRequests}</p>
-                        </div>
-                      )}
-                      {selectedBooking.notes && (
-                        <div>
-                          <span className="text-sm text-gray-600">Admin Notes:</span>
-                          <p className="text-sm text-gray-900 mt-1">{selectedBooking.notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 <div className="text-xs text-gray-500">
-                  Created on {new Date(selectedBooking.createdAt).toLocaleString()}
+                  Created on{" "}
+                  {new Date(selectedBooking.createdAt).toLocaleString()}
                 </div>
               </div>
 
