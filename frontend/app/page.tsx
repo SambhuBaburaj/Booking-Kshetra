@@ -45,7 +45,9 @@ export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [hoveredRoomType, setHoveredRoomType] = useState<"king" | "queen" | "dormitory" | null>(null);
+  const [hoveredRoomType, setHoveredRoomType] = useState<
+    "king" | "queen" | "dormitory" | null
+  >(null);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
@@ -55,26 +57,26 @@ export default function Home() {
       "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1520637836862-4d197d17c881?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1520637836862-4d197d17c881?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     ],
     queen: [
       "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1540518614846-7eded47d24e5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1540518614846-7eded47d24e5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     ],
     dormitory: [
       "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1595814432314-90095f342694?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1595814432314-90095f342694?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     ],
     default: [
       "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-    ]
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+    ],
   };
 
   const mainServices = [
@@ -328,23 +330,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          className="absolute bottom-8 left-8 flex flex-col items-start"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4 }}
-        >
-          <div className="text-white/60 text-sm mb-4 font-light">
-            Scroll to discover
-          </div>
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-px h-16 bg-gradient-to-b from-white/60 to-transparent"
-          />
-        </motion.div>
       </section>
 
       {/* Main Services Carousel Section */}
@@ -650,11 +635,18 @@ export default function Home() {
                 <div className="space-y-6">
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType('king')}
+                    onMouseEnter={() => setHoveredRoomType("king")}
                     onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    onClick={() =>
+                      window.open(
+                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
+                        "_blank"
+                      )
+                    }
                     className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === 'king' ? 'bg-blue-500/20 shadow-lg shadow-blue-500/25' : 'hover:bg-white/10'
+                      hoveredRoomType === "king"
+                        ? "bg-blue-500/20 shadow-lg shadow-blue-500/25"
+                        : "hover:bg-white/10"
                     }`}
                   >
                     <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -674,20 +666,30 @@ export default function Home() {
 
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType('queen')}
+                    onMouseEnter={() => setHoveredRoomType("queen")}
                     onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    onClick={() =>
+                      window.open(
+                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
+                        "_blank"
+                      )
+                    }
                     className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === 'queen' ? 'bg-green-500/20 shadow-lg shadow-green-500/25' : 'hover:bg-white/10'
+                      hoveredRoomType === "queen"
+                        ? "bg-green-500/20 shadow-lg shadow-green-500/25"
+                        : "hover:bg-white/10"
                     }`}
                   >
                     <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
                       <Bed className="w-6 h-6 text-green-400" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-xl font-semibold">Queen Sized Room</h4>
+                      <h4 className="text-xl font-semibold">
+                        Queen Sized Room
+                      </h4>
                       <p className="text-white/80">
-                        Comfortable room with queen-size bed and modern facilities
+                        Comfortable room with queen-size bed and modern
+                        facilities
                       </p>
                       <p className="text-green-400 font-semibold mt-1">
                         Starting from ₹2,800/night
@@ -698,11 +700,18 @@ export default function Home() {
 
                   <motion.div
                     whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType('dormitory')}
+                    onMouseEnter={() => setHoveredRoomType("dormitory")}
                     onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() => window.open("https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala", "_blank")}
+                    onClick={() =>
+                      window.open(
+                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
+                        "_blank"
+                      )
+                    }
                     className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === 'dormitory' ? 'bg-purple-500/20 shadow-lg shadow-purple-500/25' : 'hover:bg-white/10'
+                      hoveredRoomType === "dormitory"
+                        ? "bg-purple-500/20 shadow-lg shadow-purple-500/25"
+                        : "hover:bg-white/10"
                     }`}
                   >
                     <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
@@ -711,7 +720,8 @@ export default function Home() {
                     <div className="flex-1">
                       <h4 className="text-xl font-semibold">Dormitory</h4>
                       <p className="text-white/80">
-                        Shared accommodation perfect for budget travelers and groups
+                        Shared accommodation perfect for budget travelers and
+                        groups
                       </p>
                       <p className="text-purple-400 font-semibold mt-1">
                         Starting from ₹1,200/night per bed
@@ -773,17 +783,25 @@ export default function Home() {
               {/* Room Type Indicator */}
               <div className="mb-4 text-center">
                 <p className="text-white/60 text-sm">
-                  {hoveredRoomType ?
-                    `Viewing ${hoveredRoomType === 'king' ? 'King Sized Room' : hoveredRoomType === 'queen' ? 'Queen Sized Room' : 'Dormitory'} Images` :
-                    'Hover over room types to see images'
-                  }
+                  {hoveredRoomType
+                    ? `Viewing ${
+                        hoveredRoomType === "king"
+                          ? "King Sized Room"
+                          : hoveredRoomType === "queen"
+                          ? "Queen Sized Room"
+                          : "Dormitory"
+                      } Images`
+                    : "Hover over room types to see images"}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {(hoveredRoomType ? roomImages[hoveredRoomType] : roomImages.default).map((image, idx) => (
+                {(hoveredRoomType
+                  ? roomImages[hoveredRoomType]
+                  : roomImages.default
+                ).map((image, idx) => (
                   <motion.div
-                    key={`${hoveredRoomType || 'default'}-${idx}`}
+                    key={`${hoveredRoomType || "default"}-${idx}`}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
@@ -793,27 +811,41 @@ export default function Home() {
                   >
                     <img
                       src={image}
-                      alt={`${hoveredRoomType || 'Room'} ${idx + 1}`}
+                      alt={`${hoveredRoomType || "Room"} ${idx + 1}`}
                       className="w-full h-48 object-cover transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
                     {/* Image overlay with room type label */}
                     <div className="absolute bottom-3 left-3 right-3">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
-                        hoveredRoomType === 'king' ? 'bg-blue-500/80 text-white' :
-                        hoveredRoomType === 'queen' ? 'bg-green-500/80 text-white' :
-                        hoveredRoomType === 'dormitory' ? 'bg-purple-500/80 text-white' :
-                        'bg-white/20 text-white/80'
-                      }`}>
-                        {hoveredRoomType === 'king' && <Bed className="w-3 h-3" />}
-                        {hoveredRoomType === 'queen' && <Bed className="w-3 h-3" />}
-                        {hoveredRoomType === 'dormitory' && <Users className="w-3 h-3" />}
+                      <div
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                          hoveredRoomType === "king"
+                            ? "bg-blue-500/80 text-white"
+                            : hoveredRoomType === "queen"
+                            ? "bg-green-500/80 text-white"
+                            : hoveredRoomType === "dormitory"
+                            ? "bg-purple-500/80 text-white"
+                            : "bg-white/20 text-white/80"
+                        }`}
+                      >
+                        {hoveredRoomType === "king" && (
+                          <Bed className="w-3 h-3" />
+                        )}
+                        {hoveredRoomType === "queen" && (
+                          <Bed className="w-3 h-3" />
+                        )}
+                        {hoveredRoomType === "dormitory" && (
+                          <Users className="w-3 h-3" />
+                        )}
                         <span>
-                          {hoveredRoomType === 'king' ? 'King Room' :
-                           hoveredRoomType === 'queen' ? 'Queen Room' :
-                           hoveredRoomType === 'dormitory' ? 'Dormitory' :
-                           'Our Rooms'}
+                          {hoveredRoomType === "king"
+                            ? "King Room"
+                            : hoveredRoomType === "queen"
+                            ? "Queen Room"
+                            : hoveredRoomType === "dormitory"
+                            ? "Dormitory"
+                            : "Our Rooms"}
                         </span>
                       </div>
                     </div>
@@ -833,7 +865,8 @@ export default function Home() {
                       Interactive Room Gallery
                     </p>
                     <p className="text-white/80 text-sm">
-                      Hover over room types on the left to see specific room images
+                      Hover over room types on the left to see specific room
+                      images
                     </p>
                   </div>
                 </motion.div>
