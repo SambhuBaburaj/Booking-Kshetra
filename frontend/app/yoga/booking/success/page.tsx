@@ -30,28 +30,42 @@ function YogaBookingSuccessPageContent() {
   const orderId = searchParams.get('order_id')
   const bookingId = searchParams.get('booking_id')
 
-  const [bookingDetails] = useState({
-    bookingId: bookingId || `68de0794dd1de844fe67e37d`,
-    bookingReference: `YB${Date.now().toString().slice(-6)}`,
-    paymentId: paymentId || 'demo_payment_id',
-    orderId: orderId || 'demo_order_id',
-    bookingDate: new Date().toLocaleDateString('en-IN'),
-    sessionType: 'Yoga Session',
-    batchName: 'Demo Booking',
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 90 * 60 * 1000).toISOString(), // 90 minutes
-    instructor: 'Demo Instructor',
-    location: 'Kshetra Retreat Resort, Varkala',
-    customerName: 'Demo Customer',
-    customerEmail: 'demo@example.com',
-    customerPhone: '+91 9999999999',
-    totalAmount: 1500
-  })
+  const [bookingDetails, setBookingDetails] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     // Scroll to top on page load
     window.scrollTo(0, 0)
-  }, [])
+
+    // Fetch booking details
+    const fetchBookingDetails = async () => {
+      if (!bookingId) {
+        setError('Booking ID is required')
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const response = await ApiInstance.get(`/bookings/public/${bookingId}`)
+
+        if (response.data.success) {
+          const booking = response.data.data.booking
+          setBookingDetails(booking)
+        } else {
+          setError('Failed to fetch booking details')
+        }
+      } catch (error) {
+        console.error('Error fetching booking details:', error)
+        setError('Failed to fetch booking details')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBookingDetails()
+  }, [bookingId])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -70,7 +84,7 @@ function YogaBookingSuccessPageContent() {
 
   const handleDownloadReceipt = async () => {
     try {
-      const response = await ApiInstance.get(`/yoga/booking/${bookingDetails.bookingId}/receipt`, {
+      const response = await ApiInstance.get(`/bookings/${bookingDetails._id}/receipt`, {
         responseType: 'blob'
       })
 
@@ -79,17 +93,18 @@ function YogaBookingSuccessPageContent() {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `yoga-booking-receipt-${bookingDetails.bookingId}.pdf`
+        a.download = `yoga-booking-receipt-${bookingDetails._id}.pdf`
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
+        toast.success('Receipt downloaded successfully!')
       } else {
-        alert('Error downloading receipt. Please try again.')
+        toast.error('Error downloading receipt. Please try again.')
       }
     } catch (error) {
       console.error('Error downloading receipt:', error)
-      alert('Error downloading receipt. Please try again.')
+      toast.error('Error downloading receipt. Please try again.')
     }
   }
 
@@ -108,12 +123,72 @@ function YogaBookingSuccessPageContent() {
   }
 
   const handleCopyBookingId = () => {
-    navigator.clipboard.writeText(bookingDetails.bookingId)
+    navigator.clipboard.writeText(bookingDetails._id)
     toast.success('Booking ID copied to clipboard!')
   }
 
   const handleTrackBooking = () => {
-    router.push(`/track-booking?booking_id=${bookingDetails.bookingId}`)
+    router.push(`/track-booking?booking_id=${bookingDetails._id}`)
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading booking details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="text-center">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-12 h-12 text-red-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Error</h1>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => router.push('/yoga')}
+              className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
+            >
+              Back to Yoga
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No booking data
+  if (!bookingDetails) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Not Found</h1>
+            <p className="text-gray-600 mb-4">The booking details could not be found.</p>
+            <button
+              onClick={() => router.push('/yoga')}
+              className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700"
+            >
+              Back to Yoga
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -172,7 +247,7 @@ function YogaBookingSuccessPageContent() {
                   <span className="text-gray-600">Booking ID</span>
                   <div className="flex items-start gap-2 mt-1">
                     <p className="font-bold text-sm md:text-lg text-orange-600 font-mono break-all flex-1 leading-relaxed">
-                      {bookingDetails.bookingId}
+                      {bookingDetails._id}
                     </p>
                     <button
                       onClick={handleCopyBookingId}
@@ -185,15 +260,15 @@ function YogaBookingSuccessPageContent() {
                 </div>
                 <div>
                   <span className="text-gray-600">Booking Date</span>
-                  <p className="font-medium text-gray-900">{bookingDetails.bookingDate}</p>
+                  <p className="font-medium text-gray-900">{formatDate(bookingDetails.createdAt)}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Payment ID</span>
-                  <p className="font-medium text-gray-900 font-mono text-xs">{bookingDetails.paymentId}</p>
+                  <p className="font-medium text-gray-900 font-mono text-xs">{bookingDetails.paymentId || paymentId || 'N/A'}</p>
                 </div>
                 <div>
                   <span className="text-gray-600">Amount Paid</span>
-                  <p className="font-bold text-lg text-green-600">{formatCurrency(bookingDetails.totalAmount)}</p>
+                  <p className="font-bold text-lg text-green-600">{formatCurrency(bookingDetails.finalAmount || bookingDetails.totalAmount)}</p>
                 </div>
               </div>
             </motion.div>
@@ -211,7 +286,7 @@ function YogaBookingSuccessPageContent() {
                 <div className="flex items-center gap-3 mb-4">
                   <Users className="w-6 h-6 text-orange-600" />
                   <h3 className="text-lg font-semibold text-orange-900">
-                    {bookingDetails.sessionType}
+                    {bookingDetails.primaryService || 'Yoga Session'}
                   </h3>
                 </div>
 
@@ -219,19 +294,25 @@ function YogaBookingSuccessPageContent() {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-orange-600" />
                     <span className="text-orange-800">
-                      <strong>Date:</strong> {formatDate(bookingDetails.startDate)}
+                      <strong>Date:</strong> {formatDate(bookingDetails.checkIn)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-orange-600" />
                     <span className="text-orange-800">
-                      <strong>Duration:</strong> 90 minutes
+                      <strong>Duration:</strong> {bookingDetails.yogaSessionId?.type === 'daily' ? '90 minutes' : 'As scheduled'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-orange-600" />
                     <span className="text-orange-800">
-                      <strong>Instructor:</strong> {bookingDetails.instructor}
+                      <strong>Instructor:</strong> {bookingDetails.yogaSessionId?.instructor || 'TBA'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-orange-600" />
+                    <span className="text-orange-800">
+                      <strong>Participants:</strong> {bookingDetails.totalGuests} ({bookingDetails.adults} Adults, {bookingDetails.children} Children)
                     </span>
                   </div>
                 </div>
@@ -240,7 +321,7 @@ function YogaBookingSuccessPageContent() {
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 text-orange-600 mt-1" />
                     <span className="text-orange-800">
-                      <strong>Location:</strong> {bookingDetails.location}
+                      <strong>Location:</strong> {bookingDetails.yogaSessionId?.location || 'Kshetra Retreat Resort, Varkala'}
                     </span>
                   </div>
                 </div>
@@ -288,7 +369,7 @@ function YogaBookingSuccessPageContent() {
                   <strong>Note:</strong> Please save your booking ID for future correspondence and tracking.
                 </p>
                 <p className="text-sm text-yellow-800 mt-2 font-mono break-all bg-yellow-100 p-2 rounded border">
-                  <strong>{bookingDetails.bookingId}</strong>
+                  <strong>{bookingDetails._id}</strong>
                 </p>
               </div>
             </motion.div>
