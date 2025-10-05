@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:500/api";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001/api";
 
 // Create axios instance
 const ApiInstance = axios.create({
@@ -526,48 +526,7 @@ export const contactAPI = {
   },
 };
 
-// Coupon API calls
-export const couponAPI = {
-  // Public validation (no auth required)
-  validateCoupon: async (data: {
-    code: string;
-    serviceType: "airport" | "yoga" | "rental" | "adventure";
-    orderValue: number;
-    userId?: string;
-    phoneNumber?: string;
-  }) => {
-    return await ApiInstance.post("/coupons/validate", data);
-  },
-
-  // Admin functions (auth required)
-  getAllCoupons: async (params?: any) => {
-    return await AdminApiInstance.get("/coupons", { params });
-  },
-
-  createCoupon: async (data: any) => {
-    return await AdminApiInstance.post("/coupons", data);
-  },
-
-  getCouponById: async (id: string) => {
-    return await AdminApiInstance.get(`/coupons/${id}`);
-  },
-
-  updateCoupon: async (id: string, data: any) => {
-    return await AdminApiInstance.put(`/coupons/${id}`, data);
-  },
-
-  toggleCouponStatus: async (id: string) => {
-    return await AdminApiInstance.patch(`/coupons/${id}/toggle-status`);
-  },
-
-  deleteCoupon: async (id: string) => {
-    return await AdminApiInstance.delete(`/coupons/${id}`);
-  },
-
-  getCouponStatistics: async () => {
-    return await AdminApiInstance.get("/coupons/statistics");
-  },
-};
+// Note: Coupon API has been moved to /lib/api/coupons.ts for better organization
 
 // Service pricing constants
 export const SERVICE_PRICES = {

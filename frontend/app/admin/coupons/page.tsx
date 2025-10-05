@@ -17,8 +17,7 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react'
-import { couponAPI } from '../../../lib/api'
-import type { Coupon, CouponStatistics } from '../../../lib/api/coupons'
+import { couponAPI, type Coupon, type CouponStatistics } from '../../../lib/api/coupons'
 import CreateCouponModal from './CreateCouponModal'
 
 export default function CouponsPage() {
