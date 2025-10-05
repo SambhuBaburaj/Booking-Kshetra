@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Percent, DollarSign } from 'lucide-react'
 import { couponAPI, type Coupon, type CreateCouponRequest } from '../../../lib/api/coupons'
+import { extractCouponErrorMessage } from '../../../lib/utils/errorHandler'
 
 interface CreateCouponModalProps {
   isOpen: boolean
@@ -30,6 +31,40 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess, coupon }
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Update form data when coupon prop changes
+  useEffect(() => {
+    setError(null) // Clear any previous errors
+
+    if (coupon) {
+      setFormData({
+        code: coupon.code || '',
+        description: coupon.description || '',
+        discountType: coupon.discountType || 'percentage',
+        discountValue: coupon.discountValue || 0,
+        applicableServices: coupon.applicableServices || [],
+        minOrderValue: coupon.minOrderValue || undefined,
+        maxDiscount: coupon.maxDiscount || undefined,
+        validFrom: coupon.validFrom ? new Date(coupon.validFrom).toISOString().split('T')[0] : '',
+        validUntil: coupon.validUntil ? new Date(coupon.validUntil).toISOString().split('T')[0] : '',
+        usageLimit: coupon.usageLimit || undefined
+      })
+    } else {
+      // Reset form for new coupon
+      setFormData({
+        code: '',
+        description: '',
+        discountType: 'percentage',
+        discountValue: 0,
+        applicableServices: [],
+        minOrderValue: undefined,
+        maxDiscount: undefined,
+        validFrom: '',
+        validUntil: '',
+        usageLimit: undefined
+      })
+    }
+  }, [coupon])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,22 +118,8 @@ export default function CreateCouponModal({ isOpen, onClose, onSuccess, coupon }
 
       onSuccess()
       onClose()
-
-      // Reset form
-      setFormData({
-        code: '',
-        description: '',
-        discountType: 'percentage',
-        discountValue: 0,
-        applicableServices: [],
-        minOrderValue: undefined,
-        maxDiscount: undefined,
-        validFrom: '',
-        validUntil: '',
-        usageLimit: undefined
-      })
     } catch (err: any) {
-      setError(err.message)
+      setError(extractCouponErrorMessage(err))
     } finally {
       setLoading(false)
     }

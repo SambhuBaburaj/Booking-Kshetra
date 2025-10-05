@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   Filter,
-  Eye,
   Edit,
   Trash2,
   ToggleLeft,
@@ -18,6 +17,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import { couponAPI, type Coupon, type CouponStatistics } from '../../../lib/api/coupons'
+import { extractCouponErrorMessage } from '../../../lib/utils/errorHandler'
 import CreateCouponModal from './CreateCouponModal'
 
 export default function CouponsPage() {
@@ -58,7 +58,7 @@ export default function CouponsPage() {
       setCoupons(response.data.data.coupons)
       setTotalPages(response.data.data.pagination.totalPages)
     } catch (err: any) {
-      setError(err.message)
+      setError(extractCouponErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -79,7 +79,7 @@ export default function CouponsPage() {
       fetchCoupons()
       fetchStatistics()
     } catch (err: any) {
-      setError(err.message)
+      setError(extractCouponErrorMessage(err))
     }
   }
 
@@ -91,7 +91,7 @@ export default function CouponsPage() {
       fetchCoupons()
       fetchStatistics()
     } catch (err: any) {
-      setError(err.message)
+      setError(extractCouponErrorMessage(err))
     }
   }
 
@@ -380,9 +380,6 @@ export default function CouponsPage() {
                           ) : (
                             <ToggleLeft className="h-5 w-5" />
                           )}
-                        </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          <Eye className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleEdit(coupon)}

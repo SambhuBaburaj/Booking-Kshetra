@@ -32,6 +32,18 @@ export const createCoupon = async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
+    // Validate date range
+    const validFromDate = new Date(validFrom);
+    const validUntilDate = new Date(validUntil);
+
+    if (validUntilDate <= validFromDate) {
+      res.status(400).json({
+        success: false,
+        message: 'Valid until date must be after valid from date'
+      });
+      return;
+    }
+
     const coupon = new Coupon({
       code: code.toUpperCase(),
       description,
@@ -40,8 +52,8 @@ export const createCoupon = async (req: AuthenticatedRequest, res: Response): Pr
       applicableServices,
       minOrderValue,
       maxDiscount,
-      validFrom: new Date(validFrom),
-      validUntil: new Date(validUntil),
+      validFrom: validFromDate,
+      validUntil: validUntilDate,
       usageLimit,
       createdBy: new mongoose.Types.ObjectId(req.user?._id)
     });
@@ -206,6 +218,40 @@ export const updateCoupon = async (req: AuthenticatedRequest, res: Response): Pr
           message: 'Coupon code already exists'
         });
         return;
+      }
+    }
+
+    // Validate date range if either date is being updated
+    if (updates.validFrom || updates.validUntil) {
+      // Get the current coupon to check existing dates
+      const currentCoupon = await Coupon.findById(id);
+      if (!currentCoupon) {
+        res.status(404).json({
+          success: false,
+          message: 'Coupon not found'
+        });
+        return;
+      }
+
+      // Determine the final validFrom and validUntil values
+      const finalValidFrom = updates.validFrom ? new Date(updates.validFrom) : currentCoupon.validFrom;
+      const finalValidUntil = updates.validUntil ? new Date(updates.validUntil) : currentCoupon.validUntil;
+
+      // Validate that validUntil is after validFrom
+      if (finalValidUntil <= finalValidFrom) {
+        res.status(400).json({
+          success: false,
+          message: 'Valid until date must be after valid from date'
+        });
+        return;
+      }
+
+      // Convert string dates to Date objects if needed
+      if (updates.validFrom) {
+        updates.validFrom = new Date(updates.validFrom);
+      }
+      if (updates.validUntil) {
+        updates.validUntil = new Date(updates.validUntil);
       }
     }
 
