@@ -429,6 +429,15 @@ export const validateCoupon = async (req: any, res: Response): Promise<void> => 
       }
     }
 
+    // Check minimum order value before calculating discount
+    if (coupon.minOrderValue && orderValue < coupon.minOrderValue) {
+      res.status(400).json({
+        success: false,
+        message: `Minimum order value of ₹${coupon.minOrderValue.toLocaleString()} is required`
+      });
+      return;
+    }
+
     // Calculate discount
     const discount = pricingCalculator.calculateCouponDiscount(coupon, orderValue);
     const finalAmount = orderValue - discount;
