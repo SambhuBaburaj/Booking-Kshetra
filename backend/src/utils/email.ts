@@ -63,7 +63,135 @@ export class EmailService {
     }
   }
 
+  generateYogaBookingConfirmationEmail(booking: any, user: any): string {
+    const sessionDate = new Date(booking.checkIn).toLocaleDateString('en-IN');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; }
+          .container { max-width: 700px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .header { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; padding: 30px; text-align: center; }
+          .content { padding: 30px; }
+          .yoga-session { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+          .booking-details { background-color: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 5px solid #ff6b35; }
+          .participants { background-color: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 8px; }
+          .footer { background-color: #f8f9fa; padding: 25px; text-align: center; }
+          .highlight { color: #ff6b35; font-weight: bold; }
+          .amount { font-size: 24px; font-weight: bold; color: #28a745; text-align: center; padding: 15px; background-color: #e8f5e9; border-radius: 8px; margin: 15px 0; }
+          .important-info { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🧘‍♀️ Yoga Booking Confirmed!</h1>
+            <h2>Kshetra Retreat Resort</h2>
+            <p>Your journey to wellness begins here</p>
+          </div>
+
+          <div class="content">
+            <h3>Namaste ${user.name}! 🙏</h3>
+            <p>Thank you for choosing Kshetra Retreat Resort for your yoga journey! Your yoga session booking has been confirmed.</p>
+
+            <div class="amount">
+              🎯 Total Paid: ₹${booking.finalAmount || booking.totalAmount}
+            </div>
+
+            <div class="booking-details">
+              <h4>📋 Booking Information:</h4>
+              <p><strong>Booking ID:</strong> <span class="highlight">${booking._id}</span></p>
+              <p><strong>Session Date:</strong> ${sessionDate}</p>
+              <p><strong>Participants:</strong> ${booking.totalGuests} (${booking.adults} Adults, ${booking.children} Children)</p>
+              <p><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">CONFIRMED</span></p>
+              ${booking.paymentId ? `<p><strong>Payment ID:</strong> ${booking.paymentId}</p>` : ''}
+            </div>
+
+            ${booking.guests && booking.guests.length > 0 ? `
+            <div class="participants">
+              <h4>👥 Participant Details:</h4>
+              ${booking.guests.map((guest: any, index: number) => `
+                <p><strong>${index + 1}. ${guest.name}</strong> (Age: ${guest.age}${guest.gender ? `, ${guest.gender}` : ''})</p>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            <div class="yoga-session">
+              <h3>🧘‍♀️ Your Yoga Session Details</h3>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
+                  <strong>Session Type:</strong><br>
+                  ${booking.primaryService || 'Yoga Session'}
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
+                  <strong>Date:</strong><br>
+                  ${sessionDate}
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
+                  <strong>Instructor:</strong><br>
+                  ${booking.yogaSessionId?.instructor || 'Will be assigned'}
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px;">
+                  <strong>Location:</strong><br>
+                  ${booking.yogaSessionId?.location || 'Kshetra Retreat Resort, Varkala'}
+                </div>
+              </div>
+            </div>
+
+            ${booking.specialRequests ? `
+            <div class="booking-details">
+              <h4>📝 Special Requests:</h4>
+              <p>${booking.specialRequests}</p>
+            </div>
+            ` : ''}
+
+            <div class="important-info">
+              <h4>🎯 Important Instructions:</h4>
+              <ul>
+                <li><strong>Arrival:</strong> Please arrive 15 minutes before your session</li>
+                <li><strong>What to Bring:</strong> Comfortable yoga clothes and a water bottle</li>
+                <li><strong>What We Provide:</strong> Yoga mats, props, and refreshments</li>
+                <li><strong>Contact:</strong> Our team will contact you 24 hours before your session</li>
+                ${booking.yogaSessionId?.specialization ? `<li><strong>Specialization:</strong> ${booking.yogaSessionId.specialization}</li>` : ''}
+              </ul>
+            </div>
+
+            <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h4 style="color: #28a745; margin-top: 0;">🌟 What to Expect:</h4>
+              <p>Our experienced instructors will guide you through a transformative yoga experience in the serene atmosphere of Kshetra Retreat Resort. Whether you're a beginner or advanced practitioner, our sessions are designed to enhance your physical and mental well-being.</p>
+            </div>
+
+            <div class="booking-details">
+              <h4>📞 Contact Information:</h4>
+              <p><strong>Resort Phone:</strong> +91-XXXXXXXXXX</p>
+              <p><strong>Email:</strong> info@kshetraretreat.com</p>
+              <p><strong>Address:</strong> Kshetra Retreat Resort, Varkala, Kerala</p>
+            </div>
+
+            <p style="text-align: center; font-size: 16px; color: #28a745; font-weight: bold;">
+              🙏 We look forward to welcoming you for a rejuvenating yoga experience! 🧘‍♀️
+            </p>
+          </div>
+
+          <div class="footer">
+            <p>🌟 <strong>Namaste!</strong> 🌟</p>
+            <p>This is an automated confirmation email. Please save this for your records.</p>
+            <p>&copy; 2025 Kshetra Retreat Resort. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   generateBookingConfirmationEmail(booking: any, user: any): string {
+    // Check if this is a yoga booking and use specialized template
+    if (booking.bookingType === 'yoga' || booking.yogaSessionId || booking.primaryService === 'Yoga Session') {
+      return this.generateYogaBookingConfirmationEmail(booking, user);
+    }
+
     const checkInDate = new Date(booking.checkIn).toLocaleDateString('en-IN');
     const checkOutDate = new Date(booking.checkOut).toLocaleDateString('en-IN');
     
