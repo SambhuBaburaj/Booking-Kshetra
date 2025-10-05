@@ -102,13 +102,7 @@ const couponSchema = new Schema<ICoupon>(
     },
     validUntil: {
       type: Date,
-      required: [true, 'Valid until date is required'],
-      validate: {
-        validator: function(this: ICoupon, value: Date) {
-          return value > this.validFrom;
-        },
-        message: 'Valid until date must be after valid from date'
-      }
+      required: [true, 'Valid until date is required']
     },
     usageLimit: {
       type: Number,
