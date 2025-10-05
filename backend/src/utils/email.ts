@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import { IBooking } from '../models/Booking';
 
 export interface EmailOptions {
   to: string;

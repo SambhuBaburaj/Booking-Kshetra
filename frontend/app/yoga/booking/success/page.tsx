@@ -30,9 +30,9 @@ function YogaBookingSuccessPageContent() {
   const orderId = searchParams.get('order_id')
   const bookingId = searchParams.get('booking_id')
 
-  const [bookingDetails, setBookingDetails] = useState(null)
+  const [bookingDetails, setBookingDetails] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     // Scroll to top on page load
