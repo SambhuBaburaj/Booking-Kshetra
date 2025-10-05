@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, Percent, DollarSign } from 'lucide-react'
-import { couponAPI } from '../../../lib/api'
-import type { Coupon, CreateCouponRequest } from '../../../lib/api/coupons'
+import { couponAPI, type Coupon, type CreateCouponRequest } from '../../../lib/api/coupons'
 
 interface CreateCouponModalProps {
   isOpen: boolean

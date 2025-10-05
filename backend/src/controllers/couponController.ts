@@ -43,7 +43,7 @@ export const createCoupon = async (req: AuthenticatedRequest, res: Response): Pr
       validFrom: new Date(validFrom),
       validUntil: new Date(validUntil),
       usageLimit,
-      createdBy: new mongoose.Types.ObjectId(req.user?.userId)
+      createdBy: new mongoose.Types.ObjectId(req.user?._id)
     });
 
     await coupon.save();
@@ -209,7 +209,7 @@ export const updateCoupon = async (req: AuthenticatedRequest, res: Response): Pr
       }
     }
 
-    updates.updatedBy = new mongoose.Types.ObjectId(req.user?.userId);
+    updates.updatedBy = new mongoose.Types.ObjectId(req.user?._id);
 
     const coupon = await Coupon.findByIdAndUpdate(id, updates, {
       new: true,
@@ -261,7 +261,7 @@ export const toggleCouponStatus = async (req: AuthenticatedRequest, res: Respons
     }
 
     coupon.isActive = !coupon.isActive;
-    coupon.updatedBy = new mongoose.Types.ObjectId(req.user?.userId);
+    coupon.updatedBy = new mongoose.Types.ObjectId(req.user?._id);
     await coupon.save();
 
     res.json({
@@ -360,6 +360,15 @@ export const validateCoupon = async (req: any, res: Response): Promise<void> => 
 
     // Check if user has already used this coupon
     if (userId || phoneNumber) {
+      // Validate userId if provided
+      if (userId && !mongoose.isValidObjectId(userId)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid user ID format'
+        });
+        return;
+      }
+
       const hasUsed = await CouponUsage.hasUserUsedCoupon(
         coupon._id as mongoose.Types.ObjectId,
         userId ? new mongoose.Types.ObjectId(userId) : undefined,
