@@ -388,9 +388,9 @@ const TrackBookingPage = () => {
                         <p className="text-sm text-gray-600">Booking Type</p>
                         <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
                           {booking.primaryService ||
-                            booking.bookingType?.charAt(0).toUpperCase() +
-                              booking.bookingType?.slice(1) ||
-                            "General"}
+                            (booking.bookingType ?
+                              booking.bookingType.charAt(0).toUpperCase() + booking.bookingType.slice(1) :
+                              "General")}
                         </span>
                       </div>
                     </div>
@@ -570,7 +570,9 @@ const TrackBookingPage = () => {
                         Yoga Session Information
                       </h4>
                       <p className="text-sm text-gray-600">
-                        Session ID: {booking.yogaSessionId}
+                        Session ID: {typeof booking.yogaSessionId === 'string'
+                          ? booking.yogaSessionId
+                          : booking.yogaSessionId?._id || 'N/A'}
                       </p>
                     </div>
                   )}
