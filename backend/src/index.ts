@@ -81,10 +81,11 @@ const corsOptions = {
 
     // In production, specify allowed origins
     const allowedOrigins = [
-      process.env.FRONTEND_URL || "http://localhost:3001",
+      process.env.FRONTEND_URL ,
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://booking-kshetra-1-hnje-git-main-farhanak624s-projects.vercel.app"
+      "https://kshetraretreat.com",
+      "https://booking-kshetra-1-hnje.vercel.app"
       // Add your production domains here
     ];
 
