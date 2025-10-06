@@ -84,6 +84,7 @@ const corsOptions = {
       process.env.FRONTEND_URL || "http://localhost:3001",
       "http://localhost:3000",
       "http://localhost:3001",
+      "https://booking-kshetra-1-hnje-git-main-farhanak624s-projects.vercel.app"
       // Add your production domains here
     ];
 
