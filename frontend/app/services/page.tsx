@@ -381,41 +381,41 @@ const ServicesPage = () => {
 
     return (
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 hover:border-white/40 transition-all duration-300 overflow-hidden">
-        <div className="p-8">
-          <div className="flex items-start justify-between mb-6">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4 lg:mb-6">
             {/* Service Info */}
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl">
-                  <ServiceIcon className="w-8 h-8 text-orange-400" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl w-fit">
+                  <ServiceIcon className="w-6 h-6 sm:w-8 sm:h-8 text-orange-400" />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">{service.name}</h3>
-                  <p className="text-gray-300">{service.description}</p>
+                <div className="flex-1">
+                  <h3 className="text-xl sm:text-2xl font-bold text-white mb-1">{service.name}</h3>
+                  <p className="text-gray-300 text-sm sm:text-base">{service.description}</p>
                 </div>
               </div>
 
               {/* Duration */}
               {service.duration && (
-                <div className="flex items-center gap-2 mb-4 text-gray-300">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4 text-gray-300">
                   <Clock className="w-4 h-4 text-orange-400" />
-                  <span className="text-sm">Duration: {service.duration}</span>
+                  <span className="text-xs sm:text-sm">Duration: {service.duration}</span>
                 </div>
               )}
 
               {/* Features */}
-              <div className="grid md:grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
                 {service.features.slice(0, 4).map((feature, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="text-gray-300 text-sm">{feature}</span>
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />
+                    <span className="text-gray-300 text-xs sm:text-sm">{feature}</span>
                   </div>
                 ))}
               </div>
 
               {/* Price */}
-              <div className="inline-block bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl px-4 py-2 mb-4">
-                <div className="text-2xl font-bold text-orange-400">
+              <div className="inline-block bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl px-3 py-2 sm:px-4 sm:py-2 mb-4">
+                <div className="text-lg sm:text-2xl font-bold text-orange-400">
                   {formatPrice(service.price, service.priceUnit)}
                 </div>
               </div>
@@ -434,31 +434,31 @@ const ServicesPage = () => {
             </div>
 
             {/* Quantity Controls */}
-            <div className="ml-8">
+            <div className="mt-4 lg:mt-0 lg:ml-6 xl:ml-8">
               {quantity > 0 ? (
                 <div className="text-center">
-                  <div className="text-gray-400 text-sm mb-3">Selected</div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                  <div className="text-gray-400 text-xs sm:text-sm mb-2 sm:mb-3">Selected</div>
+                  <div className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-xl p-2 sm:p-3">
                     <button
                       onClick={() => removeService(service._id)}
-                      className="w-8 h-8 bg-red-500/20 hover:bg-red-500/30 rounded-full flex items-center justify-center text-red-400 transition-colors"
+                      className="w-7 h-7 sm:w-8 sm:h-8 bg-red-500/20 hover:bg-red-500/30 rounded-full flex items-center justify-center text-red-400 transition-colors"
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
-                    <span className="text-xl font-bold text-white w-6 text-center">{quantity}</span>
+                    <span className="text-lg sm:text-xl font-bold text-white w-5 sm:w-6 text-center">{quantity}</span>
                     <button
                       onClick={() => addService(service)}
                       disabled={quantity >= (service.maxQuantity || 10)}
-                      className="w-8 h-8 bg-green-500/20 hover:bg-green-500/30 rounded-full flex items-center justify-center text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500/20 hover:bg-green-500/30 rounded-full flex items-center justify-center text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                   <div className="text-gray-500 text-xs mt-2">
                     Max: {service.maxQuantity || 10}
                   </div>
                   {quantity > 0 && (
-                    <div className="text-orange-400 font-semibold text-sm mt-2">
+                    <div className="text-orange-400 font-semibold text-xs sm:text-sm mt-2">
                       Total: ₹{(service.price * quantity).toLocaleString()}
                     </div>
                   )}
@@ -466,7 +466,7 @@ const ServicesPage = () => {
               ) : (
                 <button
                   onClick={() => addService(service)}
-                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                 >
                   Add Service
                 </button>
@@ -497,16 +497,16 @@ const ServicesPage = () => {
 
     return (
       <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 hover:border-white/40 transition-all duration-300 overflow-hidden">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Vehicle Header */}
           <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
-                <VehicleIcon className="w-6 h-6 text-orange-400" />
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+              <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg flex-shrink-0">
+                <VehicleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">{vehicle.name}</h3>
-                <p className="text-gray-300 text-sm">{vehicle.brand} {vehicle.vehicleModel}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg sm:text-xl font-bold text-white truncate">{vehicle.name}</h3>
+                <p className="text-gray-300 text-xs sm:text-sm truncate">{vehicle.brand} {vehicle.vehicleModel}</p>
               </div>
             </div>
             <button
@@ -514,34 +514,34 @@ const ServicesPage = () => {
                 setSelectedVehicleDetails(vehicle);
                 setShowVehicleModal(true);
               }}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              className="p-2 text-gray-400 hover:text-white transition-colors flex-shrink-0"
             >
-              <Eye className="w-5 h-5" />
+              <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
 
           {/* Vehicle Details */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="flex items-center gap-2 text-gray-300 text-sm">
-              <Users className="w-4 h-4 text-orange-400" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4">
+            <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
               <span>{vehicle.seatingCapacity} seats</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-300 text-sm">
-              <Fuel className="w-4 h-4 text-orange-400" />
+            <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm">
+              <Fuel className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
               <span>{vehicle.fuelType}</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-300 text-sm">
-              <Settings className="w-4 h-4 text-orange-400" />
+            <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm">
+              <Settings className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
               <span>{vehicle.transmission}</span>
             </div>
-            <div className="flex items-center gap-2 text-gray-300 text-sm">
-              <MapPin className="w-4 h-4 text-orange-400" />
-              <span>{vehicle.location.pickupLocation}</span>
+            <div className="flex items-center gap-2 text-gray-300 text-xs sm:text-sm">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 flex-shrink-0" />
+              <span className="truncate">{vehicle.location.pickupLocation}</span>
             </div>
           </div>
 
           {/* Features */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-1 sm:gap-2 mb-4">
             {vehicle.features.slice(0, 3).map((feature, index) => (
               <span key={index} className="px-2 py-1 bg-white/10 rounded-lg text-gray-300 text-xs">
                 {feature}
@@ -557,11 +557,11 @@ const ServicesPage = () => {
           {/* Price */}
           <div className="bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-xl p-3 mb-4">
             <div className="flex items-center gap-2">
-              <IndianRupee className="w-5 h-5 text-orange-400" />
-              <span className="text-xl font-bold text-orange-400">
+              <IndianRupee className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
+              <span className="text-lg sm:text-xl font-bold text-orange-400">
                 {vehicle.pricePerDay.toLocaleString()}
               </span>
-              <span className="text-gray-300 text-sm">per day</span>
+              <span className="text-gray-300 text-xs sm:text-sm">per day</span>
             </div>
             {vehicle.driverOption.withDriver && vehicle.driverOption.driverChargePerDay && (
               <div className="text-gray-400 text-xs mt-1">
@@ -572,10 +572,10 @@ const ServicesPage = () => {
 
           {/* Rental Options */}
           {quantity > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-sm">Rental Days:</span>
-                <div className="flex items-center gap-2">
+                <span className="text-gray-300 text-xs sm:text-sm">Rental Days:</span>
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={() => {
                       const newDays = Math.max(1, rentalDays - 1);
@@ -586,7 +586,7 @@ const ServicesPage = () => {
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="text-white font-medium w-8 text-center">{rentalDays}</span>
+                  <span className="text-white font-medium w-6 sm:w-8 text-center text-sm">{rentalDays}</span>
                   <button
                     onClick={() => {
                       const newDays = rentalDays + 1;
@@ -602,14 +602,14 @@ const ServicesPage = () => {
 
               {vehicle.driverOption.withDriver && (
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300 text-sm">With Driver:</span>
+                  <span className="text-gray-300 text-xs sm:text-sm">With Driver:</span>
                   <button
                     onClick={() => {
                       const newWithDriver = !withDriver;
                       setWithDriver(newWithDriver);
                       updateVehicleOptions(vehicle._id, rentalDays, newWithDriver);
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                       withDriver
                         ? 'bg-green-500/20 text-green-400'
                         : 'bg-white/10 text-gray-300'
@@ -621,15 +621,15 @@ const ServicesPage = () => {
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-gray-300 text-sm">Quantity:</span>
-                <div className="flex items-center gap-2">
+                <span className="text-gray-300 text-xs sm:text-sm">Quantity:</span>
+                <div className="flex items-center gap-1 sm:gap-2">
                   <button
                     onClick={() => removeVehicle(vehicle._id)}
                     className="w-6 h-6 bg-red-500/20 hover:bg-red-500/30 rounded flex items-center justify-center text-red-400"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="text-white font-medium w-8 text-center">{quantity}</span>
+                  <span className="text-white font-medium w-6 sm:w-8 text-center text-sm">{quantity}</span>
                   <button
                     onClick={() => addVehicle(vehicle, rentalDays, withDriver)}
                     className="w-6 h-6 bg-green-500/20 hover:bg-green-500/30 rounded flex items-center justify-center text-green-400"
@@ -640,7 +640,7 @@ const ServicesPage = () => {
               </div>
 
               <div className="pt-2 border-t border-white/10">
-                <div className="text-orange-400 font-semibold">
+                <div className="text-orange-400 font-semibold text-sm">
                   Total: ₹{(getTotalPrice() * quantity).toLocaleString()}
                 </div>
               </div>
@@ -648,7 +648,7 @@ const ServicesPage = () => {
           ) : (
             <button
               onClick={() => addVehicle(vehicle, 1, false)}
-              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+              className="w-full bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white py-2 sm:py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
             >
               Add to Booking
             </button>
@@ -684,12 +684,12 @@ const ServicesPage = () => {
               <div className="w-8 h-px bg-orange-400" />
             </div>
 
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 sm:mb-6 leading-tight">
               Premium
               <span className="block text-orange-400">Experiences</span>
             </h1>
 
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Elevate your stay with our curated collection of luxury services and thrilling adventures,
               designed to create unforgettable memories.
             </p>
@@ -722,8 +722,8 @@ const ServicesPage = () => {
               viewport={{ once: true }}
               className="text-center mb-12"
             >
-              <h2 className="text-4xl font-bold text-white mb-4">Vehicle Rentals</h2>
-              <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">Vehicle Rentals</h2>
+              <p className="text-gray-300 text-base sm:text-lg max-w-2xl mx-auto">
                 Explore Varkala and beyond with our premium vehicle rental service. From scooters to luxury cars.
               </p>
             </motion.div>
@@ -733,35 +733,36 @@ const ServicesPage = () => {
               <div className="flex bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 overflow-hidden">
                 <button
                   onClick={() => setVehicleTypeFilter('all')}
-                  className={`px-6 py-3 font-medium transition-all ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-all text-sm sm:text-base ${
                     vehicleTypeFilter === 'all'
                       ? 'bg-orange-500 text-white'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Filter className="w-4 h-4 inline mr-2" />
-                  All Vehicles
+                  <Filter className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">All Vehicles</span>
+                  <span className="sm:hidden">All</span>
                 </button>
                 <button
                   onClick={() => setVehicleTypeFilter('2-wheeler')}
-                  className={`px-6 py-3 font-medium transition-all ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-all text-sm sm:text-base ${
                     vehicleTypeFilter === '2-wheeler'
                       ? 'bg-orange-500 text-white'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Bike className="w-4 h-4 inline mr-2" />
+                  <Bike className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                   2-Wheeler
                 </button>
                 <button
                   onClick={() => setVehicleTypeFilter('4-wheeler')}
-                  className={`px-6 py-3 font-medium transition-all ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 font-medium transition-all text-sm sm:text-base ${
                     vehicleTypeFilter === '4-wheeler'
                       ? 'bg-orange-500 text-white'
                       : 'text-gray-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Car className="w-4 h-4 inline mr-2" />
+                  <Car className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                   4-Wheeler
                 </button>
               </div>
@@ -780,7 +781,7 @@ const ServicesPage = () => {
                 <p className="text-gray-300">Check back later for vehicle rental options.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {vehicles.map((vehicle, index) => (
                   <motion.div
                     key={vehicle._id}
@@ -801,72 +802,72 @@ const ServicesPage = () => {
       {/* Selected Services Summary & Booking */}
       {(selectedServices.length > 0 || selectedVehicles.length > 0) && (
         <div className="bg-white border-t border-gray-200 sticky bottom-0 z-20 shadow-lg">
-          <div className="container mx-auto px-4 py-6">
+          <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
             <div className="max-w-4xl mx-auto">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col lg:flex-row gap-6 items-center"
+                className="flex flex-col gap-4 sm:gap-6"
               >
                 {/* Selected Items Summary */}
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="space-y-3 sm:space-y-4">
                     {selectedServices.length > 0 && (
-                      <>
-                        <h4 className="text-lg font-bold text-gray-900">
+                      <div>
+                        <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
                           Services ({selectedServices.length})
                         </h4>
-                        <div className="flex gap-2 overflow-x-auto">
+                        <div className="flex gap-2 overflow-x-auto pb-2">
                           {selectedServices.map(service => (
-                            <div key={service._id} className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-1 min-w-fit">
+                            <div key={service._id} className="flex items-center gap-1 sm:gap-2 bg-orange-50 rounded-lg px-2 sm:px-3 py-1 min-w-fit">
                               <div className="p-1 bg-orange-100 rounded">
                                 {React.createElement(getServiceIcon(service.category), { className: "w-3 h-3 text-orange-600" })}
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{service.quantity}x {service.name}</span>
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">{service.quantity}x {service.name}</span>
                             </div>
                           ))}
                         </div>
-                      </>
+                      </div>
                     )}
 
                     {selectedVehicles.length > 0 && (
-                      <>
-                        <h4 className="text-lg font-bold text-gray-900">
+                      <div>
+                        <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
                           Vehicles ({selectedVehicles.length})
                         </h4>
-                        <div className="flex gap-2 overflow-x-auto">
+                        <div className="flex gap-2 overflow-x-auto pb-2">
                           {selectedVehicles.map(vehicle => (
-                            <div key={vehicle._id} className="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-1 min-w-fit">
+                            <div key={vehicle._id} className="flex items-center gap-1 sm:gap-2 bg-blue-50 rounded-lg px-2 sm:px-3 py-1 min-w-fit">
                               <div className="p-1 bg-blue-100 rounded">
                                 {React.createElement(vehicle.type === '2-wheeler' ? Bike : Car, { className: "w-3 h-3 text-blue-600" })}
                               </div>
-                              <span className="text-sm font-medium text-gray-900">
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">
                                 {vehicle.quantity}x {vehicle.name} ({vehicle.rentalDays}d)
                               </span>
                             </div>
                           ))}
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Date Selection & Booking */}
-                <div className="flex items-center gap-4">
-                  <div>
-                    <label className="block text-gray-700 text-sm font-medium mb-1">Service Date</label>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                  <div className="flex-1 sm:flex-initial">
+                    <label className="block text-gray-700 text-xs sm:text-sm font-medium mb-1">Service Date</label>
                     <input
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 text-sm"
                     />
                   </div>
 
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-1">Total</div>
-                    <div className="text-xl font-bold text-orange-600">
+                  <div className="text-center sm:text-left flex-1 sm:flex-initial">
+                    <div className="text-xs sm:text-sm text-gray-600 mb-1">Total</div>
+                    <div className="text-lg sm:text-xl font-bold text-orange-600">
                       ₹{getTotalAmount().toLocaleString()}
                     </div>
                   </div>
@@ -874,7 +875,7 @@ const ServicesPage = () => {
                   <button
                     onClick={handleBookServices}
                     disabled={(selectedServices.length === 0 && selectedVehicles.length === 0) || !selectedDate}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md"
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md text-sm sm:text-base"
                   >
                     <Calendar className="w-4 h-4" />
                     Book Now
@@ -912,47 +913,47 @@ const ServicesPage = () => {
 
       {/* Service Details Modal */}
       {showServiceModal && selectedServiceDetails && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
-                    {React.createElement(getServiceIcon(selectedServiceDetails.category), { className: "w-6 h-6 text-orange-600" })}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg flex-shrink-0">
+                    {React.createElement(getServiceIcon(selectedServiceDetails.category), { className: "w-5 h-5 sm:w-6 sm:h-6 text-orange-600" })}
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedServiceDetails.name}</h2>
-                    <p className="text-gray-600 flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{selectedServiceDetails.name}</h2>
+                    <div className="text-gray-600 text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                       {selectedServiceDetails.location && (
-                        <>
-                          <MapPin className="w-4 h-4" />
-                          {selectedServiceDetails.location}
-                        </>
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span className="truncate">{selectedServiceDetails.location}</span>
+                        </div>
                       )}
                       {selectedServiceDetails.duration && (
-                        <>
-                          <Clock className="w-4 h-4 ml-4" />
-                          {selectedServiceDetails.duration}
-                        </>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>{selectedServiceDetails.duration}</span>
+                        </div>
                       )}
-                    </p>
+                    </div>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowServiceModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Service Images */}
               {selectedServiceDetails.images && selectedServiceDetails.images.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">Photos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                     {selectedServiceDetails.images.slice(0, 6).map((image, index) => (
                       <div key={index} className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
                         <img src={image} alt={`${selectedServiceDetails.name} ${index + 1}`} className="w-full h-full object-cover" />
@@ -1130,29 +1131,29 @@ const ServicesPage = () => {
 
       {/* Vehicle Details Modal */}
       {showVehicleModal && selectedVehicleDetails && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg">
-                    {React.createElement(selectedVehicleDetails.type === '2-wheeler' ? Bike : Car, { className: "w-6 h-6 text-orange-600" })}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="p-2 bg-gradient-to-r from-orange-500/20 to-pink-500/20 rounded-lg flex-shrink-0">
+                    {React.createElement(selectedVehicleDetails.type === '2-wheeler' ? Bike : Car, { className: "w-5 h-5 sm:w-6 sm:h-6 text-orange-600" })}
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">{selectedVehicleDetails.name}</h2>
-                    <p className="text-gray-600">{selectedVehicleDetails.brand} {selectedVehicleDetails.vehicleModel} ({selectedVehicleDetails.year})</p>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">{selectedVehicleDetails.name}</h2>
+                    <p className="text-gray-600 text-sm truncate">{selectedVehicleDetails.brand} {selectedVehicleDetails.vehicleModel} ({selectedVehicleDetails.year})</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowVehicleModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Vehicle Images */}
               {selectedVehicleDetails.images.length > 0 && (
                 <div>

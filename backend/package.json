@@ -9,7 +9,8 @@
     "build": "tsc",
     "build:render": "cd backend && npm install && npm run build",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "setup:admin": "node scripts/setup-admin.js"
+    "setup:admin": "node scripts/setup-admin.js",
+    "seed:accommodations": "npx ts-node src/scripts/seedAccommodations.ts"
   },
   "keywords": [
     "resort",
@@ -22,6 +23,7 @@
   "description": "Resort booking system backend API",
   "dependencies": {
     "@types/multer": "^2.0.0",
+    "@types/puppeteer": "^5.4.7",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
@@ -36,6 +38,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
+    "puppeteer": "^24.23.0",
     "razorpay": "^2.9.6",
     "twilio": "^5.9.0"
   },

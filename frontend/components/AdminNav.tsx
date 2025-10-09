@@ -40,6 +40,7 @@ const AdminNav = () => {
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/bookings', icon: Calendar, label: 'Bookings' },
+    { href: '/admin/accommodations', icon: Home, label: 'Luxury Accommodations' },
     { href: '/admin/yoga', icon: Activity, label: 'Yoga Sessions' },
     { href: '/admin/teachers', icon: Users, label: 'Teachers' },
     { href: '/admin/adventure-sports', icon: Activity, label: 'Adventure Sports' },

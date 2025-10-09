@@ -7,7 +7,8 @@ import {
   getUserBookings,
   getBookingById,
   getPublicBookingById,
-  cancelBooking
+  cancelBooking,
+  getBookingReceipt
 } from '../controllers/bookingController';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validation';
@@ -171,6 +172,13 @@ router.get(
   '/public/:id',
   validate(bookingIdValidation),
   getPublicBookingById
+);
+
+// Public booking receipt route (no auth required)
+router.get(
+  '/:id/receipt',
+  validate(bookingIdValidation),
+  getBookingReceipt
 );
 
 // Authenticated booking route

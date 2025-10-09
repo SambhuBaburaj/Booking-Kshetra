@@ -12,6 +12,7 @@ export { default as Driver } from './Driver';
 export { default as TransportAssignment } from './TransportAssignment';
 export { default as VehicleRental } from './VehicleRental';
 export { default as AdventureSport } from './AdventureSport';
+export { default as Accommodation } from './Accommodation';
 export { default as Coupon } from './Coupon';
 export { default as CouponUsage } from './CouponUsage';
 
@@ -29,5 +30,6 @@ export type { IDriver } from './Driver';
 export type { ITransportAssignment } from './TransportAssignment';
 export type { IVehicleRental } from './VehicleRental';
 export type { IAdventureSport } from './AdventureSport';
+export type { IAccommodation } from './Accommodation';
 export type { ICoupon } from './Coupon';
 export type { ICouponUsage, ICouponUsageModel } from './CouponUsage';

@@ -109,7 +109,8 @@ export const IMAGE_FOLDERS = {
     COURSES: '/yoga/courses'
   },
   RESORTS: {
-    ROOMS: '/resorts/rooms'
+    ROOMS: '/resorts/rooms',
+    ACCOMMODATIONS: '/resorts/accommodations'
   },
   ADVENTURE_SPORTS: '/adventure-sports'
 } as const;
@@ -137,6 +138,11 @@ export const IMAGE_TRANSFORMATIONS = {
     quality: 95
   },
   ADVENTURE_SPORTS_PHOTO: {
+    width: 800,
+    height: 600,
+    quality: 85
+  },
+  ACCOMMODATION_PHOTO: {
     width: 800,
     height: 600,
     quality: 85

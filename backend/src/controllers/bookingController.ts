@@ -5,6 +5,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { pricingCalculator } from '../utils/pricing';
 import { bookingValidator } from '../utils/bookingValidation';
 import { emailService } from '../utils/email';
+import { ReceiptService } from '../services/receiptService';
 
 // Helper function to notify active agency about transport bookings
 const notifyActiveAgencyAboutTransport = async (booking: any) => {
@@ -964,6 +965,46 @@ export const getPublicBookingById = async (req: any, res: Response): Promise<voi
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to get booking details'
+    });
+  }
+};
+
+// Generate and download booking receipt as PDF (public access)
+export const getBookingReceipt = async (req: any, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Find booking by ID and populate all related fields
+    const booking = await Booking.findById(id)
+      .populate('userId', 'name email phone')
+      .populate('roomId', 'roomNumber roomType description pricePerNight amenities images')
+      .populate('selectedServices.serviceId', 'name category price description')
+      .populate('yogaSessionId', 'type batchName startDate endDate instructor schedule description location specialization');
+
+    if (!booking) {
+      res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+      return;
+    }
+
+    // Generate PDF receipt
+    const pdfBuffer = await ReceiptService.generateReceiptPDF(booking);
+
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=yoga-booking-receipt-${booking._id}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Send PDF buffer
+    res.send(pdfBuffer);
+
+  } catch (error: any) {
+    console.error('Error generating receipt:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate receipt'
     });
   }
 };

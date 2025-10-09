@@ -1,9 +1,10 @@
 import { Response } from 'express';
 import mongoose from 'mongoose';
 import { validationResult } from 'express-validator';
-import { Booking, Room, Service, YogaSession, User, Payment, Agency } from '../models';
+import { Booking, Room, Service, YogaSession, User, Payment, Agency, Accommodation } from '../models';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { uploadMultipleImages, deleteImageFromCloudinary } from '../utils/imageUpload';
+import { uploadMultipleImages as uploadMultipleToImageKit, deleteImageFromImageKit, IMAGE_FOLDERS, IMAGE_TRANSFORMATIONS } from '../utils/imagekitUpload';
 
 // Dashboard Stats
 export const getDashboardStats = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -1230,6 +1231,187 @@ export const getActiveAgency = async (req: AuthenticatedRequest, res: Response):
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to get active agency'
+    });
+  }
+};
+
+// Accommodation Management
+export const getAllAccommodations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const accommodations = await Accommodation.find()
+      .sort({ displayOrder: 1, createdAt: 1 });
+
+    res.json({
+      success: true,
+      data: { accommodations }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get accommodations'
+    });
+  }
+};
+
+export const createAccommodation = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const accommodationData = req.body;
+    const files = req.files as Express.Multer.File[];
+
+    // Handle images - can be from files (old way) or from JSON (new way)
+    let imageUrls: string[] = [];
+
+    if (accommodationData.images && typeof accommodationData.images === 'string') {
+      // New way: images sent as JSON array of URLs
+      try {
+        imageUrls = JSON.parse(accommodationData.images);
+      } catch (e) {
+        // If parsing fails, treat as empty array
+        imageUrls = [];
+      }
+    } else if (files && files.length > 0) {
+      // Old way: upload files directly
+      imageUrls = await uploadMultipleToImageKit(files, {
+        folder: IMAGE_FOLDERS.RESORTS.ACCOMMODATIONS,
+        transformation: IMAGE_TRANSFORMATIONS.ACCOMMODATION_PHOTO
+      });
+    }
+
+    // Set display order to be last if not provided
+    if (!accommodationData.displayOrder) {
+      const lastAccommodation = await Accommodation.findOne().sort({ displayOrder: -1 });
+      accommodationData.displayOrder = lastAccommodation ? lastAccommodation.displayOrder + 1 : 1;
+    }
+
+    // Remove the images string from accommodationData if it exists
+    const { images: _, ...cleanData } = accommodationData;
+
+    const accommodation = new Accommodation({
+      ...cleanData,
+      images: imageUrls
+    });
+
+    await accommodation.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Accommodation created successfully',
+      data: { accommodation }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to create accommodation'
+    });
+  }
+};
+
+export const updateAccommodation = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    const files = req.files as Express.Multer.File[];
+
+    const existingAccommodation = await Accommodation.findById(id);
+    if (!existingAccommodation) {
+      res.status(404).json({
+        success: false,
+        message: 'Accommodation not found'
+      });
+      return;
+    }
+
+    // Handle images - can be from files (old way) or from JSON (new way)
+    let finalImageUrls: string[] = existingAccommodation.images;
+
+    if (updateData.images && typeof updateData.images === 'string') {
+      // New way: images sent as JSON array of URLs (this replaces all images)
+      try {
+        finalImageUrls = JSON.parse(updateData.images);
+
+        // Delete old images that are not in the new list
+        const imagesToDelete = existingAccommodation.images.filter(
+          oldUrl => !finalImageUrls.includes(oldUrl)
+        );
+
+        for (const imageUrl of imagesToDelete) {
+          await deleteImageFromImageKit(imageUrl);
+        }
+      } catch (e) {
+        // If parsing fails, keep existing images
+        finalImageUrls = existingAccommodation.images;
+      }
+    } else if (files && files.length > 0) {
+      // Old way: upload files directly
+      const newImageUrls = await uploadMultipleToImageKit(files, {
+        folder: IMAGE_FOLDERS.RESORTS.ACCOMMODATIONS,
+        transformation: IMAGE_TRANSFORMATIONS.ACCOMMODATION_PHOTO
+      });
+
+      // If replacing images, delete old ones
+      if (updateData.replaceImages === 'true' && existingAccommodation.images.length > 0) {
+        for (const imageUrl of existingAccommodation.images) {
+          await deleteImageFromImageKit(imageUrl);
+        }
+        finalImageUrls = newImageUrls;
+      } else {
+        // Append new images to existing ones
+        finalImageUrls = [...existingAccommodation.images, ...newImageUrls];
+      }
+    }
+
+    // Remove fields that shouldn't be in the update
+    const { images: _, replaceImages: __, ...cleanUpdateData } = updateData;
+
+    const accommodation = await Accommodation.findByIdAndUpdate(
+      id,
+      { ...cleanUpdateData, images: finalImageUrls },
+      { new: true, runValidators: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Accommodation updated successfully',
+      data: { accommodation }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to update accommodation'
+    });
+  }
+};
+
+export const deleteAccommodation = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const accommodation = await Accommodation.findById(id);
+    if (!accommodation) {
+      res.status(404).json({
+        success: false,
+        message: 'Accommodation not found'
+      });
+      return;
+    }
+
+    // Delete associated images from ImageKit
+    if (accommodation.images.length > 0) {
+      for (const imageUrl of accommodation.images) {
+        await deleteImageFromImageKit(imageUrl);
+      }
+    }
+
+    await Accommodation.findByIdAndDelete(id);
+
+    res.json({
+      success: true,
+      message: 'Accommodation deleted successfully'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to delete accommodation'
     });
   }
 };
