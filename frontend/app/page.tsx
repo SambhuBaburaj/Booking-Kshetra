@@ -40,14 +40,27 @@ import {
 import { useRouter } from "next/navigation";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { accommodationAPI } from "../lib/api";
+
+interface Accommodation {
+  _id: string;
+  name: string;
+  description: string;
+  price: string;
+  colorTheme: 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'teal' | 'pink' | 'indigo';
+  iconType: 'bed' | 'users' | 'hotel' | 'home' | 'building';
+  images: string[];
+  externalLink: string;
+  isActive: boolean;
+  displayOrder: number;
+}
 
 export default function Home() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [hoveredRoomType, setHoveredRoomType] = useState<
-    "king" | "queen" | "dormitory" | null
-  >(null);
+  const [hoveredRoomType, setHoveredRoomType] = useState<string | null>(null);
+  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const { scrollYProgress } = useScroll();
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
@@ -183,6 +196,22 @@ export default function Home() {
     },
   ];
 
+  // Fetch accommodations on component mount
+  useEffect(() => {
+    const fetchAccommodations = async () => {
+      try {
+        const response = await accommodationAPI.getAllAccommodations();
+        if (response.data.success) {
+          setAccommodations(response.data.data.accommodations);
+        }
+      } catch (error) {
+        console.error('Failed to fetch accommodations:', error);
+      }
+    };
+
+    fetchAccommodations();
+  }, []);
+
   // Carousel auto-slide effect
   useEffect(() => {
     const timer = setInterval(() => {
@@ -207,6 +236,63 @@ export default function Home() {
     setCurrentSlide(
       (prev) => (prev - 1 + mainServices.length) % mainServices.length
     );
+  };
+
+  // Helper function to get icon component
+  const getIconComponent = (iconType: string) => {
+    const iconMap: { [key: string]: any } = {
+      bed: Bed,
+      users: Users,
+      hotel: Hotel,
+      home: Hotel, // Using Hotel as fallback
+      building: Hotel, // Using Hotel as fallback
+    };
+    return iconMap[iconType] || Hotel;
+  };
+
+  // Helper function to get color theme classes
+  const getColorThemeClasses = (theme: string) => {
+    const themeClasses: { [key: string]: string } = {
+      blue: 'bg-blue-500/20 shadow-lg shadow-blue-500/25',
+      green: 'bg-green-500/20 shadow-lg shadow-green-500/25',
+      purple: 'bg-purple-500/20 shadow-lg shadow-purple-500/25',
+      orange: 'bg-orange-500/20 shadow-lg shadow-orange-500/25',
+      red: 'bg-red-500/20 shadow-lg shadow-red-500/25',
+      teal: 'bg-teal-500/20 shadow-lg shadow-teal-500/25',
+      pink: 'bg-pink-500/20 shadow-lg shadow-pink-500/25',
+      indigo: 'bg-indigo-500/20 shadow-lg shadow-indigo-500/25',
+    };
+    return themeClasses[theme] || themeClasses.blue;
+  };
+
+  // Helper function to get color theme icon classes
+  const getColorThemeIconClasses = (theme: string) => {
+    const themeClasses: { [key: string]: string } = {
+      blue: 'bg-blue-500/20 text-blue-400',
+      green: 'bg-green-500/20 text-green-400',
+      purple: 'bg-purple-500/20 text-purple-400',
+      orange: 'bg-orange-500/20 text-orange-400',
+      red: 'bg-red-500/20 text-red-400',
+      teal: 'bg-teal-500/20 text-teal-400',
+      pink: 'bg-pink-500/20 text-pink-400',
+      indigo: 'bg-indigo-500/20 text-indigo-400',
+    };
+    return themeClasses[theme] || themeClasses.blue;
+  };
+
+  // Helper function to get text color classes
+  const getTextColorClasses = (theme: string) => {
+    const themeClasses: { [key: string]: string } = {
+      blue: 'text-blue-400',
+      green: 'text-green-400',
+      purple: 'text-purple-400',
+      orange: 'text-orange-400',
+      red: 'text-red-400',
+      teal: 'text-teal-400',
+      pink: 'text-pink-400',
+      indigo: 'text-indigo-400',
+    };
+    return themeClasses[theme] || themeClasses.blue;
   };
 
   return (
@@ -629,106 +715,57 @@ export default function Home() {
               <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8">
                 <h3 className="text-4xl font-bold text-white mb-6 flex items-center gap-3">
                   <Hotel className="w-10 h-10 text-blue-400" />
-                  Our Rooms & Suites
+                  Our Luxury Accommodations
                 </h3>
 
                 <div className="space-y-6">
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType("king")}
-                    onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() =>
-                      window.open(
-                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
-                        "_blank"
-                      )
-                    }
-                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === "king"
-                        ? "bg-blue-500/20 shadow-lg shadow-blue-500/25"
-                        : "hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                      <Bed className="w-6 h-6 text-blue-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-semibold">King Sized Room</h4>
-                      <p className="text-white/80">
-                        Spacious room with king-size bed and premium amenities
-                      </p>
-                      <p className="text-blue-400 font-semibold mt-1">
-                        Starting from ₹3,500/night
-                      </p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                  </motion.div>
+                  {accommodations.map((accommodation, index) => {
+                    const IconComponent = getIconComponent(accommodation.iconType);
 
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType("queen")}
-                    onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() =>
-                      window.open(
-                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
-                        "_blank"
-                      )
-                    }
-                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === "queen"
-                        ? "bg-green-500/20 shadow-lg shadow-green-500/25"
-                        : "hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <Bed className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-semibold">
-                        Queen Sized Room
-                      </h4>
-                      <p className="text-white/80">
-                        Comfortable room with queen-size bed and modern
-                        facilities
-                      </p>
-                      <p className="text-green-400 font-semibold mt-1">
-                        Starting from ₹2,800/night
-                      </p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                  </motion.div>
+                    return (
+                      <motion.div
+                        key={accommodation._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                        whileHover={{ scale: 1.02 }}
+                        onMouseEnter={() => setHoveredRoomType(accommodation._id)}
+                        onMouseLeave={() => setHoveredRoomType(null)}
+                        onClick={() =>
+                          window.open(
+                            accommodation.externalLink,
+                            "_blank"
+                          )
+                        }
+                        className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
+                          hoveredRoomType === accommodation._id
+                            ? getColorThemeClasses(accommodation.colorTheme)
+                            : "hover:bg-white/10"
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${getColorThemeIconClasses(accommodation.colorTheme)}`}>
+                          <IconComponent className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-xl font-semibold">{accommodation.name}</h4>
+                          <p className="text-white/80">
+                            {accommodation.description}
+                          </p>
+                          <p className={`font-semibold mt-1 ${getTextColorClasses(accommodation.colorTheme)}`}>
+                            {accommodation.price}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
+                      </motion.div>
+                    );
+                  })}
 
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onMouseEnter={() => setHoveredRoomType("dormitory")}
-                    onMouseLeave={() => setHoveredRoomType(null)}
-                    onClick={() =>
-                      window.open(
-                        "https://live.ipms247.com/booking/book-rooms-kshetraretreatvarkala",
-                        "_blank"
-                      )
-                    }
-                    className={`flex items-center gap-4 text-white cursor-pointer p-4 rounded-lg transition-all duration-300 ${
-                      hoveredRoomType === "dormitory"
-                        ? "bg-purple-500/20 shadow-lg shadow-purple-500/25"
-                        : "hover:bg-white/10"
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                      <Users className="w-6 h-6 text-purple-400" />
+                  {accommodations.length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-white/60">Loading accommodations...</p>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-xl font-semibold">Dormitory</h4>
-                      <p className="text-white/80">
-                        Shared accommodation perfect for budget travelers and
-                        groups
-                      </p>
-                      <p className="text-purple-400 font-semibold mt-1">
-                        Starting from ₹1,200/night per bed
-                      </p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                  </motion.div>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4 mt-8">
@@ -772,7 +809,7 @@ export default function Home() {
               </motion.button>
             </motion.div>
 
-            {/* Room Images Gallery */}
+            {/* Accommodation Images Gallery */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -780,77 +817,75 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              {/* Room Type Indicator */}
+              {/* Accommodation Type Indicator */}
               <div className="mb-4 text-center">
                 <p className="text-white/60 text-sm">
                   {hoveredRoomType
-                    ? `Viewing ${
-                        hoveredRoomType === "king"
-                          ? "King Sized Room"
-                          : hoveredRoomType === "queen"
-                          ? "Queen Sized Room"
-                          : "Dormitory"
-                      } Images`
-                    : "Hover over room types to see images"}
+                    ? `Viewing ${accommodations.find(acc => acc._id === hoveredRoomType)?.name || 'Accommodation'} Images`
+                    : "Hover over accommodations to see images"}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {(hoveredRoomType
-                  ? roomImages[hoveredRoomType]
-                  : roomImages.default
-                ).map((image, idx) => (
-                  <motion.div
-                    key={`${hoveredRoomType || "default"}-${idx}`}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.4, delay: idx * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -10 }}
-                    className="relative overflow-hidden rounded-2xl group"
-                  >
-                    <img
-                      src={image}
-                      alt={`${hoveredRoomType || "Room"} ${idx + 1}`}
-                      className="w-full h-48 object-cover transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                {hoveredRoomType && accommodations.find(acc => acc._id === hoveredRoomType)?.images.length ? (
+                  accommodations.find(acc => acc._id === hoveredRoomType)!.images.map((image, idx) => {
+                    const accommodation = accommodations.find(acc => acc._id === hoveredRoomType)!;
+                    const IconComponent = getIconComponent(accommodation.iconType);
 
-                    {/* Image overlay with room type label */}
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <div
-                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
-                          hoveredRoomType === "king"
-                            ? "bg-blue-500/80 text-white"
-                            : hoveredRoomType === "queen"
-                            ? "bg-green-500/80 text-white"
-                            : hoveredRoomType === "dormitory"
-                            ? "bg-purple-500/80 text-white"
-                            : "bg-white/20 text-white/80"
-                        }`}
+                    return (
+                      <motion.div
+                        key={`${hoveredRoomType}-${idx}`}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.4, delay: idx * 0.1 }}
+                        whileHover={{ scale: 1.05, y: -10 }}
+                        className="relative overflow-hidden rounded-2xl group"
                       >
-                        {hoveredRoomType === "king" && (
-                          <Bed className="w-3 h-3" />
-                        )}
-                        {hoveredRoomType === "queen" && (
-                          <Bed className="w-3 h-3" />
-                        )}
-                        {hoveredRoomType === "dormitory" && (
-                          <Users className="w-3 h-3" />
-                        )}
-                        <span>
-                          {hoveredRoomType === "king"
-                            ? "King Room"
-                            : hoveredRoomType === "queen"
-                            ? "Queen Room"
-                            : hoveredRoomType === "dormitory"
-                            ? "Dormitory"
-                            : "Our Rooms"}
-                        </span>
+                        <img
+                          src={image}
+                          alt={`${accommodation.name} ${idx + 1}`}
+                          className="w-full h-48 object-cover transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
+                        {/* Image overlay with accommodation type label */}
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 bg-${accommodation.colorTheme}-500/80 text-white`}>
+                            <IconComponent className="w-3 h-3" />
+                            <span>{accommodation.name}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  // Default images when no accommodation is hovered
+                  roomImages.default.map((image, idx) => (
+                    <motion.div
+                      key={`default-${idx}`}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.4, delay: idx * 0.1 }}
+                      whileHover={{ scale: 1.05, y: -10 }}
+                      className="relative overflow-hidden rounded-2xl group"
+                    >
+                      <img
+                        src={image}
+                        alt={`Accommodation ${idx + 1}`}
+                        className="w-full h-48 object-cover transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white/80">
+                          <Hotel className="w-3 h-3" />
+                          <span>Our Accommodations</span>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))
+                )}
               </div>
 
               {/* Hover instruction */}
@@ -862,11 +897,10 @@ export default function Home() {
                 >
                   <div className="bg-black/60 backdrop-blur-sm rounded-2xl px-6 py-4 text-center">
                     <p className="text-white text-lg font-semibold mb-2">
-                      Interactive Room Gallery
+                      Interactive Accommodation Gallery
                     </p>
                     <p className="text-white/80 text-sm">
-                      Hover over room types on the left to see specific room
-                      images
+                      Hover over accommodations on the left to see specific images
                     </p>
                   </div>
                 </motion.div>

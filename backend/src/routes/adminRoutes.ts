@@ -22,7 +22,11 @@ import {
   activateAgency,
   deactivateAgency,
   deleteAgency,
-  getActiveAgency
+  getActiveAgency,
+  getAllAccommodations,
+  createAccommodation,
+  updateAccommodation,
+  deleteAccommodation
 } from '../controllers/adminController';
 import {
   getVehiclesForAdmin,
@@ -619,6 +623,100 @@ router.post('/adventure-sports/:id/upload-images',
   param('id').isMongoId().withMessage('Valid adventure sport ID required'),
   uploadMultiple,
   uploadAdventureSportImages
+);
+
+// Accommodation Management
+const accommodationValidation = [
+  body('name')
+    .trim()
+    .notEmpty()
+    .withMessage('Accommodation name is required')
+    .isLength({ max: 100 })
+    .withMessage('Name cannot be more than 100 characters'),
+  body('description')
+    .trim()
+    .notEmpty()
+    .withMessage('Description is required')
+    .isLength({ max: 500 })
+    .withMessage('Description cannot be more than 500 characters'),
+  body('price')
+    .trim()
+    .notEmpty()
+    .withMessage('Price is required')
+    .isLength({ max: 100 })
+    .withMessage('Price cannot be more than 100 characters'),
+  body('colorTheme')
+    .isIn(['blue', 'green', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo'])
+    .withMessage('Invalid color theme'),
+  body('iconType')
+    .isIn(['bed', 'users', 'hotel', 'home', 'building'])
+    .withMessage('Invalid icon type'),
+  body('externalLink')
+    .trim()
+    .notEmpty()
+    .withMessage('External link is required')
+    .isURL({ protocols: ['http', 'https'] })
+    .withMessage('External link must be a valid URL'),
+  body('displayOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Display order must be a non-negative integer'),
+  body('isActive')
+    .optional()
+    .isBoolean()
+    .withMessage('isActive must be boolean')
+];
+
+router.get('/accommodations', getAllAccommodations);
+router.post('/accommodations',
+  uploadMultiple,
+  handleFormDataArrays,
+  validate(accommodationValidation),
+  createAccommodation
+);
+router.put('/accommodations/:id',
+  param('id').isMongoId().withMessage('Valid accommodation ID required'),
+  uploadMultiple,
+  handleFormDataArrays,
+  validate(accommodationValidation),
+  updateAccommodation
+);
+router.delete('/accommodations/:id',
+  param('id').isMongoId().withMessage('Valid accommodation ID required'),
+  deleteAccommodation
+);
+router.post('/accommodations/upload-images',
+  uploadMultiple,
+  async (req: any, res: any) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No images provided'
+        });
+      }
+
+      // Upload images using the same utility used in accommodations
+      const { uploadMultipleImages: uploadMultipleToImageKit, IMAGE_FOLDERS, IMAGE_TRANSFORMATIONS } = require('../utils/imagekitUpload');
+
+      const imageUrls = await uploadMultipleToImageKit(files, {
+        folder: IMAGE_FOLDERS.RESORTS.ACCOMMODATIONS,
+        transformation: IMAGE_TRANSFORMATIONS.ACCOMMODATION_PHOTO
+      });
+
+      res.json({
+        success: true,
+        data: { imageUrls }
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload images'
+      });
+    }
+  }
 );
 
 export default router;

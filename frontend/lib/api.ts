@@ -511,6 +511,38 @@ export const adminAPI = {
       }
     );
   },
+
+  // Accommodation Management
+  getAllAccommodations: async () => {
+    return await AdminApiInstance.get("/admin/accommodations");
+  },
+
+  createAccommodation: async (data: FormData) => {
+    return await AdminApiInstance.post("/admin/accommodations", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  updateAccommodation: async (id: string, data: FormData) => {
+    return await AdminApiInstance.put(`/admin/accommodations/${id}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  deleteAccommodation: async (id: string) => {
+    return await AdminApiInstance.delete(`/admin/accommodations/${id}`);
+  },
+};
+
+// Accommodation API calls (public)
+export const accommodationAPI = {
+  getAllAccommodations: async () => {
+    return await ApiInstance.get("/accommodations");
+  },
 };
 
 // Contact API calls
