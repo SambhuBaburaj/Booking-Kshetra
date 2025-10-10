@@ -304,7 +304,7 @@ export default function Home() {
         {/* Parallax Background */}
         <motion.div style={{ y }} className="absolute inset-0 scale-110">
           <img
-            src="https://ik.imagekit.io/8xufknozx/landing.jpg?updatedAt=1760023147735"
+            src="https://ik.imagekit.io/8xufknozx/615043_122333741244763_442710492_o.jpg?updatedAt=1760020608104"
             alt="Varkala Beach"
             className="w-full h-full object-cover"
           />
@@ -327,7 +327,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="mb-44"
+                  className="mb-72"
                 >
                 </motion.div>
 
@@ -338,12 +338,12 @@ export default function Home() {
                   transition={{ delay: 0.4 }}
                   className=""
                 >
-                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-none mb-3">
+                  {/* <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-none mb-3">
                     <span className="block text-white">Kshetra</span>
                     <span className="block text-orange-400 text-4xl md:text-5xl lg:text-6xl font-light">
                       Retreat
                     </span>
-                  </h1>
+                  </h1> */}
                 </motion.div>
 
                 {/* Description */}
@@ -351,27 +351,32 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="mb-5"
+                  className="mb-2"
                 >
-                  <p className="text-xl md:text-2xl text-white/90 font-light leading-relaxed max-w-lg">
-                    Welcome To The Boundless Bed Of Kshetra Retreat
+                  <p className="text-3xl md:text-2xl text-white/90 font-light leading-relaxed max-w-lg">
+                    Welcome To The Boundless Bed of Kshetra Retreat
                   </p>
                 </motion.div>
 
-                {/* Location */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
                   className="mb-4"
                 >
-                  <div className="flex items-center gap-3 text-white/80">
+                    <div
+                    onClick={() => {
+                      window.open("https://maps.app.goo.gl/8vRv3Ys4F12MMzdMA", "_blank");
+                    }}
+                    className="flex items-center gap-3 text-white/80 cursor-pointer hover:text-orange-300 transition-colors"
+                    >
                     <MapPin className="w-5 h-5 text-orange-400" />
                     <span className="text-lg font-light">
                       Kshetra Retreat North Cliff Varkala Beach
                     </span>
-                  </div>
+                    </div>
                 </motion.div>
+                {/* Location */}
 
                 {/* CTA Buttons */}
                 <motion.div
