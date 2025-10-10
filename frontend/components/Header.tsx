@@ -19,20 +19,20 @@ export default function Header() {
   ];
 
   return (
-    <header className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-900 shadow-lg sticky top-0 z-50 backdrop-blur-sm bg-opacity-95">
+    <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
 
       {/* Main header */}
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-lg shadow-lg">
-              <Crown className="w-8 h-8 text-white" />
-            </div>
+            {/* <div className="bg-gradient-to-r p-2 rounded-lg shadow-lg"> */}
+              <img src={"https://ik.imagekit.io/8xufknozx/logo_new.png?updatedAt=1760079531972"} className="w-12 h-12" />
+            {/* </div> */}
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">KSHETRA</h1>
-              <p className="text-sm text-gray-300 font-light tracking-wider">
-                RETREAT RESORT
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">KSHETRA</h1>
+              <p className="text-sm text-gray-600 font-light tracking-wider">
+                RETREAT
               </p>
             </div>
           </Link>
@@ -47,12 +47,12 @@ export default function Header() {
                   href={item.href}
                   className={`font-medium transition-all duration-200 relative group cursor-pointer ${
                     isActive
-                      ? 'text-orange-400'
-                      : 'text-gray-200 hover:text-orange-400'
+                      ? 'text-orange-500'
+                      : 'text-gray-700 hover:text-orange-500'
                   }`}
                 >
                   {item.name}
-                  <span className={`absolute bottom-0 left-0 h-0.5 bg-orange-400 transition-all duration-300 ${
+                  <span className={`absolute bottom-0 left-0 h-0.5 bg-orange-500 transition-all duration-300 ${
                     isActive
                       ? 'w-full'
                       : 'w-0 group-hover:w-full'
@@ -68,7 +68,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-gray-200 hover:text-white"
+            className="md:hidden p-2 text-gray-700 hover:text-gray-900"
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" />
@@ -81,7 +81,7 @@ export default function Header() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-gray-800 border-t border-gray-700">
+        <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-4">
               {navigation.map((item) => {
@@ -92,8 +92,8 @@ export default function Header() {
                     href={item.href}
                     className={`font-medium py-2 transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? 'text-orange-400 border-l-2 border-orange-400 pl-4'
-                        : 'text-gray-200 hover:text-orange-400 hover:border-l-2 hover:border-orange-400 hover:pl-4'
+                        ? 'text-orange-500 border-l-2 border-orange-500 pl-4'
+                        : 'text-gray-700 hover:text-orange-500 hover:border-l-2 hover:border-orange-500 hover:pl-4'
                     }`}
                     onClick={() => setIsMenuOpen(false)}
                   >
