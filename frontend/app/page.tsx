@@ -371,7 +371,7 @@ export default function Home() {
                     className="flex items-center gap-3 text-white/80 cursor-pointer hover:text-orange-300 transition-colors"
                     >
                     <MapPin className="w-5 h-5 text-orange-400" />
-                    <span className="text-lg font-light">
+                    <span className="text-lg font-light text-orange-400">
                       Kshetra Retreat North Cliff Varkala Beach
                     </span>
                     </div>
