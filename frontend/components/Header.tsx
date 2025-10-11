@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Crown, Phone, Mail, Shield } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,11 +25,9 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            {/* <div className="bg-gradient-to-r p-2 rounded-lg shadow-lg"> */}
-              <img src={"https://ik.imagekit.io/8xufknozx/logo_new.png?updatedAt=1760079531972"} className="w-12 h-12" />
-            {/* </div> */}
-            <div>
+          <Link href="/" className="flex items-center gap-3 z-10 relative">
+            <img src={"https://ik.imagekit.io/8xufknozx/logo_new.png?updatedAt=1760079531972"} className="w-12 h-12" />
+            <div className="hidden sm:block">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">KSHETRA</h1>
               <p className="text-sm text-gray-600 font-light tracking-wider">
                 RETREAT
@@ -38,37 +36,36 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`font-medium transition-all duration-200 relative group cursor-pointer ${
-                    isActive
-                      ? 'text-orange-500'
-                      : 'text-gray-700 hover:text-orange-500'
-                  }`}
-                >
-                  {item.name}
-                  <span className={`absolute bottom-0 left-0 h-0.5 bg-orange-500 transition-all duration-300 ${
-                    isActive
-                      ? 'w-full'
-                      : 'w-0 group-hover:w-full'
-                  }`}></span>
-                </Link>
-              );
-            })}
+          <nav className="hidden lg:flex items-center justify-center flex-1 px-8">
+            <div className="flex items-center gap-6 xl:gap-8">
+              {navigation.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`font-medium transition-all duration-200 relative group cursor-pointer whitespace-nowrap text-sm xl:text-base ${
+                      isActive
+                        ? 'text-orange-500'
+                        : 'text-gray-700 hover:text-orange-500'
+                    }`}
+                  >
+                    {item.name}
+                    <span className={`absolute bottom-0 left-0 h-0.5 bg-orange-500 transition-all duration-300 ${
+                      isActive
+                        ? 'w-full'
+                        : 'w-0 group-hover:w-full'
+                    }`}></span>
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
-
-          {/* Spacer for balance */}
-          <div className="hidden md:block w-32"></div>
 
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-gray-700 hover:text-gray-900"
+            className="lg:hidden p-2 text-gray-700 hover:text-gray-900 transition-colors z-10 relative"
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" />
@@ -81,7 +78,7 @@ export default function Header() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg">
+        <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-4">
               {navigation.map((item) => {
@@ -101,7 +98,6 @@ export default function Header() {
                   </Link>
                 );
               })}
-
             </div>
           </nav>
         </div>
