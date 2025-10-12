@@ -29,12 +29,12 @@ export default function Header() {
             {/* <div className="bg-gradient-to-r p-2 rounded-lg shadow-lg"> */}
               <img src={"https://ik.imagekit.io/8xufknozx/logo_new.png?updatedAt=1760079531972"} className="w-12 h-12" />
             {/* </div> */}
-            <div>
+            {/* <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">KSHETRA</h1>
               <p className="text-sm text-gray-600 font-light tracking-wider">
                 RETREAT
               </p>
-            </div>
+            </div> */}
           </Link>
 
           {/* Desktop Navigation */}
