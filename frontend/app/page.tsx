@@ -354,7 +354,7 @@ export default function Home() {
                   className="mb-2"
                 >
                   <p className="text-3xl md:text-2xl text-white/90 font-light leading-relaxed max-w-lg">
-                    Welcome To The Boundless Bed of Kshetra Retreat
+                    Welcome To The Boundless Bed Of 
                   </p>
                 </motion.div>
 
